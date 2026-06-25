@@ -138,6 +138,7 @@ const MAP_CORNERS = {
   'gorodok':      { c0:[-203200,-203200], c1:[203200,203200] },
   'harju':        { c0:[-201600,-201600], c1:[201600,201600] },
   'jensen':       { c0:[-200400,-200400], c1:[200400,200400] },
+  'jensensrange': { c0:[-200400,-200400], c1:[200400,200400] },
   'kamdesh':      { c0:[-201600,-201600], c1:[201600,201600] },
   'kohat':        { c0:[-230000,-230000], c1:[231700,231700] },
   'kokan':        { c0:[-107600,-107600], c1:[142000,142000] },
@@ -158,19 +159,17 @@ const MAP_CORNERS = {
 // Normaliza el nombre del mapa del servidor al key del diccionario
 function normalizeMapName(raw) {
   if (!raw) return null;
-  const s = raw.toLowerCase()
-    .replace(/[^a-z]/g, '')
-    .replace('jensensrange', 'jensen')
-    .replace('jensens', 'jensen')
-    .replace('albasrah', 'albasrah')
-    .replace('blackcoast', 'blackcoast')
-    .replace('foolsroad', 'foolsroad')
-    .replace('goosebay', 'goosebay');
-  // Match parcial
+  // Limpiar: solo letras minúsculas
+  const s = raw.toLowerCase().replace(/[^a-z]/g, '');
+  
+  // Buscar la clave más larga que esté contenida en s
+  let best = null;
   for (const key of Object.keys(MAP_CORNERS)) {
-    if (s.includes(key) || key.includes(s)) return key;
+    if (s.includes(key) && (!best || key.length > best.length)) {
+      best = key;
+    }
   }
-  return null;
+  return best;
 }
 
 // ── LEAFLET SETUP ─────────────────────────────────────────────────────────────
@@ -390,7 +389,7 @@ async function poll() {
       };
     } else {
       // Fallback al diccionario de mapas (por si el plugin no envía corners)
-      const key = normalizeMapName(data.map);
+      const mapKey = normalizeMapName(data.layer || data.map);
       if (key && MAP_CORNERS[key]) {
         const { c0, c1 } = MAP_CORNERS[key];
         corners = {
