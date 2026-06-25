@@ -686,8 +686,8 @@ const ICON_SVG = {
    ========================================================= */
 const MAP_CONFIG = {
   name: "Kokan",
-  cornerZero: [142013.671875, 142013.671875],   // top-left del basemap, en UU
-  cornerOne:  [-107634.9375, -107566.75],       // bottom-right del basemap, en UU
+  cornerOne: [142013.671875, 142013.671875],   // top-left del basemap, en UU
+  cornerZero:  [-107634.9375, -107566.75],       // bottom-right del basemap, en UU
 };
 
 // snapshot 1: 05:10:15 — ileveN a pie
@@ -730,8 +730,7 @@ function gameToLatLng(pos){
   const fracY = (pos[1] - y0) / (y1 - y0);
   const px = fracX * MAP_UNITS;
   const py = fracY * MAP_UNITS;
-  return [-py, px]; // lat = -py (Leaflet lat crece hacia arriba), lng = px
-}
+  return [py, px]; 
 
 /* =========================================================
    4. Mapa Leaflet (CRS.Simple, sin proyección geográfica)
