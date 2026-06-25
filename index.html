@@ -412,6 +412,8 @@ map.fitBounds(bounds);
 let basemapLayer = null;
 let currentMapKey = null;
 let imageLoaded = false;
+let rallyLayer = null;
+let ammoLayer = null;
 
 function loadBasemap(mapKey, force = false) {
   if (!force && mapKey === currentMapKey && imageLoaded) return;
@@ -674,6 +676,30 @@ function updateObjectives(objectives, corners) {
 // ── FOB/HAB MARKERS (rescatado de maqueta antigua) ──────────────────────────────
 let fobMarkersLayer = null;
 
+function initRallyLayer() {
+  if (!rallyLayer) {
+    rallyLayer = L.featureGroup().addTo(map);
+  } else {
+    rallyLayer.clearLayers();
+  }
+}
+
+function clearRallyMarkers() {
+  if (rallyLayer) rallyLayer.clearLayers();
+}
+
+function initAmmoLayer() {
+  if (!ammoLayer) {
+    ammoLayer = L.featureGroup().addTo(map);
+  } else {
+    ammoLayer.clearLayers();
+  }
+}
+
+function clearAmmoMarkers() {
+  if (ammoLayer) ammoLayer.clearLayers();
+}
+
 function initFobLayer() {
   if (!fobMarkersLayer) {
     fobMarkersLayer = L.featureGroup().addTo(map);
@@ -686,6 +712,91 @@ function clearFobMarkers() {
   if (fobMarkersLayer) {
     fobMarkersLayer.clearLayers();
   }
+}
+
+function renderRallyMarker(rally, corners) {
+  if (!rallyLayer) return;
+  const pos = rally.pos || { x: 0, y: 0 };
+  const teamID = rally.teamID || 1;
+  const squadID = rally.squadID || '?';
+  const latLng = gameToLatLng(pos, corners);
+
+  const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="28" viewBox="0 0 22 28">
+    <line x1="4" y1="2" x2="4" y2="26" stroke="#000" stroke-width="2"/>
+    <path d="M4 3 L20 6 L4 11 Z" fill="${iconColor}" stroke="#000" stroke-width="0.5" opacity=".9"/>
+    <text x="12" y="9" font-size="6" fill="#fff" font-weight="bold" text-anchor="middle">${squadID}</text>
+    <circle cx="4" cy="26" r="2" fill="#000"/>
+  </svg>`;
+
+  const icon = L.divIcon({
+    html: svg,
+    iconSize: [22, 28],
+    iconAnchor: [4, 26],
+    className: 'rally-icon',
+  });
+
+  const marker = L.marker(latLng, { icon }).addTo(rallyLayer);
+  marker.bindTooltip(`Squad ${squadID} Rally (T${teamID})`, {
+    className: "squad-tip",
+    direction: "top",
+  });
+}
+
+function updateRallies(rallyArray, corners) {
+  if (!rallyArray || !Array.isArray(rallyArray) || rallyArray.length === 0) {
+    if (rallyLayer) rallyLayer.clearLayers();
+    return;
+  }
+  initRallyLayer();
+  rallyArray.forEach(r => {
+    try { renderRallyMarker(r, corners); } catch(e) { console.warn('Rally error:', e); }
+  });
+}
+
+function renderAmmoMarker(ammo, corners) {
+  if (!ammoLayer) return;
+  const pos = ammo.pos || { x: 0, y: 0 };
+  const teamID = ammo.teamID || 1;
+  const state = ammo.state || 'Completed';
+  const latLng = gameToLatLng(pos, corners);
+
+  const color = teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const isBuilt = state === 'Completed';
+  const opacity = isBuilt ? 1 : 0.5;
+
+  const icon = L.divIcon({
+    html: `<div style="
+      width:20px;height:20px;
+      background:${color};
+      border-radius:3px;
+      border:1px solid #000;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;color:#fff;opacity:${opacity};
+      box-shadow:0 0 2px rgba(0,0,0,0.6);
+    ">📦</div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    className: 'ammo-icon',
+  });
+
+  const marker = L.marker(latLng, { icon }).addTo(ammoLayer);
+  const status = isBuilt ? '✅' : '🚧';
+  marker.bindTooltip(`Ammo crate T${teamID} ${status}`, {
+    className: "squad-tip",
+    direction: "top",
+  });
+}
+
+function updateAmmo(ammoArray, corners) {
+  if (!ammoArray || !Array.isArray(ammoArray) || ammoArray.length === 0) {
+    if (ammoLayer) ammoLayer.clearLayers();
+    return;
+  }
+  initAmmoLayer();
+  ammoArray.forEach(a => {
+    try { renderAmmoMarker(a, corners); } catch(e) { console.warn('Ammo error:', e); }
+  });
 }
 
 function renderFobMarker(fob, corners) {
@@ -1043,6 +1154,20 @@ async function poll() {
       updateFobs(data.fobs, corners);
     } else if (!data.fobs?.length) {
       clearFobMarkers();
+    }
+
+    // Renderizar rally points
+    if (corners && data.rallyPoints?.length) {
+      updateRallies(data.rallyPoints, corners);
+    } else if (!data.rallyPoints?.length) {
+      clearRallyMarkers();
+    }
+
+    // Renderizar ammocrates
+    if (corners && data.ammocrates?.length) {
+      updateAmmo(data.ammocrates, corners);
+    } else if (!data.ammocrates?.length) {
+      clearAmmoMarkers();
     }
 
     updatePlayerList(data.players ?? []);
