@@ -496,6 +496,19 @@ function roleIconName(p) {
   return 'rifleman'; // fallback genérico
 }
 
+// Resuelve la ruta del ícono de rol según dónde se use:
+// - 'white'  -> menús/dashboard (resources/Role_Icons_Squad_White/*.webp)
+// - 'team'   -> mapa, color según equipo (Blue/Red, *.png con transparencia)
+function roleIconPath(p, variant) {
+  const name = roleIconName(p);
+  if (variant === 'white') {
+    return `./resources/Role_Icons_Squad_White/T_role_${name}.webp`;
+  }
+  const teamFolder = p.teamID === 1 ? 'Role_Icons_Squad_Blue' : 'Role_Icons_Squad_Red';
+  const teamSuffix = p.teamID === 1 ? 'blue' : 'red';
+  return `./resources/${teamFolder}/T_role_${name}_${teamSuffix}.png`;
+}
+
 // ── ICONOS ────────────────────────────────────────────────────────────────────
 function makeIcon(p, selected) {
   const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
@@ -547,11 +560,11 @@ function makeIcon(p, selected) {
     });
   }
 
-  // ── Si NO está en vehículo, usamos el ícono de rol ──
+  // ── Si NO está en vehículo, usamos el ícono de rol (color según equipo) ──
   const iconName = roleIconName(p);
-  const iconSrc = `./resources/T_role_${iconName}.webp`;
-  const bgCircle = `<div style="position:absolute;inset:0;border-radius:50%;background:${color};opacity:.92;border:1px solid #000;"></div>`;
-  const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:2px;width:24px;height:24px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
+  const iconSrc = roleIconPath(p, 'team');
+  const bgCircle = `<div style="position:absolute;inset:0;border-radius:50%;background:#0b0f0c;opacity:.55;border:1px solid #000;"></div>`;
+  const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
   // Pequeño badge de vehículo (ya no es necesario, pero lo dejamos por si quieres ver el tipo)
   const vehicleBadge = p.vehicle ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:2px;background:#d9a441;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:6px;">🚗</div>` : '';
   const faction = factionFromRole(p.role);
@@ -1106,7 +1119,7 @@ function showPlayerCard(p) {
     <div class="player-card">
       <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> ${esc(p.name)}</div>
       <div class="row"><span>Estado</span><span class="val">${status}</span></div>
-      <div class="row"><span>Rol</span><span class="val">${esc(p.role ?? '—')}</span></div>
+      <div class="row"><span>Rol</span><span class="val" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;"><img src="${roleIconPath(p,'white')}" alt="" style="width:16px;height:16px;"/>${esc(p.role ?? '—')}</span></div>
       ${vehicleLine}
       <div class="row"><span>Squad</span><span class="val">${p.squadName ? esc(p.squadName) : (p.squadID ?? '—')}</span></div>
       <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
@@ -1308,12 +1321,16 @@ function updatePlayerList(players) {
       }
     }
     const role = roleIconName(p).replace(/_/g,' ');
+    const roleIcon = roleIconPath(p, 'white');
     const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)}</span>` : '';
     const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
     // Aplicar opacidad si muerto (dead) y no está vivo, para distinguir
     const deadOpacity = (!p.isAlive && !p.position) ? 'opacity:.4;' : '';
     html += `<div class="player-card" style="cursor:pointer;margin-bottom:4px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <img src="${roleIcon}" alt="" style="width:16px;height:16px;flex-shrink:0;"/>
+        <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>
+      </div>
       <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${role} · ${statusText}</div>
     </div>`;
   }
