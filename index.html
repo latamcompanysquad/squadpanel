@@ -192,27 +192,20 @@ let imageLoaded = false; // bandera para saber si la imagen se cargó bien
 function loadBasemap(mapKey, force = false) {
   console.log('loadBasemap llamado con mapKey:', mapKey, 'force:', force, 'currentMapKey:', currentMapKey);
   
-  // Si es el mismo mapa y no se fuerza, y la imagen ya se cargó correctamente, salir
   if (mapKey === currentMapKey && !force && imageLoaded) {
     console.log('⏩ Misma imagen ya cargada, omitiendo recarga');
     return;
   }
 
-  
-
-
-  // Si cambió el mapa o se fuerza, actualizar
   currentMapKey = mapKey;
-  imageLoaded = false; // resetear bandera
+  imageLoaded = false;
 
-  // Eliminar capa anterior si existe
   if (basemapLayer) {
     console.log('🗑️ Eliminando capa anterior');
     map.removeLayer(basemapLayer);
     basemapLayer = null;
   }
 
-  // Construir URL con anti-cache
   const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp?t=${Date.now()}`;
   console.log('🌐 Cargando imagen:', url);
 
@@ -222,13 +215,11 @@ function loadBasemap(mapKey, force = false) {
   basemapLayer.on('load', function() {
     console.log('✅ Imagen cargada correctamente');
     imageLoaded = true;
-    // Forzar redibujo del mapa
     map.invalidateSize();
   });
 
   basemapLayer.on('error', function(e) {
     console.error('❌ Error cargando imagen:', url, e);
-    // Opcional: reintentar después de 2 segundos (solo si el mapa sigue siendo el mismo)
     setTimeout(() => {
       if (currentMapKey === mapKey && !imageLoaded) {
         console.log('🔄 Reintentando cargar imagen...');
@@ -370,7 +361,7 @@ function updateHUD(data) {
 // ── POLL (corregida) ─────────────────────────────────────────────────────────
 async function poll() {
   try {
-    const res  = await fetch(`${WORKER_URL}/api/match`);
+    const res = await fetch(`${WORKER_URL}/api/match`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
@@ -390,8 +381,8 @@ async function poll() {
     } else {
       // Fallback al diccionario de mapas (por si el plugin no envía corners)
       const mapKey = normalizeMapName(data.layer || data.map);
-      if (key && MAP_CORNERS[key]) {
-        const { c0, c1 } = MAP_CORNERS[key];
+      if (mapKey && MAP_CORNERS[mapKey]) {
+        const { c0, c1 } = MAP_CORNERS[mapKey];
         corners = {
           minX: Math.min(c0[0], c1[0]),
           maxX: Math.max(c0[0], c1[0]),
@@ -404,14 +395,15 @@ async function poll() {
     console.log('Corners calculados:', corners);
 
     // ── Cargar imagen del mapa ──────────────────────────────────────────
-    const mapKey = normalizeMapName(data.map);
-    // Dentro de poll(), después de obtener mapKey:
+    // ✅ USAR data.layer COMO FUENTE PRINCIPAL
+    const mapKey = normalizeMapName(data.layer || data.map);
+    console.log('🔍 mapKey detectado:', mapKey, 'desde layer:', data.layer, 'map:', data.map);
+
     if (mapKey) {
       // Forzar recarga si es la primera vez o si cambió el mapa
       const forceLoad = !currentMapKey || mapKey !== currentMapKey || !imageLoaded;
       loadBasemap(mapKey, forceLoad);
     } else {
-      // Si no se reconoce el mapa, mostramos un mensaje
       document.getElementById('statusText').textContent = 'Mapa desconocido';
     }
 
@@ -434,7 +426,6 @@ async function poll() {
     document.getElementById('liveDot').className = 'live-dot offline';
   }
 }
-
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
