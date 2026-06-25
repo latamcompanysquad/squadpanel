@@ -135,3 +135,131 @@ function json(data, status = 200) {
     headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WORKER ADMIN EXTENSION — agregar al worker existente
+// squadpanel-worker / src/index.js (o worker.js)
+//
+// DEPENDE DE: Cloudflare KV namespace "SQUADPANEL_KV" (ya existente)
+// Agregar un segundo KV binding: ADMIN_KV (o reusar el mismo con prefijo)
+//
+// Para usar el mismo KV existente, reemplaza ADMIN_KV con tu KV actual.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── ROUTER (agregar estas rutas al fetch handler existente) ──────────────────
+//
+// En tu fetch handler principal, ANTES del return de rutas desconocidas:
+//
+//   if (url.pathname === '/api/admin/command' && request.method === 'POST')
+//     return handleAdminCommand(request, env);
+//   if (url.pathname === '/api/admin/pending' && request.method === 'GET')
+//     return handleAdminPending(request, env);
+//   if (url.pathname.startsWith('/api/admin/done/') && request.method === 'DELETE')
+//     return handleAdminDone(request, env);
+
+// ── CORS helper (probablemente ya lo tienes) ──────────────────────────────────
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+}
+function jsonRes(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+  });
+}
+
+// ── POST /api/admin/command ───────────────────────────────────────────────────
+// Frontend → Worker: encolar un comando para el plugin
+async function handleAdminCommand(request, env) {
+  let body;
+  try { body = await request.json(); }
+  catch { return jsonRes({ error: 'Invalid JSON' }, 400); }
+
+  const { action } = body;
+  const VALID_ACTIONS = [
+    'warn', 'kick', 'ban', 'switchTeam', 'respawn',
+    'broadcast', 'setNextMap', 'endMatch',
+    'pauseMatch', 'unpauseMatch',
+  ];
+  if (!VALID_ACTIONS.includes(action)) {
+    return jsonRes({ error: `Unknown action: ${action}` }, 400);
+  }
+
+  const id = `cmd_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const cmd = {
+    id,
+    action,
+    payload: body,           // toda la info: steamID, reason, message, map, etc.
+    createdAt: Date.now(),
+    status: 'pending',
+  };
+
+  // Guardar en KV con TTL de 60s (si el plugin no lo recoge en 60s, se pierde)
+  // Usa el KV que tengas: env.SQUADPANEL_KV o env.ADMIN_KV
+  await env.SQUADPANEL_KV.put(`admin:${id}`, JSON.stringify(cmd), { expirationTtl: 60 });
+
+  // También mantener lista de pending IDs (para que el plugin pueda listar)
+  const listRaw = await env.SQUADPANEL_KV.get('admin:pending_list');
+  const list = listRaw ? JSON.parse(listRaw) : [];
+  list.push(id);
+  // Limpiar IDs muy viejos de la lista (por si acaso)
+  const cutoff = Date.now() - 120_000;
+  const cleanList = list.filter(i => {
+    const ts = parseInt(i.split('_')[1]);
+    return ts > cutoff;
+  });
+  cleanList.push(id);
+  await env.SQUADPANEL_KV.put('admin:pending_list', JSON.stringify([...new Set(cleanList)]), { expirationTtl: 120 });
+
+  return jsonRes({ ok: true, id });
+}
+
+// ── GET /api/admin/pending ────────────────────────────────────────────────────
+// Plugin → Worker: obtener lista de comandos pendientes
+async function handleAdminPending(request, env) {
+  const listRaw = await env.SQUADPANEL_KV.get('admin:pending_list');
+  if (!listRaw) return jsonRes({ commands: [] });
+
+  const list = JSON.parse(listRaw);
+  const commands = [];
+
+  for (const id of list) {
+    const raw = await env.SQUADPANEL_KV.get(`admin:${id}`);
+    if (raw) {
+      const cmd = JSON.parse(raw);
+      if (cmd.status === 'pending') commands.push(cmd);
+    }
+  }
+
+  return jsonRes({ commands });
+}
+
+// ── DELETE /api/admin/done/:id ────────────────────────────────────────────────
+// Plugin → Worker: marcar comando como ejecutado
+async function handleAdminDone(request, env) {
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+  if (!id.startsWith('cmd_')) return jsonRes({ error: 'Invalid id' }, 400);
+
+  const raw = await env.SQUADPANEL_KV.get(`admin:${id}`);
+  if (raw) {
+    const cmd = JSON.parse(raw);
+    cmd.status = 'done';
+    cmd.doneAt = Date.now();
+    // Guardar como done por 10s más para debug, luego se limpia solo
+    await env.SQUADPANEL_KV.put(`admin:${id}`, JSON.stringify(cmd), { expirationTtl: 10 });
+  }
+
+  // Remover de pending list
+  const listRaw = await env.SQUADPANEL_KV.get('admin:pending_list');
+  if (listRaw) {
+    const list = JSON.parse(listRaw).filter(i => i !== id);
+    await env.SQUADPANEL_KV.put('admin:pending_list', JSON.stringify(list), { expirationTtl: 120 });
+  }
+
+  return jsonRes({ ok: true, id });
+}

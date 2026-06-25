@@ -1,4 +1,4 @@
-//VERSION FUNCIONAL, API OPERATIVO. De ahora en adelante es todo UI y funciones, iconos, etc. 
+//VERSION CON PANEL ADMIN. Fase 2 completa + Admin commands.
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,6 +14,8 @@
   --text:#d8d9c9; --text-dim:#8a9080;
   --blue:#4fa6e8; --blue-dim:#1c3a52;
   --red:#e0584f;  --red-dim:#4a2220;
+  --green:#4caf6a; --green-dim:#1a3326;
+  --warn:#f0a500;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;height:100%;overflow:hidden;}
@@ -42,6 +44,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 .ticket-num.red{color:var(--red);}
 .status-text{font-size:11px;color:var(--text-dim);}
 
+/* TABS */
+#sideTabs{display:flex;border-bottom:1px solid var(--panel-edge);flex-shrink:0;}
+.side-tab{
+  flex:1;padding:8px 0;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;text-align:center;cursor:pointer;color:var(--text-dim);
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+}
+.side-tab.active{color:var(--olive);border-bottom-color:var(--olive);}
+.side-tab:hover:not(.active){color:var(--text);}
+
 /* BODY */
 #body{flex:1;display:flex;min-height:0;}
 #mapwrap{flex:1;position:relative;min-width:0;background:#05070a;}
@@ -55,10 +67,11 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 
 /* SIDE PANEL */
 #side{
-  width:280px;flex-shrink:0;background:var(--panel);
+  width:300px;flex-shrink:0;background:var(--panel);
   border-left:1px solid var(--panel-edge);
-  display:flex;flex-direction:column;padding:16px;gap:14px;overflow-y:auto;
+  display:flex;flex-direction:column;
 }
+#sideContent{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;}
 .panel-title{
   font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--olive);border-bottom:1px solid var(--panel-edge);
@@ -76,8 +89,74 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 .player-card .val{color:var(--text);}
 .no-data{color:var(--text-dim);font-size:11px;text-align:center;padding:20px 0;}
 
+/* ADMIN PANEL */
+#tabPlayers,#tabAdmin{display:none;}
+#tabPlayers.show,#tabAdmin.show{display:block;}
+
+/* Admin sections */
+.admin-section{margin-bottom:16px;}
+.admin-section .panel-title{color:var(--amber);}
+
+/* Botones admin */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:3px;border:1px solid;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  cursor:pointer;transition:opacity .15s,background .15s;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.btn:hover{opacity:.85;}
+.btn:active{opacity:.6;}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+.btn-full{grid-column:1/-1;}
+
+.btn-warn  {background:#332200;border-color:var(--warn);color:var(--warn);}
+.btn-kick  {background:#2a1a1a;border-color:#e07050;color:#e07050;}
+.btn-ban   {background:var(--red-dim);border-color:var(--red);color:var(--red);}
+.btn-green {background:var(--green-dim);border-color:var(--green);color:var(--green);}
+.btn-blue  {background:var(--blue-dim);border-color:var(--blue);color:var(--blue);}
+.btn-olive {background:#1c2212;border-color:var(--olive);color:var(--olive);}
+
+/* Input fields */
+.admin-input{
+  width:100%;background:#0a0e08;border:1px solid var(--panel-edge);
+  color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:6px 8px;border-radius:3px;margin-top:4px;
+}
+.admin-input:focus{outline:none;border-color:var(--olive);}
+.admin-input::placeholder{color:var(--text-dim);}
+
+/* Selected player in admin */
+#adminTarget{
+  background:#0d120b;border:1px solid var(--panel-edge);border-radius:3px;
+  padding:8px 10px;font-size:11px;color:var(--text-dim);margin-bottom:10px;
+}
+#adminTarget .target-name{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;font-size:13px;}
+#adminTarget .target-steam{font-size:10px;color:var(--olive-dim);}
+
+/* Admin feedback toast */
+#adminToast{
+  position:fixed;bottom:20px;right:320px;
+  background:#1a2518;border:1px solid var(--olive);
+  color:var(--olive);padding:8px 14px;border-radius:3px;
+  font-size:11px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#adminToast.show{opacity:1;}
+
+/* Command log */
+#cmdLog{font-size:10px;color:var(--text-dim);max-height:100px;overflow-y:auto;margin-top:6px;}
+#cmdLog .log-entry{padding:2px 0;border-bottom:1px solid #1a1f18;}
+#cmdLog .log-ok{color:var(--green);}
+#cmdLog .log-err{color:var(--red);}
+#cmdLog .log-pending{color:var(--warn);}
+
 /* Leaflet marker overrides */
 .leaflet-marker-icon{background:none;border:none;}
+
+/* Scrollbar */
+#sideContent::-webkit-scrollbar{width:4px;}
+#sideContent::-webkit-scrollbar-track{background:var(--panel);}
+#sideContent::-webkit-scrollbar-thumb{background:var(--olive-dim);border-radius:2px;}
 </style>
 </head>
 <body>
@@ -106,28 +185,106 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
       <div id="map"></div>
       <div id="sweep"></div>
     </div>
+
     <div id="side">
-      <div>
-        <div class="panel-title">Jugador seleccionado</div>
-        <div id="playerPanel"><div class="no-data">Hover sobre un ícono</div></div>
+      <div id="sideTabs">
+        <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
+        <div class="side-tab" onclick="switchTab('admin')">Admin</div>
       </div>
-      <div>
-        <div class="panel-title">En mapa (<span id="playerCount">0</span>)</div>
-        <div id="playerList"></div>
+
+      <div id="sideContent">
+        <!-- TAB: JUGADORES -->
+        <div id="tabPlayers" class="show">
+          <div>
+            <div class="panel-title">Jugador seleccionado</div>
+            <div id="playerPanel"><div class="no-data">Hover sobre un ícono</div></div>
+          </div>
+          <div>
+            <div class="panel-title">En mapa (<span id="playerCount">0</span>)</div>
+            <div id="playerList"></div>
+          </div>
+        </div>
+
+        <!-- TAB: ADMIN -->
+        <div id="tabAdmin">
+          <!-- Target actual -->
+          <div class="admin-section">
+            <div class="panel-title">Objetivo seleccionado</div>
+            <div id="adminTarget">
+              <div class="no-data" id="adminNoTarget">Haz click en un marcador del mapa</div>
+              <div id="adminTargetInfo" style="display:none">
+                <div class="target-name" id="adminTargetName">—</div>
+                <div class="target-steam" id="adminTargetSteam">—</div>
+                <div style="margin-top:4px;color:var(--text-dim)">
+                  <span id="adminTargetTeam">—</span> · Squad <span id="adminTargetSquad">—</span> · <span id="adminTargetRole">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Acciones sobre jugador -->
+            <div class="btn-grid" id="playerActionBtns" style="display:none">
+              <button class="btn btn-warn" onclick="adminCmd('warn')">⚠ Advertir</button>
+              <button class="btn btn-blue" onclick="adminCmd('switchTeam')">⇄ Cambiar equipo</button>
+              <button class="btn btn-kick" onclick="adminCmd('kick')">✕ Kick</button>
+              <button class="btn btn-ban" onclick="adminCmd('ban')">⛔ Ban</button>
+              <button class="btn btn-green btn-full" onclick="adminCmd('respawn')">↺ Force Respawn</button>
+            </div>
+            <div id="adminReasonWrap" style="display:none;margin-top:8px;">
+              <input class="admin-input" id="adminReason" placeholder="Razón (opcional)..." />
+              <div style="display:flex;gap:6px;margin-top:6px;">
+                <button class="btn btn-warn" style="flex:1" onclick="sendPendingCmd()">Confirmar</button>
+                <button class="btn btn-olive" style="flex:1" onclick="cancelPendingCmd()">Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Broadcast -->
+          <div class="admin-section">
+            <div class="panel-title">Broadcast</div>
+            <textarea class="admin-input" id="broadcastMsg" rows="2" placeholder="Mensaje a todos los jugadores..."></textarea>
+            <div class="btn-grid" style="margin-top:6px;">
+              <button class="btn btn-olive btn-full" onclick="sendBroadcast()">📢 Broadcast</button>
+            </div>
+          </div>
+
+          <!-- Cambio de mapa -->
+          <div class="admin-section">
+            <div class="panel-title">Cambio de mapa</div>
+            <input class="admin-input" id="nextMapInput" placeholder="Ej: AlBasrah_AAS_v1..." />
+            <div class="btn-grid" style="margin-top:6px;">
+              <button class="btn btn-blue" onclick="sendSetNextMap()">Siguiente mapa</button>
+              <button class="btn btn-warn" onclick="sendEndMatch()">⏹ Terminar match</button>
+            </div>
+          </div>
+
+          <!-- Slap/Slay globales -->
+          <div class="admin-section">
+            <div class="panel-title">Acciones globales</div>
+            <div class="btn-grid">
+              <button class="btn btn-olive" onclick="sendGlobal('pauseMatch')">⏸ Pausar</button>
+              <button class="btn btn-green" onclick="sendGlobal('unpauseMatch')">▶ Reanudar</button>
+            </div>
+          </div>
+
+          <!-- Log de comandos -->
+          <div class="admin-section">
+            <div class="panel-title">Log de comandos</div>
+            <div id="cmdLog"><div class="no-data" style="padding:6px 0;">Sin comandos enviados</div></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
+<div id="adminToast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
 const POLL_MS    = 2000;
-const MAP_UNITS  = 1000; // espacio virtual Leaflet
+const MAP_UNITS  = 1000;
 
-// Corners en Unreal Units (metros × 100) extraídos de SquadCalc
-// corner0 = MIN (esquina inferior-izquierda), corner1 = MAX (esquina superior-derecha)
 const MAP_CORNERS = {
   'albasrah':     { c0:[-200000,-200000], c1:[200000,200000] },
   'anvil':        { c0:[-204000,-204000], c1:[102000,102000] },
@@ -156,150 +313,109 @@ const MAP_CORNERS = {
   'yehorivka':    { c0:[-330200,-330200], c1:[304800,304800] },
 };
 
-// Normaliza el nombre del mapa del servidor al key del diccionario
 function normalizeMapName(raw) {
   if (!raw) return null;
-  // Limpiar: solo letras minúsculas
   const s = raw.toLowerCase().replace(/[^a-z]/g, '');
-  
-  // Buscar la clave más larga que esté contenida en s
   let best = null;
   for (const key of Object.keys(MAP_CORNERS)) {
-    if (s.includes(key) && (!best || key.length > best.length)) {
-      best = key;
-    }
+    if (s.includes(key) && (!best || key.length > best.length)) best = key;
   }
   return best;
 }
 
-// ── LEAFLET SETUP ─────────────────────────────────────────────────────────────
+// ── LEAFLET ───────────────────────────────────────────────────────────────────
 const map = L.map('map', {
-  crs: L.CRS.Simple,
-  minZoom: -2,
-  maxZoom: 4,
-  zoomSnap: 0.5,
-  attributionControl: false,
+  crs: L.CRS.Simple, minZoom: -2, maxZoom: 4, zoomSnap: 0.5, attributionControl: false,
 });
-
 const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
 map.fitBounds(bounds);
 
 let basemapLayer = null;
 let currentMapKey = null;
-
-let imageLoaded = false; // bandera para saber si la imagen se cargó bien
+let imageLoaded = false;
 
 function loadBasemap(mapKey, force = false) {
-  console.log('loadBasemap llamado con mapKey:', mapKey, 'force:', force, 'currentMapKey:', currentMapKey);
-  
-  if (mapKey === currentMapKey && !force && imageLoaded) {
-    console.log('⏩ Misma imagen ya cargada, omitiendo recarga');
-    return;
-  }
-
-  currentMapKey = mapKey;
-  imageLoaded = false;
-
-  if (basemapLayer) {
-    console.log('🗑️ Eliminando capa anterior');
-    map.removeLayer(basemapLayer);
-    basemapLayer = null;
-  }
-
-  const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp?t=${Date.now()}`;
-  console.log('🌐 Cargando imagen:', url);
-
-  basemapLayer = L.imageOverlay(url, bounds, { crossOrigin: true }).addTo(map);
-  basemapLayer.bringToBack();
-
-  basemapLayer.on('load', function() {
-    console.log('✅ Imagen cargada correctamente');
-    imageLoaded = true;
-    map.invalidateSize();
+  if (!force && mapKey === currentMapKey && imageLoaded) return;
+  const url = `./maps/${mapKey}.webp`;
+  if (basemapLayer) { map.removeLayer(basemapLayer); basemapLayer = null; }
+  basemapLayer = L.imageOverlay(url, bounds, { opacity: 0 }).addTo(map);
+  basemapLayer.getElement()?.addEventListener('load', () => {
+    basemapLayer.setOpacity(1); imageLoaded = true; currentMapKey = mapKey;
   });
-
-  basemapLayer.on('error', function(e) {
-    console.error('❌ Error cargando imagen:', url, e);
-    setTimeout(() => {
-      if (currentMapKey === mapKey && !imageLoaded) {
-        console.log('🔄 Reintentando cargar imagen...');
-        loadBasemap(mapKey, true);
-      }
-    }, 2000);
+  basemapLayer.getElement()?.addEventListener('error', () => {
+    console.warn('No se pudo cargar imagen del mapa:', url);
+    imageLoaded = false;
   });
-
-  map.fitBounds(bounds);
-  console.log('📐 Bounds aplicados:', bounds);
 }
 
-// ── COORD TRANSFORM (corregida) ──────────────────────────────────────────────
 function gameToLatLng(pos, corners) {
-  // corners = { minX, maxX, minY, maxY } (en Unreal Units)
-  const { minX, maxX, minY, maxY } = corners;
-  const fracX = (pos.x - minX) / (maxX - minX); // 0..1 (este → derecha)
-  const fracY = (pos.y - minY) / (maxY - minY); // 0..1 (norte → arriba)
-
-  // Leaflet: Y (lat) es hacia abajo, X (lng) hacia la derecha
-  // Invertimos Y para que el norte quede arriba
-  const px = fracX * MAP_UNITS;          // X: este → derecha
-  const py = (1 - fracY) * MAP_UNITS;    // Y: norte → arriba (invertido)
+  const fracX = (pos.x - corners.minX) / (corners.maxX - corners.minX);
+  const fracY = (pos.y - corners.minY) / (corners.maxY - corners.minY);
+  const px = fracX * MAP_UNITS;
+  const py = (1 - fracY) * MAP_UNITS;
   return [py, px];
 }
 
 // ── ICONOS SVG ────────────────────────────────────────────────────────────────
-function makeIcon(teamID, isVehicle) {
+function makeIcon(teamID, isVehicle, selected) {
   const color = teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const ring = selected ? `<circle cx="11" cy="11" r="10" fill="none" stroke="#d9a441" stroke-width="2"/>` : '';
   const svg = isVehicle
     ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
         <rect x="3" y="7" width="16" height="10" rx="2" fill="${color}" opacity=".9"/>
         <rect x="7" y="4" width="8" height="5" rx="1" fill="${color}"/>
         <circle cx="6"  cy="18" r="2.5" fill="#222"/>
         <circle cx="16" cy="18" r="2.5" fill="#222"/>
+        ${ring}
        </svg>`
-    : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="8" fill="${color}" opacity=".9" stroke="#000" stroke-width="1"/>
-        <line x1="10" y1="2" x2="10" y2="18" stroke="#000" stroke-width="1.5"/>
-        <line x1="2"  y1="10" x2="18" y2="10" stroke="#000" stroke-width="1.5"/>
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="8" fill="${color}" opacity=".9" stroke="#000" stroke-width="1"/>
+        <line x1="11" y1="3" x2="11" y2="19" stroke="#000" stroke-width="1.5"/>
+        <line x1="3"  y1="11" x2="19" y2="11" stroke="#000" stroke-width="1.5"/>
+        ${ring}
        </svg>`;
   return L.divIcon({ html: svg, iconSize:[22,22], iconAnchor:[11,11], className:'' });
 }
 
 // ── MARCADORES ────────────────────────────────────────────────────────────────
-const markers = {}; // steamID → L.marker
+const markers = {};
+let selectedSteamID = null;
 
 function updateMarkers(players, corners) {
   const seen = new Set();
-  let created = 0;
   for (const p of players) {
     if (!p.position || !p.isAlive) continue;
     seen.add(p.steamID);
     const ll = gameToLatLng(p.position, corners);
-    const icon = makeIcon(p.teamID, !!p.vehicle);
+    const isSel = p.steamID === selectedSteamID;
+    const icon = makeIcon(p.teamID, !!p.vehicle, isSel);
     if (markers[p.steamID]) {
       markers[p.steamID].setLatLng(ll).setIcon(icon);
     } else {
       const m = L.marker(ll, { icon }).addTo(map);
-      m.on('mouseover', () => showPlayerCard(p));
       markers[p.steamID] = m;
-      created++;
-      console.log(`✅ Marcador creado para ${p.name} en [${ll[0].toFixed(1)}, ${ll[1].toFixed(1)}]`);
     }
-    markers[p.steamID].bindTooltip(p.name, { permanent:false, direction:'top', offset:[0,-12] });
     markers[p.steamID]._playerData = p;
-    markers[p.steamID].on('mouseover', () => showPlayerCard(markers[p.steamID]._playerData));
+    markers[p.steamID].bindTooltip(p.name, { permanent:false, direction:'top', offset:[0,-12] });
+    markers[p.steamID].off('mouseover click');
+    markers[p.steamID].on('mouseover', () => showPlayerCard(p));
+    markers[p.steamID].on('click',     () => selectPlayer(p));
   }
-  console.log(`📌 Marcadores en mapa: ${created} creados, ${Object.keys(markers).length} totales`);
-
-  // Remover marcadores de jugadores que ya no están
   for (const id of Object.keys(markers)) {
-    if (!seen.has(id)) {
-      map.removeLayer(markers[id]);
-      delete markers[id];
-    }
+    if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
   }
 }
 
-// ── SIDE PANEL ────────────────────────────────────────────────────────────────
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.side-tab').forEach((el,i) => {
+    el.classList.toggle('active', (i===0 && tab==='players') || (i===1 && tab==='admin'));
+  });
+  document.getElementById('tabPlayers').classList.toggle('show', tab==='players');
+  document.getElementById('tabAdmin').classList.toggle('show', tab==='admin');
+}
+
+// ── PLAYER CARD (tab jugadores) ───────────────────────────────────────────────
 function showPlayerCard(p) {
   const teamColor = p.teamID === 1 ? 'blue' : 'red';
   const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
@@ -310,20 +426,153 @@ function showPlayerCard(p) {
       <div class="row"><span>Rol</span><span class="val">${esc(p.role ?? '—')}</span></div>
       ${p.vehicle ? `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle)}</span></div>` : ''}
       <div class="row"><span>Squad</span><span class="val">${p.squadID ?? '—'}</span></div>
+      <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
     </div>`;
 }
 
+// ── SELECT PLAYER (admin target) ──────────────────────────────────────────────
+let pendingCmd = null;
+
+function selectPlayer(p) {
+  // Si estábamos en tab jugadores, no cambiamos de tab automáticamente
+  // pero actualizamos el target de admin
+  selectedSteamID = p.steamID;
+  // Refresh iconos para mostrar anillo dorado
+  for (const id of Object.keys(markers)) {
+    const m = markers[id];
+    const pd = m._playerData;
+    if (pd) m.setIcon(makeIcon(pd.teamID, !!pd.vehicle, id === selectedSteamID));
+  }
+  // Actualizar panel admin
+  document.getElementById('adminNoTarget').style.display = 'none';
+  document.getElementById('adminTargetInfo').style.display = 'block';
+  document.getElementById('adminTargetName').textContent = p.name;
+  document.getElementById('adminTargetSteam').textContent = p.steamID;
+  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID}`;
+  document.getElementById('adminTargetSquad').textContent = p.squadID ?? '—';
+  document.getElementById('adminTargetRole').textContent = p.role ?? '—';
+  document.getElementById('playerActionBtns').style.display = 'grid';
+  cancelPendingCmd();
+  showPlayerCard(p);
+}
+
+// ── ADMIN COMMANDS ────────────────────────────────────────────────────────────
+const CMD_LABELS = {
+  warn: 'Advertencia',
+  kick: 'Kick',
+  ban: 'Ban (1d)',
+  switchTeam: 'Cambiar equipo',
+  respawn: 'Force Respawn',
+};
+
+function adminCmd(action) {
+  if (!selectedSteamID) return toast('Selecciona un jugador primero', 'err');
+  pendingCmd = action;
+  if (['warn','kick','ban'].includes(action)) {
+    document.getElementById('adminReasonWrap').style.display = 'block';
+    document.getElementById('adminReason').focus();
+  } else {
+    sendPendingCmd();
+  }
+}
+
+async function sendPendingCmd() {
+  if (!pendingCmd || !selectedSteamID) return;
+  const playerData = markers[selectedSteamID]?._playerData;
+  const reason = document.getElementById('adminReason').value.trim() || 'Admin action';
+  const payload = {
+    action: pendingCmd,
+    steamID: selectedSteamID,
+    playerName: playerData?.name ?? selectedSteamID,
+    reason,
+    // ban duration en minutos (default 1440 = 1 día)
+    duration: pendingCmd === 'ban' ? 1440 : undefined,
+  };
+  cancelPendingCmd();
+  await postCommand(payload);
+}
+
+function cancelPendingCmd() {
+  pendingCmd = null;
+  document.getElementById('adminReasonWrap').style.display = 'none';
+  document.getElementById('adminReason').value = '';
+}
+
+async function sendBroadcast() {
+  const msg = document.getElementById('broadcastMsg').value.trim();
+  if (!msg) return toast('Escribe un mensaje primero', 'err');
+  await postCommand({ action: 'broadcast', message: msg });
+  document.getElementById('broadcastMsg').value = '';
+}
+
+async function sendSetNextMap() {
+  const mapStr = document.getElementById('nextMapInput').value.trim();
+  if (!mapStr) return toast('Escribe el nombre del mapa', 'err');
+  await postCommand({ action: 'setNextMap', map: mapStr });
+  document.getElementById('nextMapInput').value = '';
+}
+
+async function sendEndMatch() {
+  if (!confirm('¿Terminar el match actual?')) return;
+  await postCommand({ action: 'endMatch' });
+}
+
+async function sendGlobal(action) {
+  await postCommand({ action });
+}
+
+async function postCommand(payload) {
+  const label = payload.action;
+  addLog(`[→] ${label}${payload.playerName ? ' · '+payload.playerName : ''}`, 'pending');
+  try {
+    const res = await fetch(`${WORKER_URL}/api/admin/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    addLog(`[✓] ${label} enviado (id:${data.id?.slice(-6) ?? '?'})`, 'ok');
+    toast(`Comando enviado: ${CMD_LABELS[label] ?? label}`, 'ok');
+  } catch(e) {
+    addLog(`[✗] ${label} falló: ${e.message}`, 'err');
+    toast(`Error: ${e.message}`, 'err');
+  }
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────────────
+const logEntries = [];
+function addLog(text, type='ok') {
+  logEntries.unshift({ text, type, ts: new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) });
+  if (logEntries.length > 30) logEntries.pop();
+  const el = document.getElementById('cmdLog');
+  el.innerHTML = logEntries.map(e =>
+    `<div class="log-entry log-${e.type}">${e.ts} ${esc(e.text)}</div>`
+  ).join('');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg, type='ok') {
+  const el = document.getElementById('adminToast');
+  el.textContent = msg;
+  el.style.borderColor = type === 'err' ? 'var(--red)' : type === 'pending' ? 'var(--warn)' : 'var(--olive)';
+  el.style.color       = type === 'err' ? 'var(--red)' : type === 'pending' ? 'var(--warn)' : 'var(--green)';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── PLAYER LIST ───────────────────────────────────────────────────────────────
 function updatePlayerList(players) {
   document.getElementById('playerCount').textContent = players.filter(p=>p.isAlive).length;
   const list = document.getElementById('playerList');
   const alive = players.filter(p => p.isAlive && p.position);
-  if (!alive.length) {
-    list.innerHTML = '<div class="no-data">Sin jugadores en mapa</div>';
-    return;
-  }
+  if (!alive.length) { list.innerHTML = '<div class="no-data">Sin jugadores en mapa</div>'; return; }
   list.innerHTML = alive.map(p => {
     const c = p.teamID === 1 ? 'blue' : 'red';
-    return `<div class="player-card" style="cursor:pointer;margin-bottom:6px" onclick="">
+    const sel = p.steamID === selectedSteamID ? 'border-color:var(--amber);' : '';
+    return `<div class="player-card" style="cursor:pointer;margin-bottom:6px;${sel}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <span class="ptag ${c}">[T${p.teamID}]</span> ${esc(p.name)}
       ${p.vehicle ? '<span style="color:var(--amber)"> ▲</span>' : ''}
     </div>`;
@@ -335,102 +584,67 @@ function updateHUD(data) {
   const dot = document.getElementById('liveDot');
   const isLive = data.live && data.players !== undefined;
   dot.className = 'live-dot' + (isLive ? '' : ' offline');
-
   document.getElementById('hudMap').textContent =
     data.layer && data.layer !== 'Unknown' ? data.layer : (data.map || '—');
 
-  const t1 = data.tickets?.team1;
-  const t2 = data.tickets?.team2;
+  const t1 = data.tickets?.team1, t2 = data.tickets?.team2;
   const ticketsEl = document.getElementById('hudTickets');
-  if (t1 !== null && t2 !== null && t1 !== undefined && t2 !== undefined) {
+  if (t1 != null && t2 != null) {
     ticketsEl.style.display = 'flex';
     const total = t1 + t2 || 1;
     document.getElementById('t1num').textContent = t1;
     document.getElementById('t2num').textContent = t2;
     document.getElementById('t1bar').style.width = (t1/total*100) + '%';
     document.getElementById('t2bar').style.width = (t2/total*100) + '%';
-  } else {
-    ticketsEl.style.display = 'none';
-  }
+  } else { ticketsEl.style.display = 'none'; }
 
   const ago = data.ts ? Math.round((Date.now() - data.ts) / 1000) : null;
-  document.getElementById('statusText').textContent =
-    ago !== null ? `hace ${ago}s` : 'Sin datos';
+  document.getElementById('statusText').textContent = ago !== null ? `hace ${ago}s` : 'Sin datos';
 }
 
-// ── POLL (corregida) ─────────────────────────────────────────────────────────
+// ── POLL ─────────────────────────────────────────────────────────────────────
 async function poll() {
   try {
     const res = await fetch(`${WORKER_URL}/api/match`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
     updateHUD(data);
 
-    // ── Calcular extremos de los corners ──────────────────────────────
     let corners = null;
     if (data.cornerZero && data.cornerOne) {
       const xs = [data.cornerZero.x, data.cornerOne.x];
       const ys = [data.cornerZero.y, data.cornerOne.y];
-      corners = {
-        minX: Math.min(...xs),
-        maxX: Math.max(...xs),
-        minY: Math.min(...ys),
-        maxY: Math.max(...ys)
-      };
+      corners = { minX:Math.min(...xs), maxX:Math.max(...xs), minY:Math.min(...ys), maxY:Math.max(...ys) };
     } else {
-      // Fallback al diccionario de mapas (por si el plugin no envía corners)
       const mapKey = normalizeMapName(data.layer || data.map);
       if (mapKey && MAP_CORNERS[mapKey]) {
         const { c0, c1 } = MAP_CORNERS[mapKey];
-        corners = {
-          minX: Math.min(c0[0], c1[0]),
-          maxX: Math.max(c0[0], c1[0]),
-          minY: Math.min(c0[1], c1[1]),
-          maxY: Math.max(c0[1], c1[1])
-        };
+        corners = { minX:Math.min(c0[0],c1[0]), maxX:Math.max(c0[0],c1[0]), minY:Math.min(c0[1],c1[1]), maxY:Math.max(c0[1],c1[1]) };
       }
     }
 
-    console.log('Corners calculados:', corners);
-
-    // ── Cargar imagen del mapa ──────────────────────────────────────────
-    // ✅ USAR data.layer COMO FUENTE PRINCIPAL
     const mapKey = normalizeMapName(data.layer || data.map);
-    console.log('🔍 mapKey detectado:', mapKey, 'desde layer:', data.layer, 'map:', data.map);
-
     if (mapKey) {
-      // Forzar recarga si es la primera vez o si cambió el mapa
-      const forceLoad = !currentMapKey || mapKey !== currentMapKey || !imageLoaded;
-      loadBasemap(mapKey, forceLoad);
-    } else {
-      document.getElementById('statusText').textContent = 'Mapa desconocido';
+      loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
     }
 
-    // ── Actualizar marcadores ──────────────────────────────────────────
     if (corners && data.players?.length) {
       updateMarkers(data.players, corners);
     } else if (!data.players?.length) {
-      // Limpiar marcadores si no hay jugadores
-      for (const id of Object.keys(markers)) {
-        map.removeLayer(markers[id]);
-        delete markers[id];
-      }
+      for (const id of Object.keys(markers)) { map.removeLayer(markers[id]); delete markers[id]; }
     }
-
     updatePlayerList(data.players ?? []);
-
   } catch(e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
     document.getElementById('liveDot').className = 'live-dot offline';
   }
 }
+
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// Arrancar
 poll();
 setInterval(poll, POLL_MS);
 </script>
