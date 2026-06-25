@@ -189,14 +189,23 @@ let basemapLayer = null;
 let currentMapKey = null;
 
 function loadBasemap(mapKey) {
-  if (mapKey === currentMapKey) return;
+  console.log('loadBasemap llamado con mapKey:', mapKey, 'currentMapKey:', currentMapKey);
+  if (mapKey === currentMapKey) {
+    console.log('⚠️ mapKey ya cargado, omitiendo recarga');
+    return;
+  }
   currentMapKey = mapKey;
-  if (basemapLayer) map.removeLayer(basemapLayer);
-  // Usar la URL raw de GitHub
+  if (basemapLayer) {
+    console.log('Eliminando capa anterior');
+    map.removeLayer(basemapLayer);
+  }
   const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp`;
   console.log('Cargando imagen:', url);
   basemapLayer = L.imageOverlay(url, bounds).addTo(map);
   basemapLayer.bringToBack();
+  basemapLayer.on('load', function() {
+    console.log('✅ Imagen cargada correctamente');
+  });
   basemapLayer.on('error', function(e) {
     console.error('❌ Error cargando imagen del mapa:', url, e);
   });
