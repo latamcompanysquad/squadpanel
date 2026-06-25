@@ -198,15 +198,17 @@ function loadBasemap(mapKey) {
   map.fitBounds(bounds);
 }
 
-// ── COORD TRANSFORM ───────────────────────────────────────────────────────────
-// Convierte posición Unreal Units → [lat, lng] de Leaflet (CRS.Simple)
-// corner0 = MIN, corner1 = MAX
+// ── COORD TRANSFORM (corregida) ──────────────────────────────────────────────
 function gameToLatLng(pos, corners) {
-  const { c0, c1 } = corners;
-  const fracX = (pos.x - c0[0]) / (c1[0] - c0[0]);
-  const fracY = (pos.y - c0[1]) / (c1[1] - c0[1]);
-  const px = (1 - fracX) * MAP_UNITS; // invertir X
-  const py = fracY * MAP_UNITS;
+  // corners = { minX, maxX, minY, maxY } (en Unreal Units)
+  const { minX, maxX, minY, maxY } = corners;
+  const fracX = (pos.x - minX) / (maxX - minX); // 0..1 (este → derecha)
+  const fracY = (pos.y - minY) / (maxY - minY); // 0..1 (norte → arriba)
+
+  // Leaflet: Y (lat) es hacia abajo, X (lng) hacia la derecha
+  // Invertimos Y para que el norte quede arriba
+  const px = fracX * MAP_UNITS;          // X: este → derecha
+  const py = (1 - fracY) * MAP_UNITS;    // Y: norte → arriba (invertido)
   return [py, px];
 }
 
@@ -233,26 +235,26 @@ const markers = {}; // steamID → L.marker
 
 function updateMarkers(players, corners) {
   const seen = new Set();
-
+  let created = 0;
   for (const p of players) {
     if (!p.position || !p.isAlive) continue;
     seen.add(p.steamID);
     const ll = gameToLatLng(p.position, corners);
     const icon = makeIcon(p.teamID, !!p.vehicle);
-
     if (markers[p.steamID]) {
       markers[p.steamID].setLatLng(ll).setIcon(icon);
     } else {
       const m = L.marker(ll, { icon }).addTo(map);
       m.on('mouseover', () => showPlayerCard(p));
       markers[p.steamID] = m;
+      created++;
+      console.log(`✅ Marcador creado para ${p.name} en [${ll[0].toFixed(1)}, ${ll[1].toFixed(1)}]`);
     }
-    // Actualizar tooltip con nombre
     markers[p.steamID].bindTooltip(p.name, { permanent:false, direction:'top', offset:[0,-12] });
-    // Guardar data para hover
     markers[p.steamID]._playerData = p;
     markers[p.steamID].on('mouseover', () => showPlayerCard(markers[p.steamID]._playerData));
   }
+  console.log(`📌 Marcadores en mapa: ${created} creados, ${Object.keys(markers).length} totales`);
 
   // Remover marcadores de jugadores que ya no están
   for (const id of Object.keys(markers)) {
@@ -322,38 +324,52 @@ function updateHUD(data) {
     ago !== null ? `hace ${ago}s` : 'Sin datos';
 }
 
-// ── POLL ──────────────────────────────────────────────────────────────────────
+// ── POLL (corregida) ─────────────────────────────────────────────────────────
 async function poll() {
   try {
     const res  = await fetch(`${WORKER_URL}/api/match`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     updateHUD(data);
 
-   // Resolver corners: primero los que vienen del plugin, si no del diccionario
-let corners = null;
-if (data.cornerZero && data.cornerOne) {
-  // Convertir objetos a arrays [x, y] (ignoramos z)
-  const c0 = [data.cornerZero.x, data.cornerZero.y];
-  const c1 = [data.cornerOne.x, data.cornerOne.y];
-  corners = { c0, c1 };
-} else {
-  const key = normalizeMapName(data.map);
-  if (key && MAP_CORNERS[key]) corners = MAP_CORNERS[key];
-}
-console.log('Corners usados:', corners);
-console.log('Primer jugador:', data.players?.[0]);
-if (corners && data.players?.length) {
-  const p = data.players[0];
-  const ll = gameToLatLng(p.position, corners);
-  console.log('Coordenadas transformadas:', ll);
-}
+    // ── Calcular extremos de los corners ──────────────────────────────
+    let corners = null;
+    if (data.cornerZero && data.cornerOne) {
+      const xs = [data.cornerZero.x, data.cornerOne.x];
+      const ys = [data.cornerZero.y, data.cornerOne.y];
+      corners = {
+        minX: Math.min(...xs),
+        maxX: Math.max(...xs),
+        minY: Math.min(...ys),
+        maxY: Math.max(...ys)
+      };
+    } else {
+      // Fallback al diccionario de mapas (por si el plugin no envía corners)
+      const key = normalizeMapName(data.map);
+      if (key && MAP_CORNERS[key]) {
+        const { c0, c1 } = MAP_CORNERS[key];
+        corners = {
+          minX: Math.min(c0[0], c1[0]),
+          maxX: Math.max(c0[0], c1[0]),
+          minY: Math.min(c0[1], c1[1]),
+          maxY: Math.max(c0[1], c1[1])
+        };
+      }
+    }
 
-    // Cargar basemap
+    console.log('Corners calculados:', corners);
+
+    // ── Cargar imagen del mapa ──────────────────────────────────────────
     const mapKey = normalizeMapName(data.map);
-    if (mapKey) loadBasemap(mapKey);
+    if (mapKey) {
+      loadBasemap(mapKey);
+    } else {
+      // Si no se reconoce el mapa, mostramos un mensaje
+      document.getElementById('statusText').textContent = 'Mapa desconocido';
+    }
 
-    // Actualizar marcadores solo si tenemos corners
+    // ── Actualizar marcadores ──────────────────────────────────────────
     if (corners && data.players?.length) {
       updateMarkers(data.players, corners);
     } else if (!data.players?.length) {
@@ -367,6 +383,7 @@ if (corners && data.players?.length) {
     updatePlayerList(data.players ?? []);
 
   } catch(e) {
+    console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
     document.getElementById('liveDot').className = 'live-dot offline';
   }
