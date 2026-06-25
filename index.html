@@ -690,17 +690,18 @@ function clearFobMarkers() {
 
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
-  
-  // Extraer datos (compatible con múltiples formatos)
+
   const pos = fob.pos || fob.position || { x: 0, y: 0 };
   const teamID = fob.teamID || fob.team || 1;
-  const habName = fob.habName || fob.name || `FOB${teamID}`;
+  const habName = fob.habName || fob.name || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
   const exclusionRadius = fob.exclusion_radius || 30000;
-  
+  const isHab = fob.isHab === true;
+  const isActive = fob.isActive !== false; // por defecto true si no viene
+
   const latLng = gameToLatLng(pos, corners);
-  
-  // Círculo de EXCLUSIÓN (punteado rojo)
+
+  // Círculo de exclusión (punteado rojo) - solo para FOBs, o también para HABs si quieres
   L.circle(latLng, {
     radius: metersToMapUnits(exclusionRadius, corners),
     color: "#e0584f",
@@ -708,35 +709,48 @@ function renderFobMarker(fob, corners) {
     fillOpacity: 0.03,
     dashArray: "4,5",
   }).addTo(fobMarkersLayer);
-  
-  // Círculo de CONSTRUCCIÓN (sólido ámbar)
+
+  // Círculo de construcción (sólido ámbar)
   L.circle(latLng, {
     radius: metersToMapUnits(constructRadius, corners),
     color: "#d9a441",
     weight: 1.5,
     fillOpacity: 0.05,
   }).addTo(fobMarkersLayer);
-  
-  // MARCADOR con ícono (⚑ = símbolo de FOB)
+
+  // Ícono del marcador
   const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const bgColor = isHab ? (isActive ? iconColor : '#666') : iconColor;
+  const iconChar = isHab ? '🏠' : '⚑';
+  const overlayX = isHab && !isActive
+    ? `<div style="position:absolute;top:-6px;right:-6px;font-size:16px;color:#ff0000;font-weight:bold;text-shadow:0 0 3px #000;line-height:1;">✕</div>`
+    : '';
+
   const habIcon = L.divIcon({
     html: `<div style="
+      position:relative;
       width:26px;height:26px;
-      background:${iconColor};
+      background:${bgColor};
       border-radius:50%;
       border:1px solid #000;
       display:flex;align-items:center;justify-content:center;
-      font-weight:700;font-size:12px;
-      color:#fff;box-shadow:0 0 3px rgba(0,0,0,0.8);
+      font-weight:700;font-size:${isHab ? '16' : '12'}px;
+      color:#fff;
+      box-shadow:0 0 3px rgba(0,0,0,0.8);
       font-family:'Oswald',sans-serif;
-    ">⚑</div>`,
+    ">${iconChar}${overlayX}</div>`,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
     className: "fob-icon",
   });
-  
+
   const marker = L.marker(latLng, { icon: habIcon }).addTo(fobMarkersLayer);
-  marker.bindTooltip(`<strong>${habName}</strong><br/>Team ${teamID}`, {
+
+  let statusText = '';
+  if (isHab) {
+    statusText = isActive ? '🟢 Activo' : '🔴 Inactivo';
+  }
+  marker.bindTooltip(`<strong>${habName}</strong><br/>Team ${teamID}${isHab ? '<br/>' + statusText : ''}`, {
     className: "squad-tip",
     direction: "top",
   });
