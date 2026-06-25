@@ -730,7 +730,7 @@ function gameToLatLng(pos){
   const fracY = (pos[1] - y0) / (y1 - y0);
   const px = fracX * MAP_UNITS;
   const py = fracY * MAP_UNITS;
-  return [-py, px]; // lat = py (Y del mapa), lng = px (X del mapa)
+  return [py, px]; // lat = py (Y del mapa), lng = px (X del mapa)
 }
 
 /* =========================================================
