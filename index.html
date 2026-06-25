@@ -615,21 +615,133 @@ function playerPassesFilter(p) {
   return true;
 }
 
+function makeVehicleIcon(group, selected) {
+  const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+  const count = group.occupants.length;
+  // Emoji según tipo de vehículo (se puede refinar)
+  let emoji = '🚗';
+  const name = (group.vehicleName || '').toLowerCase();
+  if (name.includes('tank') || name.includes('mbt')) emoji = '🎯';
+  else if (name.includes('helo') || name.includes('heli')) emoji = '🚁';
+  else if (name.includes('logi') || name.includes('logistics')) emoji = '🚚';
+  else if (name.includes('mrap') || name.includes('tigr') || name.includes('tapv')) emoji = '🚙';
+  else if (name.includes('ifv') || name.includes('apc')) emoji = '🚌';
+
+  const html = `<div style="
+    width:32px;height:32px;
+    background:${color};
+    border-radius:50%;
+    border:2px solid #000;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    box-shadow:0 0 4px rgba(0,0,0,0.8);
+    ${ringStyle}
+    position:relative;
+  ">${emoji}<span style="
+    position:absolute;bottom:-2px;right:-2px;
+    background:#1a1a1a;color:#fff;border-radius:50%;
+    width:14px;height:14px;font-size:8px;font-weight:bold;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid #000;
+  ">${count}</span></div>`;
+  return L.divIcon({ html, iconSize: [32, 32], iconAnchor: [16, 16], className: '' });
+}
+
+function showVehicleCard(group) {
+  const teamColor = group.teamID === 1 ? 'blue' : 'red';
+  const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
+  const occupantsHtml = group.occupants.map(p =>
+    `<div style="display:flex;justify-content:space-between;font-size:10px;border-bottom:1px solid #1a1f18;padding:2px 0;">
+      <span>${esc(p.name)}</span>
+      <span style="color:var(--text-dim);">asiento ${p.seat ?? '?'}</span>
+    </div>`
+  ).join('');
+  document.getElementById('playerPanel').innerHTML = `
+    <div class="player-card">
+      <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> 🚗 ${esc(group.vehicleName)}</div>
+      <div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Ocupantes (${group.occupants.length})</div>
+      ${occupantsHtml}
+    </div>`;
+}
+
+function showPlayerCard(p) {
+  const teamColor = p.teamID === 1 ? 'blue' : 'red';
+  const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
+  let vehicleLine = '';
+  if (p.vehicle) {
+    const seat = p.seat !== undefined ? ` (asiento ${p.seat})` : '';
+    vehicleLine = `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle.name)}${seat}</span></div>`;
+  }
+  document.getElementById('playerPanel').innerHTML = `
+    <div class="player-card">
+      <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> ${esc(p.name)}</div>
+      <div class="row"><span>Estado</span><span class="val">${p.isAlive ? (p.vehicle ? '🚗 Vehículo' : '🚶 A pie') : '💀 Muerto'}</span></div>
+      <div class="row"><span>Rol</span><span class="val">${esc(p.role ?? '—')}</span></div>
+      ${vehicleLine}
+      <div class="row"><span>Squad</span><span class="val">${p.squadID ?? '—'}</span></div>
+      <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
+    </div>`;
+}
+
+function makeVehicleTooltip(group) {
+  const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
+  const occupantsList = group.occupants.map(p =>
+    `  ${p.name} (asiento ${p.seat ?? '?'})`
+  ).join('\n');
+  return `<div style="font-weight:600;color:var(--amber);">🚗 ${group.vehicleName}</div>
+<div style="color:var(--text-dim);">[${teamLabel}] · ${group.occupants.length} ocupantes</div>
+<pre style="font-size:9px;margin:4px 0 0;color:var(--text);">${occupantsList}</pre>`;
+}
+
 function updateMarkers(players, corners) {
+  const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
+
   const seen = new Set();
-  for (const p of players) {
-    if (!p.position) continue; // sin posición nunca se muestra
-    seen.add(p.steamID);
-    const ll    = gameToLatLng(p.position, corners);
-    const isSel = p.steamID === selectedSteamID;
-    const icon  = makeIcon(p, isSel);
-    if (markers[p.steamID]) {
-      markers[p.steamID].setLatLng(ll).setIcon(icon);
+
+  // ---- Marcadores de vehículos ----
+  for (const g of vehicleGroups) {
+    if (!g.position) continue;
+    const ll = gameToLatLng(g.position, corners);
+    const key = `veh_${g.vehicleId}`;
+    seen.add(key);
+
+    // Determinar si algún ocupante está seleccionado
+    const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
+    const icon = makeVehicleIcon(g, isSelected);
+
+    if (markers[key]) {
+      markers[key].setLatLng(ll).setIcon(icon);
     } else {
       const m = L.marker(ll, { icon });
-      markers[p.steamID] = m;
+      markers[key] = m;
     }
-    const m = markers[p.steamID];
+    const m = markers[key];
+    m._vehicleData = g; // guardar grupo para tooltip
+    m.unbindTooltip();
+    m.bindTooltip(makeVehicleTooltip(g), {
+      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
+    });
+    m.off('mouseover click');
+    m.on('mouseover', () => showVehicleCard(g));
+    m.on('click', () => selectVehicle(g));
+    if (!map.hasLayer(m)) map.addLayer(m);
+  }
+
+  // ---- Marcadores individuales (sin vehículo) ----
+  for (const p of individualPlayers) {
+    if (!p.position) continue;
+    seen.add(`player_${p.steamID}`);
+    const ll = gameToLatLng(p.position, corners);
+    const isSel = p.steamID === selectedSteamID;
+    const icon = makeIcon(p, isSel);
+    if (markers[`player_${p.steamID}`]) {
+      markers[`player_${p.steamID}`].setLatLng(ll).setIcon(icon);
+    } else {
+      const m = L.marker(ll, { icon });
+      markers[`player_${p.steamID}`] = m;
+    }
+    const m = markers[`player_${p.steamID}`];
     m._playerData = p;
     m.unbindTooltip();
     m.bindTooltip(makeTooltipContent(p), {
@@ -637,19 +749,36 @@ function updateMarkers(players, corners) {
     });
     m.off('mouseover click');
     m.on('mouseover', () => showPlayerCard(p));
-    m.on('click',     () => selectPlayer(p));
-    // Visibilidad según filtros activos
-    const visible = playerPassesFilter(p);
-    if (visible  && !map.hasLayer(m)) map.addLayer(m);
-    if (!visible &&  map.hasLayer(m)) map.removeLayer(m);
+    m.on('click', () => selectPlayer(p));
+    if (!map.hasLayer(m)) map.addLayer(m);
   }
-  // Limpiar marcadores de jugadores que salieron del snapshot
+
+  // ---- Limpiar marcadores ya no presentes ----
   for (const id of Object.keys(markers)) {
-    if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+    if (!seen.has(id)) {
+      map.removeLayer(markers[id]);
+      delete markers[id];
+    }
   }
+
   // Follow mode
-  if (followSelected && selectedSteamID && markers[selectedSteamID] && map.hasLayer(markers[selectedSteamID])) {
-    map.panTo(markers[selectedSteamID].getLatLng(), { animate: true, duration: 0.4 });
+  if (followSelected && selectedSteamID) {
+    // Buscar si el seleccionado está en un vehículo
+    let targetMarker = null;
+    for (const key of Object.keys(markers)) {
+      const m = markers[key];
+      if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+        targetMarker = m;
+        break;
+      }
+      if (m._playerData && m._playerData.steamID === selectedSteamID) {
+        targetMarker = m;
+        break;
+      }
+    }
+    if (targetMarker && map.hasLayer(targetMarker)) {
+      map.panTo(targetMarker.getLatLng(), { animate: true, duration: 0.4 });
+    }
   }
 }
 
@@ -675,6 +804,41 @@ function updateObjectives(objectives, corners) {
   for (const name of Object.keys(objectiveMarkers)) {
     if (!seen.has(name)) { map.removeLayer(objectiveMarkers[name]); delete objectiveMarkers[name]; }
   }
+}
+
+function groupPlayersByVehicle(players) {
+  const groups = {};
+  const withoutVehicle = [];
+
+  for (const p of players) {
+    if (!p.vehicle) {
+      withoutVehicle.push(p);
+      continue;
+    }
+    // Clave única: usar id si existe, si no name + teamID
+    const key = p.vehicle.id ? `veh_${p.vehicle.id}` : `veh_${p.vehicle.name}_${p.teamID}`;
+    if (!groups[key]) {
+      groups[key] = {
+        vehicleId: p.vehicle.id || key,
+        vehicleName: p.vehicle.name || 'Vehículo',
+        teamID: p.teamID,
+        occupants: [],
+        position: null,
+      };
+    }
+    groups[key].occupants.push(p);
+    // Tomamos la posición del primer ocupante como posición del vehículo
+    if (!groups[key].position && p.position) {
+      groups[key].position = p.position;
+    }
+  }
+
+  // Ordenar ocupantes por asiento (opcional)
+  for (const key of Object.keys(groups)) {
+    groups[key].occupants.sort((a, b) => (a.seat ?? 0) - (b.seat ?? 0));
+  }
+
+  return { vehicleGroups: Object.values(groups), individualPlayers: withoutVehicle };
 }
 
 // ── FOB/HAB MARKERS (rescatado de maqueta antigua) ──────────────────────────────
@@ -1063,7 +1227,6 @@ function updatePlayerList(players) {
   const visible = filters.dead ? players.filter(p => p.position) : alive;
   if (!visible.length) { list.innerHTML = '<div class="no-data">Sin jugadores en mapa</div>'; return; }
 
-  // T1 primero, luego T2; dentro del equipo: líderes > por squad
   const sorted = [...visible].sort((a,b) => {
     if (a.teamID !== b.teamID) return a.teamID - b.teamID;
     if (a.isLeader !== b.isLeader) return a.isLeader ? -1 : 1;
@@ -1072,12 +1235,12 @@ function updatePlayerList(players) {
 
   let lastTeam = null;
   list.innerHTML = sorted.map(p => {
-    const c    = p.teamID === 1 ? 'blue' : 'red';
-    const sel  = p.steamID === selectedSteamID ? 'border-color:var(--amber);' : '';
+    const c = p.teamID === 1 ? 'blue' : 'red';
+    const sel = p.steamID === selectedSteamID ? 'border-color:var(--amber);' : '';
     const dead = !p.isAlive ? 'opacity:.4;' : '';
     const role = roleIconName(p).replace(/_/g,' ');
-    const veh  = p.vehicle ? ' <span style="color:var(--amber);font-size:9px">▲VEH</span>' : '';
-    const sl   = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
+    const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)} (as.${p.seat ?? '?'})</span>` : '';
+    const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
     let header = '';
     if (p.teamID !== lastTeam) {
       lastTeam = p.teamID;
@@ -1111,6 +1274,63 @@ function updateHUD(data) {
 
   const ago = data.ts ? Math.round((Date.now() - data.ts) / 1000) : null;
   document.getElementById('statusText').textContent = ago !== null ? `hace ${ago}s` : 'Sin datos';
+}
+
+function selectPlayer(p) {
+  selectedSteamID = p.steamID;
+  // Actualizar todos los marcadores para reflejar selección
+  refreshMarkerSelection();
+  // Centrar en el marcador correspondiente (vehículo o individual)
+  centerOnSelected();
+  // Actualizar panel admin y card
+  updateAdminTarget(p);
+  showPlayerCard(p);
+}
+
+function selectVehicle(group) {
+  // Seleccionar al primer ocupante (o al líder)
+  const primary = group.occupants.find(p => p.isLeader) || group.occupants[0];
+  if (primary) selectPlayer(primary);
+}
+
+function refreshMarkerSelection() {
+  for (const key of Object.keys(markers)) {
+    const m = markers[key];
+    if (m._vehicleData) {
+      const sel = m._vehicleData.occupants.some(p => p.steamID === selectedSteamID);
+      m.setIcon(makeVehicleIcon(m._vehicleData, sel));
+    } else if (m._playerData) {
+      const sel = m._playerData.steamID === selectedSteamID;
+      m.setIcon(makeIcon(m._playerData, sel));
+    }
+  }
+}
+
+function centerOnSelected() {
+  if (!followSelected) return;
+  for (const key of Object.keys(markers)) {
+    const m = markers[key];
+    if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
+      return;
+    }
+    if (m._playerData && m._playerData.steamID === selectedSteamID) {
+      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
+      return;
+    }
+  }
+}
+
+function updateAdminTarget(p) {
+  document.getElementById('adminNoTarget').style.display = 'none';
+  document.getElementById('adminTargetInfo').style.display = 'block';
+  document.getElementById('adminTargetName').textContent = p.name;
+  document.getElementById('adminTargetSteam').textContent = p.steamID;
+  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID}`;
+  document.getElementById('adminTargetSquad').textContent = p.squadID ?? '—';
+  document.getElementById('adminTargetRole').textContent = p.role ?? '—';
+  document.getElementById('playerActionBtns').style.display = 'grid';
+  cancelPendingCmd();
 }
 
 // ── POLL ─────────────────────────────────────────────────────────────────────
