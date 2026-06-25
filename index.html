@@ -333,7 +333,7 @@ async function poll() {
    // Resolver corners: primero los que vienen del plugin, si no del diccionario
 let corners = null;
 if (data.cornerZero && data.cornerOne) {
-  // Convertir objetos {x,y,z} a arrays [x,y]
+  // Convertir objetos a arrays [x, y] (ignoramos z)
   const c0 = [data.cornerZero.x, data.cornerZero.y];
   const c1 = [data.cornerOne.x, data.cornerOne.y];
   corners = { c0, c1 };
