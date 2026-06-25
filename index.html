@@ -192,7 +192,8 @@ function loadBasemap(mapKey) {
   if (mapKey === currentMapKey) return;
   currentMapKey = mapKey;
   if (basemapLayer) map.removeLayer(basemapLayer);
-  const url = `maps/${mapKey}.webp`;
+  // Usar la URL raw de GitHub
+  const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp`;
   console.log('Cargando imagen:', url);
   basemapLayer = L.imageOverlay(url, bounds).addTo(map);
   basemapLayer.bringToBack();
