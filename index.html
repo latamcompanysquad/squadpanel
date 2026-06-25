@@ -188,28 +188,58 @@ map.fitBounds(bounds);
 let basemapLayer = null;
 let currentMapKey = null;
 
-function loadBasemap(mapKey) {
-  console.log('loadBasemap llamado con mapKey:', mapKey, 'currentMapKey:', currentMapKey);
-  if (mapKey === currentMapKey) {
-    console.log('⚠️ mapKey ya cargado, omitiendo recarga');
+let imageLoaded = false; // bandera para saber si la imagen se cargó bien
+
+function loadBasemap(mapKey, force = false) {
+  console.log('loadBasemap llamado con mapKey:', mapKey, 'force:', force, 'currentMapKey:', currentMapKey);
+  
+  // Si es el mismo mapa y no se fuerza, y la imagen ya se cargó correctamente, salir
+  if (mapKey === currentMapKey && !force && imageLoaded) {
+    console.log('⏩ Misma imagen ya cargada, omitiendo recarga');
     return;
   }
+
+  
+
+
+  // Si cambió el mapa o se fuerza, actualizar
   currentMapKey = mapKey;
+  imageLoaded = false; // resetear bandera
+
+  // Eliminar capa anterior si existe
   if (basemapLayer) {
-    console.log('Eliminando capa anterior');
+    console.log('🗑️ Eliminando capa anterior');
     map.removeLayer(basemapLayer);
+    basemapLayer = null;
   }
-  const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp`;
-  console.log('Cargando imagen:', url);
-  basemapLayer = L.imageOverlay(url, bounds).addTo(map);
+
+  // Construir URL con anti-cache
+  const url = `https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/maps/${mapKey}.webp?t=${Date.now()}`;
+  console.log('🌐 Cargando imagen:', url);
+
+  basemapLayer = L.imageOverlay(url, bounds, { crossOrigin: true }).addTo(map);
   basemapLayer.bringToBack();
+
   basemapLayer.on('load', function() {
     console.log('✅ Imagen cargada correctamente');
+    imageLoaded = true;
+    // Forzar redibujo del mapa
+    map.invalidateSize();
   });
+
   basemapLayer.on('error', function(e) {
-    console.error('❌ Error cargando imagen del mapa:', url, e);
+    console.error('❌ Error cargando imagen:', url, e);
+    // Opcional: reintentar después de 2 segundos (solo si el mapa sigue siendo el mismo)
+    setTimeout(() => {
+      if (currentMapKey === mapKey && !imageLoaded) {
+        console.log('🔄 Reintentando cargar imagen...');
+        loadBasemap(mapKey, true);
+      }
+    }, 2000);
   });
+
   map.fitBounds(bounds);
+  console.log('📐 Bounds aplicados:', bounds);
 }
 
 // ── COORD TRANSFORM (corregida) ──────────────────────────────────────────────
@@ -376,8 +406,11 @@ async function poll() {
 
     // ── Cargar imagen del mapa ──────────────────────────────────────────
     const mapKey = normalizeMapName(data.map);
+    // Dentro de poll(), después de obtener mapKey:
     if (mapKey) {
-      loadBasemap(mapKey);
+      // Forzar recarga si es la primera vez o si cambió el mapa
+      const forceLoad = !currentMapKey || mapKey !== currentMapKey || !imageLoaded;
+      loadBasemap(mapKey, forceLoad);
     } else {
       // Si no se reconoce el mapa, mostramos un mensaje
       document.getElementById('statusText').textContent = 'Mapa desconocido';
