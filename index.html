@@ -563,13 +563,11 @@ function makeIcon(p, selected) {
   // ── Si NO está en vehículo, usamos el ícono de rol (color según equipo) ──
   const iconName = roleIconName(p);
   const iconSrc = roleIconPath(p, 'team');
-  const bgCircle = `<div style="position:absolute;inset:0;border-radius:50%;background:#0b0f0c;opacity:.55;border:1px solid #000;"></div>`;
   const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
   // Pequeño badge de vehículo (ya no es necesario, pero lo dejamos por si quieres ver el tipo)
   const vehicleBadge = p.vehicle ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:2px;background:#d9a441;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:6px;">🚗</div>` : '';
   const faction = factionFromRole(p.role);
   const factionBadge = faction ? `<img src="./resources/public__img__flags__circles__${faction}.webp" alt="" style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;border:1px solid #000;background:#0b0f0c;"/>` : '';
-  const html = `<div style="position:relative;width:28px;height:28px;${ringStyle}">${bgCircle}${roleImg}${vehicleBadge}${factionBadge}</div>`;
   return L.divIcon({ html, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
 }
 
