@@ -227,7 +227,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
               <button class="btn btn-blue" onclick="adminCmd('switchTeam')">⇄ Cambiar equipo</button>
               <button class="btn btn-kick" onclick="adminCmd('kick')">✕ Kick</button>
               <button class="btn btn-ban" onclick="adminCmd('ban')">⛔ Ban</button>
-              <button class="btn btn-green btn-full" onclick="adminCmd('respawn')">↺ Force Respawn</button>
+
             </div>
             <div id="adminReasonWrap" style="display:none;margin-top:8px;">
               <input class="admin-input" id="adminReason" placeholder="Razón (opcional)..." />
@@ -462,7 +462,6 @@ const CMD_LABELS = {
   kick: 'Kick',
   ban: 'Ban (1d)',
   switchTeam: 'Cambiar equipo',
-  respawn: 'Force Respawn',
 };
 
 function adminCmd(action) {
@@ -483,9 +482,10 @@ async function sendPendingCmd() {
   const payload = {
     action: pendingCmd,
     steamID: selectedSteamID,
+    eosID: playerData?.eosID ?? null,
+    playerID: playerData?.playerID ?? null,
     playerName: playerData?.name ?? selectedSteamID,
     reason,
-    // ban duration en minutos (default 1440 = 1 día)
     duration: pendingCmd === 'ban' ? 1440 : undefined,
   };
   cancelPendingCmd();
