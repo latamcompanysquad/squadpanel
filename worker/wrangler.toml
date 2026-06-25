@@ -1,0 +1,13 @@
+name = "squadpanel-worker"
+main = "index.js"
+compatibility_date = "2024-09-23"
+
+# KV namespace — después de crear el KV en Cloudflare, reemplaza el id
+[[kv_namespaces]]
+binding = "SQUAD_KV"
+id = "8b45420e131e4184b393b54410df3d7b"
+
+# El secret para que solo el plugin pueda hacer POST
+# Configuralo como variable de entorno en el dashboard de Cloudflare,
+# NO lo escribas acá en texto plano.
+# Dashboard → Workers → squadpanel-worker → Settings → Variables → WRITE_SECRET
