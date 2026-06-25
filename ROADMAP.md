@@ -10,145 +10,147 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 
 ### FASE 1: Corrección de bugs & validación básica ✅ COMPLETADA
 
-**Objetivo:** Asegurar que el mapa renderiza posiciones correctas
-
-#### Tareas
-
-- [x] Clonar repo squadpanel
-- [x] Revisar rutas de imágenes (./maps/*.webp)
-- [x] Identificar inversión de corners (cornerZero/One)
-- [x] Corregir transformación de coordenadas (Squad → Leaflet)
-  - [x] Invertir eje X (Squad y Leaflet tienen direcciones opuestas)
-  - [x] Mantener eje Y directo (ambos sistemas compatibles)
-- [x] Validar posición de jugadores en 4 esquinas del mapa
-- [x] Verificar círculos de FOB (exclusión/construcción)
+- [x] Corners corregidos (cornerZero/One), inversión de eje X
+- [x] Transformación de coordenadas Squad → Leaflet validada en 4 esquinas
+- [x] Rutas de imágenes confirmadas (./maps/*.webp)
+- [x] FOB circles renderizando
 
 ---
 
 ### FASE 2: Sincronización Live & Backend ✅ COMPLETADA
 
-**Pipeline operativo:** Plugin → Cloudflare Worker → Supabase → Frontend
+**Pipeline:** Plugin (SquadJS) → Cloudflare Worker → Supabase → Frontend (polling 2s)
 
-#### 2.1 - Plugin SquadJS ✅
+#### Plugin ✅
+- [x] `SquadPanelBroadcast` en producción
+- [x] Lee `CurrentMatchData.json` (UTF-16 LE + UTF-8, BOM handling)
+- [x] Posiciones vía EOS ID (primario) / Steam ID (fallback)
+- [x] Snapshot incluye: jugadores, vehículos, FOBs, tickets, objectives, cornerZero/One
+- [x] `playerID` (índice en-partida) incluido en cada jugador para comandos `ById`
+- [x] `pollAdminCommands()` en mismo loop de broadcast
+- [x] `executeAdminCommand()` dispatcher con comandos RCON validados
 
-- [x] `SquadPanelBroadcast` corriendo en producción
-- [x] Lee `CurrentMatchData.json` (UTF-16 LE + UTF-8, con BOM handling)
-- [x] Parsea posiciones vía EOS ID (primario) y Steam ID (fallback)
-- [x] Envía snapshot cada `intervalMs` (default 2000ms) al Worker vía POST con `X-Secret`
-- [x] Incluye: jugadores, vehículos, FOBs, tickets, objectives, cornerZero/One
-
-#### 2.2 - Cloudflare Worker ✅
-
-- [x] Desplegado en `squadpanel-worker.latamcompanysquad.workers.dev`
-- [x] `POST /api/match` — recibe snapshot del plugin (auth X-Secret)
+#### Cloudflare Worker ✅
+- [x] `POST /api/match` — recibe snapshot (auth X-Secret)
 - [x] `GET /api/match` — sirve snapshot al frontend
-- [x] `POST /api/admin/command` — encola comando admin en Supabase
-- [x] `GET /api/admin/pending` — plugin consulta comandos pendientes
-- [x] `DELETE /api/admin/done/:id` — plugin confirma ejecución (PATCH status→done)
-- [x] Persistencia en **Supabase** (tablas `match_state` y `admin_commands`)
-- [x] KV de Cloudflare descartado para admin (límite 1000 writes/día en plan free)
+- [x] `POST /api/admin/command` — encola comando en Supabase
+- [x] `GET /api/admin/pending` — plugin consulta pendientes
+- [x] `DELETE /api/admin/done/:id` — plugin confirma ejecución
 
-#### 2.3 - Supabase ✅
+#### Supabase ✅
+- [x] `match_state` (id, data jsonb, updated_at) — upsert `id='latest'`
+- [x] `admin_commands` (id, action, payload, status, created_at, done_at)
+- [x] KV de Cloudflare descartado (límite 1000 writes/día free tier)
 
-- [x] Tabla `match_state` (id text PK, data jsonb, updated_at int8) — upsert on `id='latest'`
-- [x] Tabla `admin_commands` (id text PK, action text, payload jsonb, status text, created_at int8, done_at int8)
+#### Frontend ✅
+- [x] Polling 2s, HUD con mapa/tickets/dot live
+- [x] Marcadores SVG equipo (azul T1/rojo T2), diferenciados infantry/vehículo
+- [x] Anillo dorado en jugador seleccionado
+- [x] Tabs: Jugadores / Admin
 
-#### 2.4 - Frontend ✅
-
-- [x] Polling cada 2s a `/api/match`
-- [x] HUD: mapa activo, tickets T1/T2 (barra proporcional), dot live/offline, timestamp
-- [x] Marcadores SVG por equipo (azul T1 / rojo T2) diferenciados infantry/vehículo
-- [x] Anillo dorado en marcador seleccionado
-- [x] Panel lateral con tabs: **Jugadores** / **Admin**
-- [x] 26 corners hardcodeados como fallback + corners dinámicos desde el plugin
-
-#### 2.5 - Panel Admin ✅
-
-- [x] Target selection: click en marcador → jugador seleccionado con anillo dorado
-- [x] Acciones por jugador: Warn / Kick / Ban / Switch Team / Force Respawn
-- [x] Campo de razón para warn/kick/ban
-- [x] Broadcast global
-- [x] Set Next Map / End Match
-- [x] Pause / Unpause Match
-- [x] Log de comandos en panel (últimos 30) + toast de feedback
-- [x] Plugin: `pollAdminCommands()` en mismo loop de broadcast
-- [x] Plugin: `executeAdminCommand()` dispatcher vía `rcon.execute()`
-
-#### Pendiente (deuda técnica)
-
-- [ ] Auditar comandos RCON reales del servidor (algunos pueden no existir: `AdminPauseMatch`, `AdminKillPlayer` vs `AdminSlaughter`)
-- [ ] Limpiar comandos admin que no aplican al servidor actual
+#### Panel Admin ✅ (auditado contra ListCommands real del servidor)
+- [x] Warn / Kick / Ban — usan `ById` si playerID disponible, fallback steamID
+- [x] Ban — usa EOS ID vía `AdminBan`
+- [x] Switch Team — `AdminForceTeamChangeById` / fallback
+- [x] Broadcast — `AdminBroadcast`
+- [x] Set Next Map — `AdminSetNextLayer`
+- [x] End Match — `AdminEndMatch`
+- [x] Pause / Unpause — `AdminPauseMatch` / `AdminUnpauseMatch`
+- [x] Force Respawn — **eliminado** (`AdminKillPlayer` no existe en este servidor)
+- [x] Log de comandos (últimos 30) + toast de feedback
 
 ---
 
-### FASE 3: Iconografía Avanzada & UX Mejorada 🎯 SIGUIENTE
+### FASE 3: Iconografía Avanzada & UX 🎯 EN PROGRESO
 
-**Objetivo:** Diferenciar visualmente rol, equipo, vehículo; agregar interactividad
+#### 3.1 - Objectives/Flags en mapa 🎯 SIGUIENTE
+- [ ] Renderizar `objectives[]` del snapshot en el mapa
+- [ ] Ícono de bandera con color por equipo dueño (azul/rojo/gris neutral)
+- [ ] Tooltip con nombre del objetivo al hover
+- [ ] Actualización en tiempo real al cambiar de dueño
 
-#### 3.1 - Sistema de Iconos
+#### 3.2 - Iconos por rol
+- [ ] SVG diferenciado por rol: Infantry, Squad Leader, Medic, Engineer, Officer
+- [ ] Badge de vehículo en esquina del marcador
+- [ ] Color por facción (USA/RUS/INS/MIL)
 
-- [ ] Crear spritesheet de iconos (SVG)
-  - [ ] Por equipo: USA (azul), RUS (rojo), INSURGENCY (verde), MILITIA (naranja)
-  - [ ] Por categoría: Infantry, Squad Leader, Officer, Medic, Engineer, etc.
-  - [ ] Vehículos: Logi, APC, IFV, Tank, Heli
-  - [ ] Especiales: HAB (spawn), FOB, Emplacement
-- [ ] Iconos dinámicos basados en rol + equipo
-- [ ] Badge de vehículo (mini-icono en esquina del marcador)
-
-#### 3.2 - Interactividad
-
-- [ ] Hover → tooltip mejorado (nombre + rol + squad)
+#### 3.3 - Interactividad
 - [ ] Click en lista de jugadores → centrar mapa en marcador
 - [ ] Filter panel: toggle por equipo / rol / vehículos vs infantry
+- [ ] Tooltip mejorado: nombre + rol + squad al hover
 
-#### 3.3 - Visual Effects
-
-- [ ] Trail de movimiento (últimos 30 segundos)
-- [ ] Effect de muerte (fade out)
-- [ ] Animate ingreso de spawn (fade in)
+#### 3.4 - Visual Effects
+- [ ] Trail de movimiento (últimos 30s)
+- [ ] Fade out al morir, fade in al spawnear
 - [ ] Map grid overlay (toggle)
-
-#### 3.4 - Objetivos en mapa
-
-- [ ] Renderizar `objectives` del snapshot (flags, posición, equipo dueño)
-- [ ] Color por equipo dueño / neutral
 
 ---
 
 ### FASE 4: Replay & Herramientas de Comando 🎥
 
-**Objetivo:** Capacidad de replay de match + herramientas tácticas avanzadas
-
 #### 4.1 - Replay System
-
-- [ ] Guardar historial de snapshots en Supabase (tabla `match_snapshots`)
-- [ ] Scrubber interactivo en timeline (play/pause, velocidad, jump to timestamp)
+- [ ] Tabla `match_snapshots` en Supabase (historial cada 2-5s)
+- [ ] Scrubber interactivo (play/pause, velocidad, jump to timestamp)
 - [ ] Reconstitución de posiciones históricas
 
 #### 4.2 - Commander Tools
-
-- [ ] Dibujo en mapa (líneas, círculos, texto) — persistencia local
-- [ ] Medida de distancia (línea + tooltip con metros)
+- [ ] Dibujo en mapa (líneas, círculos, texto) — local
+- [ ] Medida de distancia con tooltip en metros
 - [ ] Marcadores tácticos (amigo/enemigo/objetivo/rally)
-- [ ] Exportar screenshot del mapa actual
+- [ ] Export screenshot
 
-#### 4.3 - Analytics & Heatmaps
-
+#### 4.3 - Analytics
 - [ ] Heatmap de actividad por zona
-- [ ] Estadísticas por zona (muertes, spawns, vehículos)
+- [ ] Estadísticas de muertes/spawns por zona
 
 ---
 
-## 🚀 Estimación de Tiempo
+## 🚀 Estado General
 
-| Fase         | Duración Estimada  | Complejidad | Estado     |
-| ------------ | ------------------- | ------------ | ---------- |
-| 1 (Bugs)     | 1 sesión            | Baja         | ✅ Done    |
-| 2 (Backend)  | 3 sesiones          | Media        | ✅ Done    |
-| 3 (UX/Icons) | 2-3 sesiones        | Media        | 🎯 Siguiente |
-| 4 (Replay)   | 4-5 sesiones        | Alta         | —          |
+| Fase         | Estado       |
+| ------------ | ------------ |
+| 1 (Bugs)     | ✅ Done      |
+| 2 (Backend)  | ✅ Done      |
+| 3 (UX/Icons) | 🎯 En curso  |
+| 4 (Replay)   | —            |
 
 ---
+
+## 🔑 Decisiones Clave
+
+| Decisión | Elección |
+|---|---|
+| Map rendering | Leaflet.js (CRS.Simple) |
+| Sync | Polling 2s (WebSocket descartado) |
+| Frontend | Vanilla JS, sin frameworks |
+| Edge | Cloudflare Worker |
+| DB | Supabase (PostgreSQL) |
+| KV Cloudflare | Solo match state backup, NO para admin |
+| Posiciones | EOS ID primario, Steam ID fallback |
+| Auth admin | Sin auth (red interna) |
+| RCON target | `ById` con playerID, fallback steamID |
+
+---
+
+## 📋 Log de Sesiones
+
+### Sesión 1 — Fase 1
+- Corners corregidos, coordenadas validadas
+
+### Sesión 2 — Fase 2 Backend
+- Plugin + Worker + Supabase operativos, marcadores en tiempo real
+
+### Sesión 3 — Panel Admin
+- Tab Admin completo, ciclo validado en producción
+
+### Sesión 4 — Deuda técnica Admin
+- Auditado ListCommands real del servidor
+- Eliminado Force Respawn (comando inexistente)
+- Migrado a comandos `ById`, EOS ID en ban
+- playerID agregado al snapshot
+
+### Próxima sesión
+- [ ] Objectives/flags en el mapa (Fase 3.1)
 
 ## 🔑 Decisiones Clave
 
@@ -173,27 +175,3 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - ✅ **Sin autenticación** en panel admin (red interna / Discord privado)
 - ✅ **Tabs Jugadores/Admin** en panel lateral
 
----
-
-## 📋 Sesiones
-
-### Sesión — Fase 1 (Bugs & validación)
-- [x] Corners corregidos, coordenadas validadas en 4 esquinas
-
-### Sesión — Fase 2 (Backend + Live)
-- [x] Plugin SquadPanelBroadcast operativo
-- [x] Worker + Supabase operativos
-- [x] Frontend con polling y marcadores en tiempo real
-
-### Sesión — Panel Admin
-- [x] Tab Admin en frontend con todos los botones
-- [x] Worker: 3 endpoints admin (command/pending/done) vía Supabase
-- [x] Plugin: pollAdminCommands() + executeAdminCommand()
-- [x] Ciclo completo validado en producción: click → Supabase → plugin → RCON → Squad
-
-### Próxima Sesión
-- [ ] Auditar y limpiar comandos RCON que no existen en el servidor
-- [ ] Fase 3: iconos por rol (SL, medic, engineer, etc.)
-- [ ] Fase 3: tooltip mejorado
-- [ ] Fase 3: filter panel por equipo/rol
-- [ ] Fase 3: renderizar objectives (flags) en el mapa
