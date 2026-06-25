@@ -694,31 +694,35 @@ function renderFobMarker(fob, corners) {
   const pos = fob.pos || fob.position || { x: 0, y: 0 };
   const teamID = fob.teamID || fob.team || 1;
   const habName = fob.habName || fob.name || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
-  const constructRadius = fob.construct_radius || 15000;
-  const exclusionRadius = fob.exclusion_radius || 30000;
   const isHab = fob.isHab === true;
   const isActive = fob.isActive !== false; // por defecto true si no viene
 
   const latLng = gameToLatLng(pos, corners);
 
-  // Círculo de exclusión (punteado rojo) - solo para FOBs, o también para HABs si quieres
-  L.circle(latLng, {
-    radius: metersToMapUnits(exclusionRadius, corners),
-    color: "#e0584f",
-    weight: 1.5,
-    fillOpacity: 0.03,
-    dashArray: "4,5",
-  }).addTo(fobMarkersLayer);
+  // ── Círculos SOLO para FOBs (no para HABs) ──
+  if (!isHab) {
+    const constructRadius = fob.construct_radius || 15000;
+    const exclusionRadius = fob.exclusion_radius || 30000;
 
-  // Círculo de construcción (sólido ámbar)
-  L.circle(latLng, {
-    radius: metersToMapUnits(constructRadius, corners),
-    color: "#d9a441",
-    weight: 1.5,
-    fillOpacity: 0.05,
-  }).addTo(fobMarkersLayer);
+    // Círculo de EXCLUSIÓN (punteado rojo) - borde más grueso y oscuro
+    L.circle(latLng, {
+      radius: metersToMapUnits(exclusionRadius, corners),
+      color: "#cc3333",        // rojo más oscuro
+      weight: 2.5,             // más grueso
+      fillOpacity: 0.03,
+      dashArray: "4,5",
+    }).addTo(fobMarkersLayer);
 
-  // Ícono del marcador
+    // Círculo de CONSTRUCCIÓN (sólido ámbar) - borde más grueso y oscuro
+    L.circle(latLng, {
+      radius: metersToMapUnits(constructRadius, corners),
+      color: "#b8860b",        // ámbar oscuro
+      weight: 2.5,
+      fillOpacity: 0.05,
+    }).addTo(fobMarkersLayer);
+  }
+
+  // ── Marcador ──
   const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
   const bgColor = isHab ? (isActive ? iconColor : '#666') : iconColor;
   const iconChar = isHab ? '🏠' : '⚑';
@@ -746,6 +750,7 @@ function renderFobMarker(fob, corners) {
 
   const marker = L.marker(latLng, { icon: habIcon }).addTo(fobMarkersLayer);
 
+  // Tooltip con estado
   let statusText = '';
   if (isHab) {
     statusText = isActive ? '🟢 Activo' : '🔴 Inactivo';
@@ -755,7 +760,6 @@ function renderFobMarker(fob, corners) {
     direction: "top",
   });
 }
-
 function updateFobs(fobArray, corners) {
   if (!fobArray || !Array.isArray(fobArray) || fobArray.length === 0) {
     clearFobMarkers();
