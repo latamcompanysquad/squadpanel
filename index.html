@@ -701,76 +701,60 @@ function renderFobMarker(fob, corners) {
 
   const latLng = gameToLatLng(pos, corners);
 
-  // ── Colores diferenciados ──
-  // FOB: usa colores de equipo (azul/rojo)
-  // HAB: usa verde/ámbar según estado activo
-  let primaryColor, secondaryColor, borderColor;
-  if (isHab) {
-    // HAB: verde si activo, gris si inactivo
-    primaryColor = isActive ? '#4caf6a' : '#666666';
-    secondaryColor = isActive ? '#2e7d32' : '#444444';
-    borderColor = isActive ? '#1b5e20' : '#333333';
-  } else {
-    // FOB: colores de equipo
-    primaryColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
-    secondaryColor = teamID === 1 ? '#1a4c7a' : '#7a2a22';
-    borderColor = teamID === 1 ? '#0d2b4a' : '#4a1a12';
+  // ── Círculos SOLO para FOBs (no para HABs) ──
+  if (!isHab) {
+    // Círculo de EXCLUSIÓN (rojo oscuro, borde grueso)
+    L.circle(latLng, {
+      radius: metersToMapUnits(exclusionRadius, corners),
+      color: "#cc3a2e",          // rojo más oscuro
+      weight: 2.5,               // borde más grueso
+      fillOpacity: 0.03,
+      dashArray: "4,5",
+    }).addTo(fobMarkersLayer);
+
+    // Círculo de CONSTRUCCIÓN (ámbar oscuro, borde grueso)
+    L.circle(latLng, {
+      radius: metersToMapUnits(constructRadius, corners),
+      color: "#c99a30",          // ámbar más oscuro
+      weight: 2.5,
+      fillOpacity: 0.05,
+    }).addTo(fobMarkersLayer);
   }
 
-  // ── Círculo de EXCLUSIÓN (punteado) ──
-  L.circle(latLng, {
-    radius: metersToMapUnits(exclusionRadius, corners),
-    color: primaryColor,
-    weight: 2.5,            // más grueso
-    fillOpacity: 0.04,
-    dashArray: "6,6",
-    opacity: 0.8,
-  }).addTo(fobMarkersLayer);
-
-  // ── Círculo de CONSTRUCCIÓN (sólido) ──
-  L.circle(latLng, {
-    radius: metersToMapUnits(constructRadius, corners),
-    color: secondaryColor,
-    weight: 2.0,
-    fillOpacity: 0.06,
-    opacity: 0.7,
-  }).addTo(fobMarkersLayer);
-
-  // ── MARCADOR CENTRAL ──
+  // ── Marcador central (FOB o HAB) ──
+  const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const bgColor = isHab ? (isActive ? iconColor : '#666') : iconColor;
   const iconChar = isHab ? '🏠' : '⚑';
   const overlayX = isHab && !isActive
     ? `<div style="position:absolute;top:-6px;right:-6px;font-size:16px;color:#ff0000;font-weight:bold;text-shadow:0 0 3px #000;line-height:1;">✕</div>`
     : '';
 
-  const iconHtml = `<div style="
-    position:relative;
-    width:28px;height:28px;
-    background:${primaryColor};
-    border-radius:50%;
-    border:2px solid ${borderColor};
-    display:flex;align-items:center;justify-content:center;
-    font-weight:700;font-size:${isHab ? '16' : '14'}px;
-    color:#fff;
-    box-shadow:0 0 6px rgba(0,0,0,0.6);
-    font-family:'Oswald',sans-serif;
-  ">${iconChar}${overlayX}</div>`;
-
   const habIcon = L.divIcon({
-    html: iconHtml,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    html: `<div style="
+      position:relative;
+      width:26px;height:26px;
+      background:${bgColor};
+      border-radius:50%;
+      border:1px solid #000;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;font-size:${isHab ? '16' : '12'}px;
+      color:#fff;
+      box-shadow:0 0 3px rgba(0,0,0,0.8);
+      font-family:'Oswald',sans-serif;
+    ">${iconChar}${overlayX}</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
     className: "fob-icon",
   });
 
   const marker = L.marker(latLng, { icon: habIcon }).addTo(fobMarkersLayer);
 
-  // ── Tooltip mejorado ──
+  // Tooltip con estado para HABs
   let statusText = '';
   if (isHab) {
     statusText = isActive ? '🟢 Activo' : '🔴 Inactivo';
   }
-  const typeLabel = isHab ? 'HAB' : 'FOB';
-  marker.bindTooltip(`<strong>${typeLabel}: ${habName}</strong><br/>Team ${teamID}${isHab ? '<br/>' + statusText : ''}`, {
+  marker.bindTooltip(`<strong>${habName}</strong><br/>Team ${teamID}${isHab ? '<br/>' + statusText : ''}`, {
     className: "squad-tip",
     direction: "top",
   });
