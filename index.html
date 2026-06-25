@@ -728,9 +728,9 @@ function gameToLatLng(pos){
   const [x1, y1] = MAP_CONFIG.cornerOne;
   const fracX = (pos[0] - x0) / (x1 - x0);
   const fracY = (pos[1] - y0) / (y1 - y0);
-  // Invertir ambos ejes: Leaflet CRS.Simple y Squad usan direcciones opuestas
-  const px = (1 - fracX) * MAP_UNITS;  // invertir X: 0→derecha, 1→izquierda en Leaflet
-  const py = (1 - fracY) * MAP_UNITS;  // invertir Y: 0→abajo, 1→arriba en Leaflet
+  // Invertir solo X (Leaflet y Squad tienen eje X opuesto)
+  const px = (1 - fracX) * MAP_UNITS;  // invertir: X crece opuesto en Squad vs Leaflet
+  const py = fracY * MAP_UNITS;        // Y es directo: ambos crecen hacia abajo
   return [py, px]; // lat = py (Y del mapa), lng = px (X del mapa)
 }
 
