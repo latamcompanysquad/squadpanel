@@ -686,8 +686,8 @@ const ICON_SVG = {
    ========================================================= */
 const MAP_CONFIG = {
   name: "Kokan",
-  cornerOne: [142013.671875, 142013.671875],   // top-left del basemap, en UU
-  cornerZero:  [-107634.9375, -107566.75],       // bottom-right del basemap, en UU
+  cornerZero: [142013.671875, 142013.671875],   // MAX: esquina superior-derecha (valores positivos)
+  cornerOne:  [-107634.9375, -107566.75],       // MIN: esquina inferior-izquierda (valores negativos)
 };
 
 // snapshot 1: 05:10:15 — ileveN a pie
@@ -730,12 +730,28 @@ function gameToLatLng(pos){
   const fracY = (pos[1] - y0) / (y1 - y0);
   const px = fracX * MAP_UNITS;
   const py = fracY * MAP_UNITS;
-  return [py, px]; 
+  return [py, px]; // lat = py (Y del mapa), lng = px (X del mapa)
+}
 
 /* =========================================================
    4. Mapa Leaflet (CRS.Simple, sin proyección geográfica)
    ========================================================= */
-const bounds = [[0,0],[-MAP_UNITS, MAP_UNITS]];
+const bounds = [[0,0],[MAP_UNITS, MAP_UNITS]];
+
+// Función para cargar el mapa base
+function loadBasemap(mapName) {
+  // Limpiar overlays anteriores
+  map.eachLayer(layer => {
+    if (layer instanceof L.ImageOverlay) {
+      map.removeLayer(layer);
+    }
+  });
+  
+  const mapNameLower = mapName.toLowerCase();
+  const imgUrl = `./maps/${mapNameLower}.webp`;
+  L.imageOverlay(imgUrl, bounds).addTo(map);
+}
+
 const map = L.map('map', {
   crs: L.CRS.Simple,
   minZoom: -2,
@@ -743,7 +759,9 @@ const map = L.map('map', {
   zoomSnap: 0.25,
   attributionControl: false,
 });
-L.imageOverlay(KOKAN_BASEMAP, bounds).addTo(map);
+
+// Cargar basemap inicial (Kokan)
+loadBasemap(MAP_CONFIG.name);
 map.fitBounds(bounds);
 
 // circulos de radio del FOB activo
