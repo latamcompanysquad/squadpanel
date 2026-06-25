@@ -330,15 +330,24 @@ async function poll() {
 
     updateHUD(data);
 
-    // Resolver corners: primero los que vienen del plugin, si no del diccionario
-    let corners = null;
-    if (data.cornerZero && data.cornerOne) {
-      // Plugin mandó corners (Unreal Units, cornerZero=MAX, cornerOne=MIN)
-      corners = { c0: data.cornerOne, c1: data.cornerZero };
-    } else {
-      const key = normalizeMapName(data.map);
-      if (key && MAP_CORNERS[key]) corners = MAP_CORNERS[key];
-    }
+   // Resolver corners: primero los que vienen del plugin, si no del diccionario
+let corners = null;
+if (data.cornerZero && data.cornerOne) {
+  // Convertir objetos {x,y,z} a arrays [x,y]
+  const c0 = [data.cornerZero.x, data.cornerZero.y];
+  const c1 = [data.cornerOne.x, data.cornerOne.y];
+  corners = { c0, c1 };
+} else {
+  const key = normalizeMapName(data.map);
+  if (key && MAP_CORNERS[key]) corners = MAP_CORNERS[key];
+}
+console.log('Corners usados:', corners);
+console.log('Primer jugador:', data.players?.[0]);
+if (corners && data.players?.length) {
+  const p = data.players[0];
+  const ll = gameToLatLng(p.position, corners);
+  console.log('Coordenadas transformadas:', ll);
+}
 
     // Cargar basemap
     const mapKey = normalizeMapName(data.map);
