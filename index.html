@@ -501,6 +501,21 @@ function makeIcon(p, selected) {
   const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
 
+  // Si está herido (no vivo pero con posición)
+  if (!p.isAlive && p.position) {
+    const iconHtml = `<div style="
+      width:28px;height:28px;
+      background:#666;
+      border-radius:50%;
+      border:2px solid #000;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      box-shadow:0 0 4px rgba(0,0,0,0.8);
+      ${ringStyle}
+    ">🟡</div>`;
+    return L.divIcon({ html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
+  }
+
   // ── Si está en vehículo, usamos ícono de vehículo ──
   if (p.vehicle) {
     // Emoji según tipo (opcional, puedes personalizar)
@@ -607,11 +622,11 @@ function makeTooltipContent(p) {
 }
 
 function playerPassesFilter(p) {
-  if (!p.position) return false;
+  if (!p.position) return false; // sin posición no se muestra en mapa
   if (!filters.t1 && p.teamID === 1) return false;
   if (!filters.t2 && p.teamID === 2) return false;
-  if (!filters.veh && p.vehicle)     return false;
-  if (!filters.dead && !p.isAlive)   return false;
+  if (!filters.veh && p.vehicle) return false;
+  if (!filters.dead && !p.isAlive) return false;
   return true;
 }
 
@@ -686,9 +701,10 @@ function showPlayerCard(p) {
 
 function makeVehicleTooltip(group) {
   const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
-  const occupantsList = group.occupants.map(p =>
-    `  ${p.name} (asiento ${p.seat ?? '?'})`
-  ).join('\n');
+  const occupantsList = group.occupants.map(p => {
+    const statusEmoji = p.isAlive ? '🟢' : (p.position ? '🟡' : '🔴');
+    return `  ${statusEmoji} ${p.name} (asiento ${p.seat ?? '?'})`;
+  }).join('\n');
   return `<div style="font-weight:600;color:var(--amber);">🚗 ${group.vehicleName}</div>
 <div style="color:var(--text-dim);">[${teamLabel}] · ${group.occupants.length} ocupantes</div>
 <pre style="font-size:9px;margin:4px 0 0;color:var(--text);">${occupantsList}</pre>`;
@@ -1073,13 +1089,23 @@ function switchTab(tab) {
 function showPlayerCard(p) {
   const teamColor = p.teamID === 1 ? 'blue' : 'red';
   const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
+  // Estado
+  let status = 'Vivo';
+  if (!p.isAlive) {
+    status = p.position ? 'Herido (wounded)' : 'Muerto (esperando respawn)';
+  }
+  let vehicleLine = '';
+  if (p.vehicle) {
+    const seat = p.seat !== undefined ? ` (asiento ${p.seat})` : '';
+    vehicleLine = `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle.name)}${seat}</span></div>`;
+  }
   document.getElementById('playerPanel').innerHTML = `
     <div class="player-card">
       <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> ${esc(p.name)}</div>
-      <div class="row"><span>Estado</span><span class="val">${p.isAlive ? (p.vehicle ? '🚗 Vehículo' : '🚶 A pie') : '💀 Muerto'}</span></div>
+      <div class="row"><span>Estado</span><span class="val">${status}</span></div>
       <div class="row"><span>Rol</span><span class="val">${esc(p.role ?? '—')}</span></div>
-      ${p.vehicle ? `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle)}</span></div>` : ''}
-      <div class="row"><span>Squad</span><span class="val">${p.squadID ?? '—'}</span></div>
+      ${vehicleLine}
+      <div class="row"><span>Squad</span><span class="val">${p.squadName ? esc(p.squadName) : (p.squadID ?? '—')}</span></div>
       <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
     </div>`;
 }
@@ -1221,36 +1247,78 @@ function toast(msg, type='ok') {
 
 // ── PLAYER LIST ───────────────────────────────────────────────────────────────
 function updatePlayerList(players) {
-  const alive = players.filter(p => p.isAlive && p.position);
-  document.getElementById('playerCount').textContent = alive.length;
   const list = document.getElementById('playerList');
-  const visible = filters.dead ? players.filter(p => p.position) : alive;
-  if (!visible.length) { list.innerHTML = '<div class="no-data">Sin jugadores en mapa</div>'; return; }
-
+  // Filtrar según estado de muertos: si dead filter está activo, mostramos todos; si no, solo vivos
+  let visible = players;
+  if (!filters.dead) {
+    visible = players.filter(p => p.isAlive === true);
+  }
+  // Ordenar: por equipo, luego por squadID (numérico), líder primero, luego nombre
   const sorted = [...visible].sort((a,b) => {
     if (a.teamID !== b.teamID) return a.teamID - b.teamID;
+    const aSquad = a.squadID ?? 999;
+    const bSquad = b.squadID ?? 999;
+    if (aSquad !== bSquad) return aSquad - bSquad;
     if (a.isLeader !== b.isLeader) return a.isLeader ? -1 : 1;
-    return (a.squadID ?? 99) - (b.squadID ?? 99);
+    return a.name.localeCompare(b.name);
   });
 
-  let lastTeam = null;
-  list.innerHTML = sorted.map(p => {
+  // Agrupar por equipo y escuadra
+  let html = '';
+  let currentTeam = null;
+  let currentSquad = null;
+  let squadName = null;
+  for (const p of sorted) {
+    const teamChanged = p.teamID !== currentTeam;
+    const squadChanged = p.squadID !== currentSquad || teamChanged;
+    if (teamChanged) {
+      // Cerrar squad anterior?
+      // Empezar nuevo equipo
+      currentTeam = p.teamID;
+      const teamColor = p.teamID === 1 ? 'blue' : 'red';
+      html += `<div class="panel-title" style="margin-top:10px;color:var(--${teamColor});">Team ${p.teamID}</div>`;
+      // También actualizamos squad para forzar apertura
+      currentSquad = null;
+    }
+    if (squadChanged) {
+      currentSquad = p.squadID;
+      squadName = p.squadName || `Squad ${p.squadID}`;
+      if (p.squadID != null) {
+        html += `<div style="font-family:'Oswald',sans-serif;font-size:12px;color:var(--olive);margin:6px 0 4px;letter-spacing:.05em;">${esc(squadName)}</div>`;
+      } else {
+        html += `<div style="font-family:'Oswald',sans-serif;font-size:12px;color:var(--text-dim);margin:6px 0 4px;">Sin escuadra</div>`;
+      }
+    }
+    // Construir card de jugador
     const c = p.teamID === 1 ? 'blue' : 'red';
     const sel = p.steamID === selectedSteamID ? 'border-color:var(--amber);' : '';
-    const dead = !p.isAlive ? 'opacity:.4;' : '';
-    const role = roleIconName(p).replace(/_/g,' ');
-    const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)} (as.${p.seat ?? '?'})</span>` : '';
-    const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
-    let header = '';
-    if (p.teamID !== lastTeam) {
-      lastTeam = p.teamID;
-      header = `<div class="panel-title" style="margin-top:${lastTeam===1?'0':'10px'};color:var(--${c})">Team ${p.teamID}</div>`;
+    // Estado
+    let statusEmoji = '🟢'; // vivo
+    let statusText = 'Vivo';
+    if (!p.isAlive) {
+      if (p.position) {
+        statusEmoji = '🟡'; // herido (wounded)
+        statusText = 'Herido';
+      } else {
+        statusEmoji = '🔴'; // muerto (dead dead)
+        statusText = 'Muerto';
+      }
     }
-    return `${header}<div class="player-card" style="cursor:pointer;margin-bottom:4px;${sel}${dead}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)}${veh}</div>
-      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${role}</div>
+    const role = roleIconName(p).replace(/_/g,' ');
+    const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)}</span>` : '';
+    const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
+    // Aplicar opacidad si muerto (dead) y no está vivo, para distinguir
+    const deadOpacity = (!p.isAlive && !p.position) ? 'opacity:.4;' : '';
+    html += `<div class="player-card" style="cursor:pointer;margin-bottom:4px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${role} · ${statusText}</div>
     </div>`;
-  }).join('');
+  }
+  if (!html) {
+    html = '<div class="no-data">No hay jugadores para mostrar</div>';
+  }
+  list.innerHTML = html;
+  document.getElementById('playerCount').textContent = visible.length;
 }
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
@@ -1326,9 +1394,12 @@ function updateAdminTarget(p) {
   document.getElementById('adminTargetInfo').style.display = 'block';
   document.getElementById('adminTargetName').textContent = p.name;
   document.getElementById('adminTargetSteam').textContent = p.steamID;
-  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID}`;
-  document.getElementById('adminTargetSquad').textContent = p.squadID ?? '—';
-  document.getElementById('adminTargetRole').textContent = p.role ?? '—';
+  const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
+  const squadDisplay = p.squadName || (p.squadID != null ? `Squad ${p.squadID}` : '—');
+  const status = p.isAlive ? 'Vivo' : (p.position ? 'Herido' : 'Muerto');
+  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID} (${teamLabel})`;
+  document.getElementById('adminTargetSquad').textContent = squadDisplay;
+  document.getElementById('adminTargetRole').textContent = `${p.role ?? '—'} · ${status}`;
   document.getElementById('playerActionBtns').style.display = 'grid';
   cancelPendingCmd();
 }
