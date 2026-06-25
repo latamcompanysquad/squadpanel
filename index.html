@@ -886,7 +886,9 @@ function clearAmmoMarkers() {
 
 function initFobLayer() {
   if (!fobMarkersLayer) {
-    fobMarkersLayer = L.featureGroup().addTo(map);
+    map.createPane('fobsPane');
+    map.getPane('fobsPane').style.zIndex = 450;
+    fobMarkersLayer = L.featureGroup({ pane: 'fobsPane' }).addTo(map);
   } else {
     fobMarkersLayer.clearLayers();
   }
@@ -986,24 +988,27 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
 
-  const pos = fob.pos || fob.position || { x: 0, y: 0 };
-  const teamID = fob.teamID || fob.team || 1;
-  const habName = fob.habName || fob.name || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
+  const pos = fob.pos || { x: 0, y: 0 };
+  const teamID = fob.teamID || 1;
+  const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
   const exclusionRadius = fob.exclusion_radius || 30000;
   const isHab = fob.isHab === true;
-  const isActive = fob.isActive !== false;
+  const isActive = fob.isActive !== false; // por defecto activo
 
   const latLng = gameToLatLng(pos, corners);
+  if (!latLng) {
+    console.warn('FOB sin posición válida:', fob);
+    return;
+  }
 
-  // ── Círculos SOLO para FOBs ──
+  // Círculos SOLO para FOBs (no para HABs)
   if (!isHab) {
-    // Colores según equipo: dos tonalidades
     const colors = teamID === 1 
-      ? { exclusion: '#2a7ab0', construct: '#4fa6e8' }  // Azul oscuro y claro
-      : { exclusion: '#b33a30', construct: '#e0584f' }; // Rojo oscuro y claro
+      ? { exclusion: '#2a7ab0', construct: '#4fa6e8' }
+      : { exclusion: '#b33a30', construct: '#e0584f' };
 
-    // Círculo de EXCLUSIÓN (exterior, más oscuro)
+    // Exclusión
     L.circle(latLng, {
       radius: metersToMapUnits(exclusionRadius, corners),
       color: colors.exclusion,
@@ -1012,7 +1017,7 @@ function renderFobMarker(fob, corners) {
       dashArray: "4,5",
     }).addTo(fobMarkersLayer);
 
-    // Círculo de CONSTRUCCIÓN (interior, más claro)
+    // Construcción
     L.circle(latLng, {
       radius: metersToMapUnits(constructRadius, corners),
       color: colors.construct,
@@ -1021,7 +1026,7 @@ function renderFobMarker(fob, corners) {
     }).addTo(fobMarkersLayer);
   }
 
-  // ── Marcador central ──
+  // Marcador central
   const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
   const bgColor = isHab ? (isActive ? iconColor : '#666') : iconColor;
   const iconChar = isHab ? '🏠' : '⚑';
@@ -1048,8 +1053,6 @@ function renderFobMarker(fob, corners) {
   });
 
   const marker = L.marker(latLng, { icon: habIcon }).addTo(fobMarkersLayer);
-
-  // Tooltip con estado para HABs
   let statusText = '';
   if (isHab) {
     statusText = isActive ? '🟢 Activo' : '🔴 Inactivo';
