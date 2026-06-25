@@ -356,25 +356,68 @@ function gameToLatLng(pos, corners) {
   return [py, px];
 }
 
+// ── FACCIONES (badge real desde resources/) ────────────────────────────────────
+const KNOWN_FACTIONS = ['USA','USMC','ADF','CAF','BAF','RGF','VDV','INS','MEA','MEI','TLF','IMF','GFI','PLA','PLAAGF','PLANMC','WPMC','AFU','CRF'];
+function factionFromRole(role) {
+  if (!role) return null;
+  const prefix = role.split('_')[0]?.toUpperCase();
+  return KNOWN_FACTIONS.includes(prefix) ? prefix : null;
+}
+
+// ── ROL (categoría) ─────────────────────────────────────────────────────────────
+function roleCategory(p) {
+  if (p.isLeader) return 'leader';
+  const r = (p.role || '').toLowerCase();
+  if (r.includes('medic')) return 'medic';
+  if (r.includes('engineer') || r.includes('sapper')) return 'engineer';
+  if (r.includes('officer')) return 'officer';
+  return 'infantry';
+}
+
+function roleOverlay(category) {
+  switch (category) {
+    case 'leader':   // estrella
+      return `<path d="M14 7.3 L15.8 11.5 L20.3 11.9 L16.9 14.8 L17.9 19.2 L14 16.9 L10.1 19.2 L11.1 14.8 L7.7 11.9 L12.2 11.5 Z" fill="#fff"/>`;
+    case 'medic':    // cruz
+      return `<rect x="12.4" y="9" width="3.2" height="10" fill="#fff"/><rect x="9" y="12.4" width="10" height="3.2" fill="#fff"/>`;
+    case 'engineer': // tuerca
+      return `<path d="M18,14 L16,10.5 L12,10.5 L10,14 L12,17.5 L16,17.5 Z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="14" cy="14" r="1.4" fill="#fff"/>`;
+    case 'officer':  // chevron
+      return `<path d="M9.5 16.2 L14 11.8 L18.5 16.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    default:         // infantería: cruz fina (sin cambios visuales respecto a antes)
+      return `<line x1="14" y1="7" x2="14" y2="21" stroke="#000" stroke-width="1.3"/><line x1="7" y1="14" x2="21" y2="14" stroke="#000" stroke-width="1.3"/>`;
+  }
+}
+
 // ── ICONOS SVG ────────────────────────────────────────────────────────────────
-function makeIcon(teamID, isVehicle, selected) {
-  const color = teamID === 1 ? '#4fa6e8' : '#e0584f';
-  const ring = selected ? `<circle cx="11" cy="11" r="10" fill="none" stroke="#d9a441" stroke-width="2"/>` : '';
-  const svg = isVehicle
-    ? `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
-        <rect x="3" y="7" width="16" height="10" rx="2" fill="${color}" opacity=".9"/>
-        <rect x="7" y="4" width="8" height="5" rx="1" fill="${color}"/>
-        <circle cx="6"  cy="18" r="2.5" fill="#222"/>
-        <circle cx="16" cy="18" r="2.5" fill="#222"/>
-        ${ring}
-       </svg>`
-    : `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
-        <circle cx="11" cy="11" r="8" fill="${color}" opacity=".9" stroke="#000" stroke-width="1"/>
-        <line x1="11" y1="3" x2="11" y2="19" stroke="#000" stroke-width="1.5"/>
-        <line x1="3"  y1="11" x2="19" y2="11" stroke="#000" stroke-width="1.5"/>
-        ${ring}
-       </svg>`;
-  return L.divIcon({ html: svg, iconSize:[22,22], iconAnchor:[11,11], className:'' });
+function makeIcon(p, selected) {
+  const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const category = roleCategory(p);
+  const ring = selected ? `<circle cx="14" cy="14" r="11" fill="none" stroke="#d9a441" stroke-width="2"/>` : '';
+  const vehicleBadge = p.vehicle
+    ? `<g transform="translate(17,1) scale(0.45)">
+         <rect x="3" y="7" width="16" height="10" rx="2" fill="#d9a441"/>
+         <rect x="7" y="4" width="8" height="5" rx="1" fill="#d9a441"/>
+         <circle cx="6" cy="18" r="2.5" fill="#000"/>
+         <circle cx="16" cy="18" r="2.5" fill="#000"/>
+       </g>`
+    : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+      <circle cx="14" cy="14" r="8" fill="${color}" opacity=".92" stroke="#000" stroke-width="1"/>
+      ${roleOverlay(category)}
+      ${vehicleBadge}
+      ${ring}
+     </svg>`;
+
+  const faction = factionFromRole(p.role);
+  const factionBadge = faction
+    ? `<img src="./resources/public__img__flags__circles__${faction}.webp" alt=""
+         style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;
+                border:1px solid #000;background:#0b0f0c;" />`
+    : '';
+
+  const html = `<div style="position:relative;width:28px;height:28px;">${svg}${factionBadge}</div>`;
+  return L.divIcon({ html, iconSize:[28,28], iconAnchor:[14,14], className:'' });
 }
 
 // ── ICONO OBJETIVO (bandera) ───────────────────────────────────────────────────
@@ -410,7 +453,7 @@ function updateMarkers(players, corners) {
     seen.add(p.steamID);
     const ll = gameToLatLng(p.position, corners);
     const isSel = p.steamID === selectedSteamID;
-    const icon = makeIcon(p.teamID, !!p.vehicle, isSel);
+    const icon = makeIcon(p, isSel);
     if (markers[p.steamID]) {
       markers[p.steamID].setLatLng(ll).setIcon(icon);
     } else {
@@ -487,7 +530,7 @@ function selectPlayer(p) {
   for (const id of Object.keys(markers)) {
     const m = markers[id];
     const pd = m._playerData;
-    if (pd) m.setIcon(makeIcon(pd.teamID, !!pd.vehicle, id === selectedSteamID));
+    if (pd) m.setIcon(makeIcon(pd, id === selectedSteamID));
   }
   // Actualizar panel admin
   document.getElementById('adminNoTarget').style.display = 'none';

@@ -69,12 +69,12 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - [x] Tooltip con nombre del objetivo al hover
 - [x] Actualización en tiempo real al cambiar de dueño
 
-#### 3.2 - Iconos por rol 🎯 SIGUIENTE
-- [ ] SVG diferenciado por rol: Infantry, Squad Leader, Medic, Engineer, Officer
-- [ ] Badge de vehículo en esquina del marcador
-- [ ] Color por facción (USA/RUS/INS/MIL)
+#### 3.2 - Iconos por rol ✅ COMPLETADA
+- [x] SVG diferenciado por rol: Infantry, Squad Leader (isLeader), Medic, Engineer, Officer
+- [x] Badge de vehículo en esquina del marcador
+- [x] Color por facción (badge real con flags/circles__* existentes, vía prefijo de `role`)
 
-#### 3.3 - Interactividad
+#### 3.3 - Interactividad 🎯 SIGUIENTE
 - [ ] Click en lista de jugadores → centrar mapa en marcador
 - [ ] Filter panel: toggle por equipo / rol / vehículos vs infantry
 - [ ] Tooltip mejorado: nombre + rol + squad al hover
@@ -155,8 +155,16 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - Tooltip con `flag_name` al hover
 - Limpieza de marcadores obsoletos al cambiar de mapa (igual patrón que jugadores)
 
+### Sesión 6 — Fase 3.2 Iconos por rol
+- `makeIcon(p, selected)` reescrito: ahora recibe el jugador completo (antes solo teamID/isVehicle)
+- Categoría de rol: `isLeader` → Squad Leader (prioridad), luego match por keyword en `role` (medic/engineer/officer), default Infantry
+- Overlay SVG por categoría: estrella (líder), cruz (medic), tuerca (engineer), chevron (officer), cruz fina (infantería, sin cambio visual)
+- Badge de vehículo: ya no reemplaza el ícono completo por un rectángulo — ahora es un badge pequeño en la esquina superior derecha, manteniendo visible el rol
+- Badge de facción: prefijo de `role` (ej. `USA_`, `RGF_`) matcheado contra los 19 `flags/circles__*.webp` ya en `resources/`, badge circular en esquina inferior derecha; si no matchea ninguna facción conocida, no se muestra badge (evita mostrar datos incorrectos)
+- Tamaño de ícono subido de 22×22 a 28×28 para dar espacio a los 2 badges
+
 ### Próxima sesión
-- [ ] Iconos por rol (Fase 3.2)
+- [ ] Interactividad (Fase 3.3)
 
 ## 🔑 Decisiones Clave
 
