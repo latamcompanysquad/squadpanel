@@ -697,31 +697,36 @@ function renderFobMarker(fob, corners) {
   const constructRadius = fob.construct_radius || 15000;
   const exclusionRadius = fob.exclusion_radius || 30000;
   const isHab = fob.isHab === true;
-  const isActive = fob.isActive !== false; // por defecto true
+  const isActive = fob.isActive !== false;
 
   const latLng = gameToLatLng(pos, corners);
 
-  // ── Círculos SOLO para FOBs (no para HABs) ──
+  // ── Círculos SOLO para FOBs ──
   if (!isHab) {
-    // Círculo de EXCLUSIÓN (rojo oscuro, borde grueso)
+    // Colores según equipo: dos tonalidades
+    const colors = teamID === 1 
+      ? { exclusion: '#2a7ab0', construct: '#4fa6e8' }  // Azul oscuro y claro
+      : { exclusion: '#b33a30', construct: '#e0584f' }; // Rojo oscuro y claro
+
+    // Círculo de EXCLUSIÓN (exterior, más oscuro)
     L.circle(latLng, {
       radius: metersToMapUnits(exclusionRadius, corners),
-      color: "#cc3a2e",          // rojo más oscuro
-      weight: 2.5,               // borde más grueso
+      color: colors.exclusion,
+      weight: 2.5,
       fillOpacity: 0.03,
       dashArray: "4,5",
     }).addTo(fobMarkersLayer);
 
-    // Círculo de CONSTRUCCIÓN (ámbar oscuro, borde grueso)
+    // Círculo de CONSTRUCCIÓN (interior, más claro)
     L.circle(latLng, {
       radius: metersToMapUnits(constructRadius, corners),
-      color: "#c99a30",          // ámbar más oscuro
+      color: colors.construct,
       weight: 2.5,
       fillOpacity: 0.05,
     }).addTo(fobMarkersLayer);
   }
 
-  // ── Marcador central (FOB o HAB) ──
+  // ── Marcador central ──
   const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
   const bgColor = isHab ? (isActive ? iconColor : '#666') : iconColor;
   const iconChar = isHab ? '🏠' : '⚑';
