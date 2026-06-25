@@ -193,8 +193,12 @@ function loadBasemap(mapKey) {
   currentMapKey = mapKey;
   if (basemapLayer) map.removeLayer(basemapLayer);
   const url = `maps/${mapKey}.webp`;
+  console.log('Cargando imagen:', url);
   basemapLayer = L.imageOverlay(url, bounds).addTo(map);
   basemapLayer.bringToBack();
+  basemapLayer.on('error', function(e) {
+    console.error('❌ Error cargando imagen del mapa:', url, e);
+  });
   map.fitBounds(bounds);
 }
 
