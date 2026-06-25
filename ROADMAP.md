@@ -63,13 +63,13 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 
 ### FASE 3: Iconografía Avanzada & UX 🎯 EN PROGRESO
 
-#### 3.1 - Objectives/Flags en mapa 🎯 SIGUIENTE
-- [ ] Renderizar `objectives[]` del snapshot en el mapa
-- [ ] Ícono de bandera con color por equipo dueño (azul/rojo/gris neutral)
-- [ ] Tooltip con nombre del objetivo al hover
-- [ ] Actualización en tiempo real al cambiar de dueño
+#### 3.1 - Objectives/Flags en mapa ✅ COMPLETADA
+- [x] Renderizar `objectives[]` del snapshot en el mapa
+- [x] Ícono de bandera con color por equipo dueño (azul/rojo/gris neutral)
+- [x] Tooltip con nombre del objetivo al hover
+- [x] Actualización en tiempo real al cambiar de dueño
 
-#### 3.2 - Iconos por rol
+#### 3.2 - Iconos por rol 🎯 SIGUIENTE
 - [ ] SVG diferenciado por rol: Infantry, Squad Leader, Medic, Engineer, Officer
 - [ ] Badge de vehículo en esquina del marcador
 - [ ] Color por facción (USA/RUS/INS/MIL)
@@ -149,8 +149,14 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - Migrado a comandos `ById`, EOS ID en ban
 - playerID agregado al snapshot
 
+### Sesión 5 — Fase 3.1 Objectives en mapa
+- Íconos de bandera renderizados desde `data.objectives[]` (pane dedicado, debajo de jugadores)
+- Color por `owningTeam` (azul/rojo/gris neutral), recalculado cada poll → actualización en tiempo real
+- Tooltip con `flag_name` al hover
+- Limpieza de marcadores obsoletos al cambiar de mapa (igual patrón que jugadores)
+
 ### Próxima sesión
-- [ ] Objectives/flags en el mapa (Fase 3.1)
+- [ ] Iconos por rol (Fase 3.2)
 
 ## 🔑 Decisiones Clave
 

@@ -377,7 +377,29 @@ function makeIcon(teamID, isVehicle, selected) {
   return L.divIcon({ html: svg, iconSize:[22,22], iconAnchor:[11,11], className:'' });
 }
 
+// ── ICONO OBJETIVO (bandera) ───────────────────────────────────────────────────
+function objectiveColor(owningTeam) {
+  return owningTeam === 1 ? '#4fa6e8' : owningTeam === 2 ? '#e0584f' : '#9aa092';
+}
+function makeObjectiveIcon(owningTeam) {
+  const color = objectiveColor(owningTeam);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32">
+      <line x1="4" y1="2" x2="4" y2="29" stroke="#1a1a1a" stroke-width="2"/>
+      <path d="M4 3 L22 7.5 L4 13 Z" fill="${color}" stroke="#000" stroke-width="1" opacity=".95"/>
+      <circle cx="4" cy="29" r="2.5" fill="#000"/>
+     </svg>`;
+  return L.divIcon({ html: svg, iconSize:[26,32], iconAnchor:[4,29], className:'' });
+}
+
 // ── MARCADORES ────────────────────────────────────────────────────────────────
+let objectivesPaneReady = false;
+function ensureObjectivesPane() {
+  if (objectivesPaneReady) return;
+  map.createPane('objectivesPane');
+  map.getPane('objectivesPane').style.zIndex = 450; // debajo del pane de jugadores (600)
+  objectivesPaneReady = true;
+}
+
 const markers = {};
 let selectedSteamID = null;
 
@@ -403,6 +425,30 @@ function updateMarkers(players, corners) {
   }
   for (const id of Object.keys(markers)) {
     if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+  }
+}
+
+// ── OBJECTIVES ────────────────────────────────────────────────────────────────
+const objectiveMarkers = {};
+
+function updateObjectives(objectives, corners) {
+  ensureObjectivesPane();
+  const seen = new Set();
+  for (const o of objectives) {
+    if (!o.position || !o.name) continue;
+    seen.add(o.name);
+    const ll = gameToLatLng(o.position, corners);
+    const icon = makeObjectiveIcon(o.owningTeam);
+    if (objectiveMarkers[o.name]) {
+      objectiveMarkers[o.name].setLatLng(ll).setIcon(icon);
+    } else {
+      const m = L.marker(ll, { icon, pane: 'objectivesPane' }).addTo(map);
+      m.bindTooltip(esc(o.name), { permanent:false, direction:'top', offset:[0,-26] });
+      objectiveMarkers[o.name] = m;
+    }
+  }
+  for (const name of Object.keys(objectiveMarkers)) {
+    if (!seen.has(name)) { map.removeLayer(objectiveMarkers[name]); delete objectiveMarkers[name]; }
   }
 }
 
@@ -633,6 +679,13 @@ async function poll() {
     } else if (!data.players?.length) {
       for (const id of Object.keys(markers)) { map.removeLayer(markers[id]); delete markers[id]; }
     }
+
+    if (corners && data.objectives?.length) {
+      updateObjectives(data.objectives, corners);
+    } else if (!data.objectives?.length) {
+      for (const name of Object.keys(objectiveMarkers)) { map.removeLayer(objectiveMarkers[name]); delete objectiveMarkers[name]; }
+    }
+
     updatePlayerList(data.players ?? []);
   } catch(e) {
     console.error('Error en poll:', e);
