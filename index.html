@@ -501,36 +501,49 @@ function makeIcon(p, selected) {
   const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
 
-  // Determinar si está en vehículo
-  const isInVehicle = !!p.vehicle;
+  // ── Si está en vehículo, usamos ícono de vehículo ──
+  if (p.vehicle) {
+    // Emoji según tipo (opcional, puedes personalizar)
+    let vehicleEmoji = '🚚';
+    const v = p.vehicle.toLowerCase();
+    if (v.includes('tank') || v.includes('mbt')) vehicleEmoji = '🎯';
+    else if (v.includes('helo') || v.includes('heli') || v.includes('ch-146') || v.includes('z-8')) vehicleEmoji = '🚁';
+    else if (v.includes('logi') || v.includes('logistics')) vehicleEmoji = '🚚';
+    else if (v.includes('mrap') || v.includes('tigr') || v.includes('tapv')) vehicleEmoji = '🚙';
+    else if (v.includes('ifv') || v.includes('apc')) vehicleEmoji = '🚌';
+    // Otros: 🚗 por defecto
 
-  // Si está en vehículo, usamos un ícono de vehículo (por ejemplo, un camión SVG)
-  if (isInVehicle) {
-    // Puedes usar un SVG de camión o un emoji grande
-    const vehicleIcon = `<svg viewBox="0 0 128 128" width="28" height="28">
-      <circle cx="64" cy="64" r="60" fill="${color}" opacity="0.9" stroke="#000" stroke-width="2"/>
-      <text x="64" y="78" font-size="50" text-anchor="middle" fill="#fff" font-family="sans-serif">🚚</text>
-    </svg>`;
+    const iconHtml = `<div style="
+      width:28px;height:28px;
+      background:${color};
+      border-radius:50%;
+      border:2px solid #000;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      box-shadow:0 0 4px rgba(0,0,0,0.8);
+      ${ringStyle}
+    ">${vehicleEmoji}</div>`;
+
     return L.divIcon({
-      html: `<div style="position:relative;${ringStyle}">${vehicleIcon}</div>`,
+      html: iconHtml,
       iconSize: [28, 28],
       iconAnchor: [14, 14],
       className: ''
     });
   }
 
-  // Si no está en vehículo, usamos el ícono de rol (igual que antes)
+  // ── Si NO está en vehículo, usamos el ícono de rol ──
   const iconName = roleIconName(p);
   const iconSrc = `./resources/T_role_${iconName}.webp`;
   const bgCircle = `<div style="position:absolute;inset:0;border-radius:50%;background:${color};opacity:.92;border:1px solid #000;"></div>`;
   const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:2px;width:24px;height:24px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
+  // Pequeño badge de vehículo (ya no es necesario, pero lo dejamos por si quieres ver el tipo)
   const vehicleBadge = p.vehicle ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:2px;background:#d9a441;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:6px;">🚗</div>` : '';
   const faction = factionFromRole(p.role);
   const factionBadge = faction ? `<img src="./resources/public__img__flags__circles__${faction}.webp" alt="" style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;border:1px solid #000;background:#0b0f0c;"/>` : '';
   const html = `<div style="position:relative;width:28px;height:28px;${ringStyle}">${bgCircle}${roleImg}${vehicleBadge}${factionBadge}</div>`;
   return L.divIcon({ html, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
 }
-
 
 // ── ICONO OBJETIVO (bandera) ───────────────────────────────────────────────────
 function objectiveColor(owningTeam) {
