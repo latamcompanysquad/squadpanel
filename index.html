@@ -1501,7 +1501,7 @@ function updateHUD(data) {
   dot.className = 'live-dot' + (isLive ? '' : ' offline');
   const rawLayer = data.layer && data.layer !== 'Unknown' ? data.layer : null;
   const layerDisplay = rawLayer
-    ? rawLayer.split('/').filter(Boolean).pop().replace(/_/g, ' ')
+    ? (rawLayer.includes('/') ? rawLayer.split('/').filter(Boolean).pop().replace(/_/g, ' ') : rawLayer)
     : null;
   document.getElementById('hudMap').textContent = layerDisplay || data.map || '—';
 
@@ -1510,13 +1510,25 @@ function updateHUD(data) {
   if (t1 != null && t2 != null) {
     ticketsEl.style.display = 'flex';
 
-    const f1Raw = data.factions?.team1;
-    const f2Raw = data.factions?.team2;
-    // Normalizar objeto → string, luego nombre completo → código corto
-    const f1Str = typeof f1Raw === 'object' && f1Raw !== null ? (f1Raw.faction ?? f1Raw.name ?? null) : f1Raw;
-    const f2Str = typeof f2Raw === 'object' && f2Raw !== null ? (f2Raw.faction ?? f2Raw.name ?? null) : f2Raw;
-    const f1 = FACTION_CODE[f1Str] ?? f1Str;
-    const f2 = FACTION_CODE[f2Str] ?? f2Str;
+    // Normalizar faction: puede ser objeto, string nombre completo, o ruta /Game/Settings/FactionSetups/TLF/...
+    const parseFaction = (raw) => {
+      if (!raw) return null;
+      const s = typeof raw === 'object' ? (raw.faction ?? raw.name ?? null) : raw;
+      if (!s) return null;
+      // Si es una ruta de path, extraer el código buscando segmentos que matcheen FACTION_CODE values
+      if (s.includes('/')) {
+        const segs = s.split('/').filter(Boolean);
+        for (const seg of segs) {
+          if (Object.values(FACTION_CODE).includes(seg)) return seg;
+        }
+        // fallback: tercer segmento después de FactionSetups suele ser el código
+        const idx = segs.indexOf('FactionSetups');
+        if (idx !== -1 && segs[idx + 1]) return segs[idx + 1];
+      }
+      return FACTION_CODE[s] ?? s;
+    };
+    const f1 = parseFaction(data.factions?.team1);
+    const f2 = parseFaction(data.factions?.team2);
     document.getElementById('t1faction').textContent = f1 || '—';
     document.getElementById('t2faction').textContent = f2 || '—';
 
@@ -1556,7 +1568,7 @@ async function poll() {
       const ys = [data.cornerZero.y, data.cornerOne.y];
       corners = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
     } else {
-      const mapKey = normalizeMapName(data.map || data.layer);
+      const mapKey = normalizeMapName(data.layer && data.layer !== 'Unknown' ? data.layer : data.map);
       if (mapKey && MAP_CORNERS[mapKey]) {
         const { c0, c1 } = MAP_CORNERS[mapKey];
         corners = { minX: Math.min(c0[0], c1[0]), maxX: Math.max(c0[0], c1[0]), minY: Math.min(c0[1], c1[1]), maxY: Math.max(c0[1], c1[1]) };
@@ -1564,7 +1576,7 @@ async function poll() {
     }
 
     // ── Cargar mapa base ──
-    const mapKey = normalizeMapName(data.map || data.layer);
+    const mapKey = normalizeMapName(data.layer && data.layer !== 'Unknown' ? data.layer : data.map);
     if (mapKey) {
       const mapChanged = currentMapKey && mapKey !== currentMapKey;
       if (mapChanged) {
