@@ -376,6 +376,35 @@ async function loadVehicleMapping() {
     }
   }
 }
+// ─── RESOLUCIÓN DE ICONOS (usa los diccionarios cargados) ──────────────────
+function getVehicleIcon(vehicleName, vehicleType = null) {
+  if (!vehicleName) return 'public__img__markers__weapons__test.webp';
+
+  // 1. Exacto en named icons
+  if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
+    return VEHICLES_WITH_NAMED_ICONS[vehicleName];
+  }
+
+  // 2. Normalizado (sin espacios, guiones, etc.)
+  const norm = normalizeVehicleKey(vehicleName);
+  if (VEHICLES_WITH_NAMED_ICONS_NORM[norm]) {
+    return VEHICLES_WITH_NAMED_ICONS_NORM[norm];
+  }
+
+  // 3. Si se proporciona un tipo, usar el icono por tipo
+  if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
+    return VEHICLE_TYPE_ICONS[vehicleType];
+  }
+
+  // 4. Deducir tipo del nombre y usar icono de tipo
+  const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName] || VEHICLE_NAME_TO_TYPE_NORM[norm];
+  if (deducedType && VEHICLE_TYPE_ICONS[deducedType]) {
+    return VEHICLE_TYPE_ICONS[deducedType];
+  }
+
+  // 5. Fallback
+  return 'public__img__markers__weapons__test.webp';
+}
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
