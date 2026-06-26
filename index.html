@@ -1027,6 +1027,7 @@ function renderAmmoMarker(ammo, corners) {
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
     console.warn('teamID inválido, usando 1');
     teamID = 1;
+  }
   const state = ammo.state || 'Completed';
   const latLng = gameToLatLng(pos, corners);
   const isBuilt = state === 'Completed';
@@ -1063,10 +1064,10 @@ function renderFobMarker(fob, corners) {
   console.log('fob.isHab:', fob.isHab);
   let teamID = parseInt(fob.teamID, 10);
   console.log('teamID after parseInt:', teamID);
-  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2))
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
     console.warn('teamID inválido, usando 1');
     teamID = 1;
-
+  }
 
   const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
@@ -1525,7 +1526,7 @@ async function poll() {
       cancelPendingCmd();
     }
   });
-})();}
+})();
 </script>
 </body>
 </html>
