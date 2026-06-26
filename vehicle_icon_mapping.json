@@ -1,5 +1,5 @@
 {
-  "description": "Vehicle-to-Icon mapping strategy for SquadPanel - ACTUALIZADO CON VEHÍCULOS DONGGONG, NANYANG Y FARP",
+  "description": "Vehicle-to-Icon mapping strategy for SquadPanel - ACTUALIZADO CON VEHÍCULOS DONGGONG, NANYANG Y FARP - SIN vehicleSpawners (solo SVG)",
   "strategy": "Hybrid approach: use named icons where available, fall back to type-based icons",
   "last_updated": "2026-06-26",
   
@@ -98,7 +98,7 @@
   "detailed_vehicle_mapping": {
     "M939 Transport": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_truck_transport.svg",
         "public__img__icons__green__vehicles__map_truck_transport.svg"
@@ -106,7 +106,7 @@
     },
     "CPV Transport": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep.svg",
         "public__img__icons__green__vehicles__map_jeep.svg"
@@ -114,125 +114,125 @@
     },
     "CPV M134 Minigun": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_truck_transport_armed.svg"
       ]
     },
     "M1117": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "MWMIK variant"
     },
     "M939 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_truck_logistics.svg"
       ]
     },
     "Technical Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp"
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg"
     },
     "M1151 M240": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep_antitank.svg"
       ]
     },
     "M1151 M2": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep.svg"
       ]
     },
     "M1151 TOW": {
       "type": "TD",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep_antitank.svg"
       ]
     },
     "Technical M2": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep.svg"
       ]
     },
     "M113A3 MSV": {
       "type": "MSV",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedapc.svg"
       ]
     },
     "M2A3 Bradley": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedifv.svg"
       ]
     },
     "BMP-1": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedifv.svg"
       ]
     },
     "BMP-2": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedifv.svg"
       ]
     },
     "BMP-3": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedheavyifv.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedheavyifv.svg"
       ]
     },
     "BMD-4M": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp"
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg"
     },
     "M1A1 Abrams": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_tank.svg"
       ]
     },
     "M1A2 Abrams": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_tank.svg"
       ]
     },
     "T-72B3": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_tank.svg"
       ]
     },
     "T-80BVM": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_tank.svg"
       ]
     },
     "T-90A": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_tank.svg"
       ]
@@ -243,28 +243,28 @@
     },
     "BTR-80A": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedapc.svg"
       ]
     },
     "BTR-82A": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedapc.svg"
       ]
     },
     "BTR-MDM": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_trackedapc.svg"
       ]
     },
     "BRDM-2": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep.svg",
         "public__img__icons__default__vehicles__map_wheeledrecon.svg"
@@ -364,21 +364,21 @@
     },
     "KamAZ 5350 Transport": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_truck_transport.svg"
       ]
     },
     "KamAZ 5350 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_truck_logistics.svg"
       ]
     },
     "Tigr-M Kord": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "alternatives": [
         "public__img__icons__default__vehicles__map_jeep.svg"
       ]
@@ -397,96 +397,96 @@
     },
     "M1150 Assault": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp"
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg"
     },
     "ZTD05": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "Chinese IFV - Donggong/Nanyang faction"
     },
     "ZSD05": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "Chinese APC - Donggong/Nanyang faction"
     },
     "ZSD05 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "comment": "Chinese Logistics variant"
     },
     "ZBD04A": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "Chinese IFV variant"
     },
     "ZTZ99A": {
       "type": "MBT",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
       "comment": "Chinese Main Battle Tank"
     },
     "WZ-131G FT": {
       "type": "TD",
-      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "comment": "Chinese Tank Destroyer"
     },
     "HX60 Transport": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "comment": "Chinese transport vehicle"
     },
     "HX60 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "comment": "Chinese logistics variant"
     },
     "CTM131 Transport": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "comment": "Chinese multipurpose transport"
     },
     "CTM131 Transport QJY88": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "comment": "CTM131 transport variant"
     },
     "CTM131 Transport QJZ89": {
       "type": "TRAN",
-      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "comment": "CTM131 transport variant"
     },
     "CTM131 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "comment": "CTM131 logistics variant"
     },
     "CTM131 QJZ89": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "CTM131 with QJZ89 armament"
     },
     "CTM131 QJY88": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "CTM131 with QJY88 armament"
     },
     "CSK131 QJZ89": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "Chinese 6x6 MRAP"
     },
     "CSK131 QJC88 RWS": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "CSK131 with RWS mount"
     },
     "CSK131 QJY88": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "CSK131 variant"
     },
     "CSK131 HJ8": {
       "type": "MRAP",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "comment": "CSK131 with HJ8 ATGM"
     },
     "Z-8G Transport": {
@@ -506,42 +506,42 @@
     },
     "RHIB Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "comment": "RHIB logistics variant"
     },
     "RHIB QJZ89": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "comment": "RHIB with QJZ89 armament"
     },
     "RHIB QJY88": {
       "type": "LTV",
-      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "comment": "RHIB with QJY88 armament"
     },
     "FV107 Scimitar": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "British light tracked APC - FARP"
     },
     "FV510 Warrior": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "British IFV - FARP"
     },
     "FV510UA": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "British IFV variant"
     },
     "FV432 L37A2 RWS": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "British APC with remote weapon station"
     },
     "FV432 L11A1 RWS": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "British APC variant"
     },
     "SA330 Puma": {
@@ -551,22 +551,22 @@
     },
     "Lynx 8x8 Transport": {
       "type": "APC",
-      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "British 8x8 APC - FARP"
     },
     "Lynx 8x8 Logistics": {
       "type": "LOGI",
-      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "comment": "Lynx logistics variant"
     },
     "Lynx 8x8 QJZ89": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "Lynx with QJZ89 armament"
     },
     "Lynx 8x8 QLZ87": {
       "type": "IFV",
-      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "comment": "Lynx with QLZ87 armament"
     },
     "Rapier FSA": {
@@ -590,6 +590,6 @@
       "4. Si aún faltan vehículos, añadir entradas al detailed_vehicle_mapping con type correspondiente"
     ],
     "code_pattern": "getVehicleIcon(vehicleName) { return namedIcons[vehicleName] || typeIcons[vehicleType[vehicleName]] || 'test.webp' }",
-    "notes": "Este JSON incluye todos los vehículos chinos (Donggong/Nanyang), británicos (FARP) y vehículos adicionales reportados"
+    "notes": "Este JSON incluye todos los vehículos chinos (Donggong/Nanyang), británicos (FARP) y vehículos adicionales reportados. Ya no se usan vehicleSpawners."
   }
 }
