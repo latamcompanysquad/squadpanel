@@ -668,7 +668,6 @@ function makeVehicleIcon(group, selected) {
   if (!iconUrl.startsWith('resources/')) {
     iconUrl = 'resources/' + iconUrl;
   }
-  // Opacidad para vehículos vacíos
   const isEmpty = count === 0;
   const opacityStyle = isEmpty ? 'opacity:0.6;' : '';
   const html = `<div style="
@@ -871,9 +870,9 @@ function updateMarkers(players, vehicles, corners) {
     const m = markers[key];
     m._playerData = p;
     m.unbindTooltip();
-    // Tooltip permanente para el jugador seleccionado
+    // Tooltip permanente solo para el seleccionado
     m.bindTooltip(makeTooltipContent(p), {
-      permanent: isSel, // solo el seleccionado tiene tooltip permanente
+      permanent: isSel,
       direction: 'top',
       offset: [0,-14],
       className: 'squad-tip'
@@ -1466,6 +1465,22 @@ async function poll() {
   await loadVehicleMapping();
   poll();
   setInterval(poll, POLL_MS);
+
+  // Click en mapa para deseleccionar
+  map.on('click', function() {
+    if (selectedSteamID !== null) {
+      selectedSteamID = null;
+      if (lastSnapshot) {
+        const { players, vehicles, corners } = lastSnapshot;
+        updateMarkers(players, vehicles, corners);
+      }
+      document.getElementById('adminNoTarget').style.display = 'block';
+      document.getElementById('adminTargetInfo').style.display = 'none';
+      document.getElementById('playerActionBtns').style.display = 'none';
+      document.getElementById('playerPanel').innerHTML = '<div class="no-data">Hover sobre un marcador</div>';
+      cancelPendingCmd();
+    }
+  });
 })();
 </script>
 </body>
