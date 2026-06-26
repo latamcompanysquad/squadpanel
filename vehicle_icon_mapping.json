@@ -1,6 +1,6 @@
 {
-  "description": "Vehicle-to-Icon mapping strategy for SquadPanel - ACTUALIZADO CON VEHÍCULOS DONGGONG, NANYANG Y FARP - SIN vehicleSpawners (solo SVG)",
-  "strategy": "Hybrid approach: use named icons where available, fall back to type-based icons",
+  "description": "Vehicle-to-Icon mapping strategy for SquadPanel - FULLY POPULATED from FactionsDump.json - ALL VEHICLES INCLUDED",
+  "strategy": "Hybrid approach: use named icons where available, fall back to type-based icons (SVG only)",
   "last_updated": "2026-06-26",
   
   "vehicles_with_named_icons": {
@@ -31,565 +31,419 @@
   "vehicle_type_mapping": {
     "TRAN": {
       "icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "vehicles": ["M939 Transport", "KamAZ 5350 Transport", "HX60 Transport", "CTM131 Transport"]
+      "comment": "Transport trucks"
     },
     "MRAP": {
       "icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "vehicles": ["CPV Transport", "CPV M134 Minigun", "M1117", "Tigr-M Kord", "CSK131 QJZ89"]
+      "comment": "Light armored vehicles"
     },
     "LOGI": {
       "icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "vehicles": ["M939 Logistics", "Technical Logistics", "KamAZ 5350 Logistics", "HX60 Logistics", "CTM131 Logistics", "Lynx 8x8 Logistics"]
+      "comment": "Logistics trucks"
     },
     "LTV": {
       "icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "comment": "No dedicated LTV icon, use MRAP or jeep_antitank SVG",
-      "vehicles": ["M1151 M240", "M1151 M2", "Technical M2", "BRDM-2", "RHIB QJZ89", "RHIB QJY88"]
+      "comment": "Light tactical vehicles with weapons"
     },
     "ULTV": {
       "icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "Ultra-light vehicles, use Jeep SVG icon",
-      "vehicles": ["Quad Bike", "RHIB M134", "RHIB Mk19", "RHIB M2"]
+      "comment": "Ultra-light vehicles (ATVs, RHIBs)"
     },
     "APC": {
       "icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "vehicles": ["BTR-80A", "BTR-82A", "BTR-MDM", "ZSD05", "FV107 Scimitar", "FV432 L37A2 RWS", "Lynx 8x8 Transport"]
+      "comment": "Armored personnel carriers"
     },
     "IFV": {
       "icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "vehicles": ["M2A3 Bradley", "BMP-1", "BMP-2", "BMP-3", "BMD-4M", "ZTD05", "ZBD04A", "FV510 Warrior", "CTM131 QJZ89", "Lynx 8x8 QJZ89"]
+      "comment": "Infantry fighting vehicles"
     },
     "MBT": {
       "icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "vehicles": ["M1A1 Abrams", "M1A2 Abrams", "T-72B3", "T-80BVM", "T-90A", "M1151 TOW", "M1150 Assault", "ZTZ99A"]
+      "comment": "Main battle tanks"
     },
     "TD": {
       "icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "comment": "Tank Destroyer, use MBT icon or create dedicated TD icon",
-      "vehicles": ["M1151 TOW", "M1150 Assault", "WZ-131G FT"]
+      "comment": "Tank destroyers / anti-tank vehicles"
     },
     "MSV": {
       "icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "Multi-role Support Vehicle, use APC icon",
-      "vehicles": ["M113A3 MSV"]
+      "comment": "Multi-role support vehicles"
     },
     "SPA": {
       "icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "comment": "Self-Propelled Artillery, use artillery marker",
-      "vehicles": ["Ural-375D BM-21 Grad", "MT-LB FAB500 Begemot", "2S1 Gvozdika", "2S3 Akatsiya"]
+      "comment": "Self-propelled artillery"
     },
     "SPAA": {
       "icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
-      "comment": "Self-Propelled AA, needs dedicated SPAA icon or use anti-air",
-      "vehicles": ["Ural-375D ZU-23-2", "M1097 Avenger", "Rapier FSA", "Starstreak HVM"]
+      "comment": "Self-propelled anti-air"
     },
     "AH": {
       "icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
-      "comment": "Attack Helicopter, use attack helo SVG icon",
-      "vehicles": ["Loach CAS", "Loach CAS Small", "VDV Little Knyaz CAS", "Ka-52 Alligator", "AH-64D Longbow", "Apache", "WZ-10", "Z-19"]
+      "comment": "Attack helicopters"
     },
     "UH": {
       "icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Utility Helicopter, use transport helo SVG icon",
-      "vehicles": ["Raven Transport", "Black Hawk Transport", "Mi-8MT", "Huey Transport", "SA330 Puma", "Z-8G Transport"]
+      "comment": "Utility/transport helicopters"
+    },
+    "MGS": {
+      "icon": "public__img__icons__default__vehicles__map_tank.svg",
+      "comment": "Mobile Gun Systems (assault guns)"
+    },
+    "RSV": {
+      "icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
+      "comment": "Rocket/artillery systems (multiple rocket launchers)"
     }
   },
 
   "detailed_vehicle_mapping": {
-    "M939 Transport": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_transport.svg",
-        "public__img__icons__green__vehicles__map_truck_transport.svg"
-      ]
-    },
-    "CPV Transport": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep.svg",
-        "public__img__icons__green__vehicles__map_jeep.svg"
-      ]
-    },
-    "CPV M134 Minigun": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_transport_armed.svg"
-      ]
-    },
-    "M1117": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "MWMIK variant"
-    },
-    "M939 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_logistics.svg"
-      ]
-    },
-    "Technical Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg"
-    },
-    "M1151 M240": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep_antitank.svg"
-      ]
-    },
-    "M1151 M2": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep.svg"
-      ]
-    },
-    "M1151 TOW": {
-      "type": "TD",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep_antitank.svg"
-      ]
-    },
-    "Technical M2": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep.svg"
-      ]
-    },
-    "M113A3 MSV": {
-      "type": "MSV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedapc.svg"
-      ]
-    },
-    "M2A3 Bradley": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedifv.svg"
-      ]
-    },
-    "BMP-1": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedifv.svg"
-      ]
-    },
-    "BMP-2": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedifv.svg"
-      ]
-    },
-    "BMP-3": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedheavyifv.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedheavyifv.svg"
-      ]
-    },
-    "BMD-4M": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg"
-    },
-    "M1A1 Abrams": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_tank.svg"
-      ]
-    },
-    "M1A2 Abrams": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_tank.svg"
-      ]
-    },
-    "T-72B3": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_tank.svg"
-      ]
-    },
-    "T-80BVM": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_tank.svg"
-      ]
-    },
-    "T-90A": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_tank.svg"
-      ]
-    },
-    "Quad Bike": {
-      "type": "ULTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg"
-    },
-    "BTR-80A": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedapc.svg"
-      ]
-    },
-    "BTR-82A": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedapc.svg"
-      ]
-    },
-    "BTR-MDM": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_trackedapc.svg"
-      ]
-    },
-    "BRDM-2": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep.svg",
-        "public__img__icons__default__vehicles__map_wheeledrecon.svg"
-      ]
-    },
-    "Ural-375D BM-21 Grad": {
-      "type": "SPA",
-      "fallback_icon": "public__img__markers__weapons__BM-21Grad.webp",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_transport.svg"
-      ],
-      "has_named_icon": true
-    },
-    "MT-LB FAB500 Begemot": {
-      "type": "SPA",
-      "fallback_icon": "public__img__markers__weapons__MTLB_FAB500.webp",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_transport.svg"
-      ],
-      "has_named_icon": true
-    },
-    "2S1 Gvozdika": {
-      "type": "SPA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg"
-    },
-    "2S3 Akatsiya": {
-      "type": "SPA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg"
-    },
-    "Ural-375D ZU-23-2": {
-      "type": "SPAA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg"
-    },
-    "M1097 Avenger": {
-      "type": "SPAA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg"
-    },
-    "Loach CAS": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "Loach CAS Small": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "VDV Little Knyaz CAS": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "Ka-52 Alligator": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "AH-64D Longbow": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "Apache": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg"
-    },
-    "Raven Transport": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg"
-    },
-    "Black Hawk Transport": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg"
-    },
-    "Mi-8MT": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg"
-    },
-    "Huey Transport": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg"
-    },
-    "UH-60M": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Black Hawk transport helicopter"
-    },
-    "Z-8G": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Chinese transport helicopter"
-    },
-    "Z-9A": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Chinese utility helicopter"
-    },
-    "CH-146": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Canadian Griffon"
-    },
-    "KamAZ 5350 Transport": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_transport.svg"
-      ]
-    },
-    "KamAZ 5350 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_truck_logistics.svg"
-      ]
-    },
-    "Tigr-M Kord": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "alternatives": [
-        "public__img__icons__default__vehicles__map_jeep.svg"
-      ]
-    },
-    "RHIB M134": {
-      "type": "ULTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg"
-    },
-    "RHIB Mk19": {
-      "type": "ULTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg"
-    },
-    "RHIB M2": {
-      "type": "ULTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg"
-    },
-    "M1150 Assault": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg"
-    },
-    "ZTD05": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "Chinese IFV - Donggong/Nanyang faction"
-    },
-    "ZSD05": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "Chinese APC - Donggong/Nanyang faction"
-    },
-    "ZSD05 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "comment": "Chinese Logistics variant"
-    },
-    "ZBD04A": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "Chinese IFV variant"
-    },
-    "ZTZ99A": {
-      "type": "MBT",
-      "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg",
-      "comment": "Chinese Main Battle Tank"
-    },
-    "WZ-131G FT": {
-      "type": "TD",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "comment": "Chinese Tank Destroyer"
-    },
-    "HX60 Transport": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "comment": "Chinese transport vehicle"
-    },
-    "HX60 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "comment": "Chinese logistics variant"
-    },
-    "CTM131 Transport": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "comment": "Chinese multipurpose transport"
-    },
-    "CTM131 Transport QJY88": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "comment": "CTM131 transport variant"
-    },
-    "CTM131 Transport QJZ89": {
-      "type": "TRAN",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
-      "comment": "CTM131 transport variant"
-    },
-    "CTM131 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "comment": "CTM131 logistics variant"
-    },
-    "CTM131 QJZ89": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "CTM131 with QJZ89 armament"
-    },
-    "CTM131 QJY88": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "CTM131 with QJY88 armament"
-    },
-    "CSK131 QJZ89": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "Chinese 6x6 MRAP"
-    },
-    "CSK131 QJC88 RWS": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "CSK131 with RWS mount"
-    },
-    "CSK131 QJY88": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "CSK131 variant"
-    },
-    "CSK131 HJ8": {
-      "type": "MRAP",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg",
-      "comment": "CSK131 with HJ8 ATGM"
-    },
-    "Z-8G Transport": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "Chinese transport helicopter"
-    },
-    "WZ-10": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
-      "comment": "Chinese attack helicopter"
-    },
-    "Z-19": {
-      "type": "AH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
-      "comment": "Chinese attack helicopter"
-    },
-    "RHIB Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "comment": "RHIB logistics variant"
-    },
-    "RHIB QJZ89": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "comment": "RHIB with QJZ89 armament"
-    },
-    "RHIB QJY88": {
-      "type": "LTV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
-      "comment": "RHIB with QJY88 armament"
-    },
-    "FV107 Scimitar": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "British light tracked APC - FARP"
-    },
-    "FV510 Warrior": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "British IFV - FARP"
-    },
-    "FV510UA": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "British IFV variant"
-    },
-    "FV432 L37A2 RWS": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "British APC with remote weapon station"
-    },
-    "FV432 L11A1 RWS": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "British APC variant"
-    },
-    "SA330 Puma": {
-      "type": "UH",
-      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
-      "comment": "British transport helicopter - FARP"
-    },
-    "Lynx 8x8 Transport": {
-      "type": "APC",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
-      "comment": "British 8x8 APC - FARP"
-    },
-    "Lynx 8x8 Logistics": {
-      "type": "LOGI",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
-      "comment": "Lynx logistics variant"
-    },
-    "Lynx 8x8 QJZ89": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "Lynx with QJZ89 armament"
-    },
-    "Lynx 8x8 QLZ87": {
-      "type": "IFV",
-      "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
-      "comment": "Lynx with QLZ87 armament"
-    },
-    "Rapier FSA": {
-      "type": "SPAA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
-      "comment": "British self-propelled AA - FARP"
-    },
-    "Starstreak HVM": {
-      "type": "SPAA",
-      "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
-      "comment": "British self-propelled AA"
-    }
+    "M939 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "CPV Transport": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "CPV M134 Minigun": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M1117": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M939 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Technical Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "M1151 M240": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "M1151 M2": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M1151 TOW": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical M2": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M113A3 MSV": { "type": "MSV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M2A3 Bradley": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-1": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-2": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-3": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedheavyifv.svg" },
+    "BMD-4M": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "M1A1 Abrams": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "M1A2 Abrams": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "T-72B3": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "T-80BVM": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "T-90A": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "Quad Bike": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BTR-80A": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-82A": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-MDM": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BRDM-2": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Ural-375D BM-21 Grad": { "type": "SPA", "fallback_icon": "public__img__markers__weapons__BM-21Grad.webp" },
+    "MT-LB FAB500 Begemot": { "type": "SPA", "fallback_icon": "public__img__markers__weapons__MTLB_FAB500.webp" },
+    "2S1 Gvozdika": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "2S3 Akatsiya": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Ural-375D ZU-23-2": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "M1097 Avenger": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Loach CAS": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Loach CAS Small": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "VDV Little Knyaz CAS": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Ka-52 Alligator": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "AH-64D Longbow": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Apache": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Raven Transport": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Black Hawk Transport": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Mi-8MT": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Huey Transport": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "UH-60M": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Z-8G": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Z-9A": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "CH-146": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "KamAZ 5350 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "KamAZ 5350 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Tigr-M Kord": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB M134": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB Mk19": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB M2": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M1150 Assault": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "ZTD05": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZSD05": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZSD05 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "ZBD04A": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZTZ99A": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "WZ-131G FT": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "HX60 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "HX60 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "CTM131 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "CTM131 Transport QJY88": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "CTM131 Transport QJZ89": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "CTM131 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "CTM131 QJZ89": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "CTM131 QJY88": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "CSK131 QJZ89": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "CSK131 QJC88 RWS": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "CSK131 QJY88": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "CSK131 HJ8": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Z-8G Transport": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "WZ-10": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Z-19": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "RHIB Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "RHIB QJZ89": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "RHIB QJY88": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "FV107 Scimitar": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "FV510 Warrior": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "FV510UA": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "FV432 L37A2 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "FV432 L11A1 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "SA330 Puma": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Lynx 8x8 Transport": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Lynx 8x8 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Lynx 8x8 QJZ89": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Lynx 8x8 QLZ87": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Rapier FSA": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "Starstreak HVM": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    
+    "-- ADDED FROM FactionsDump --": {},
+    
+    "Minsk 400": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Logistics Pickup Truck": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Transport Pickup Truck": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Ural-4320 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Ural-4320 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Safir MG3": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Safir Kord": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Safir Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Safir AGS-17": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Safir Kornet": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "BRDM-2 UB-32": { "type": "RSV", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "MTLB 6MA UB-32": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-4": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "KrAZ-6322 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "KrAZ-6322 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "KrAZ-6322 BM-21 Grad": { "type": "SPA", "fallback_icon": "public__img__markers__weapons__BM-21Grad.webp" },
+    "Kozak-2M1 NSV": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Kozak-2M1 AGS-17": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BRDM-2L1": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "T-64BM2": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "LPPV": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "LPPV RWS": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BTR-D": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-DG Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "BTR-D PKM": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-D Kord": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-ZD": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "BTR-D AGS-17": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Tigr-M AGS-17": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BMD-1M": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Sprut-SDM1": { "type": "MGS", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "Mi-8": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "UH-1Y": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "M-ATV M240": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV Mk19": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV CROWS M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV TOW": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "M113A3 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "M113A3 M2": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M113A3 Mk19": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1064A3 M121": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "M1126 CROWS M240": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1126 CROWS M2": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1128 MGS": { "type": "MGS", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "M7A3": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "MT-LB Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "MT-LB VMK": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LB PKT": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LBM 6MA": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LBM 6MB": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-1AM": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-2M": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-3M": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZSL10": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZBL08": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZBD05": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Z-8J": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "BMC-185 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "BMC-185 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Cobra II MG3": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Cobra II M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Cobra II M2 RWS": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "ACV-15 25mm": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ACV-15 MG3": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ACV-15 M2": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M113A2T M121": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "PARS III Mk19 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III MG3 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III M2 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III 25mm": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "M60T": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "UH60 PKM": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "RHIB MG3": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB M240": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB NSV": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Light Transport": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Light FSV": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Coyote": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "M113A3": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Tigr-M RWS Kord": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BTR-80": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BRDM-2 Spandrel": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "MT-LB ZU-23-2": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "Technical AGS-17": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical SPG-9": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical Kornet": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical UB-32": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Technical Mortar": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Technical BMP-1": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "MT-LB PKT (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-80 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-82A (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-MDM (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BMP-1 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-2 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-3 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedheavyifv.svg" },
+    "T-72B3 (MBT)": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "T-90A (MBT)": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "Mi-8MTV-5": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "CH-146 (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Z-8G (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Z-9A (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "UH-60M (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "Loach Scout": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Raven Transport (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "M1A1 (MBT)": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "M1A2 (MBT)": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "LAV-25": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "AAVP-7A1": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "AAVC-7A1 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "M1151 Mk19": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M1151 CROWS M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "MATV M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "MATV Mk19": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "MATV CROWS M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "MATV TOW": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "UH-1Y (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "RHIB M240 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB Mk19 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB M2 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "RHIB PKM": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB DShK": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB AGS-17": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB Transport": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BTR-D (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-DG Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "BTR-D PKM (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-D Kord (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BTR-ZD (SPAA)": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "BTR-D AGS-17 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Tigr-M AGS-17 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BMD-1M (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Sprut-SDM1 (MGS)": { "type": "MGS", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "Mi-8 (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "UH-1Y (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "M-ATV M240 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV M2 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV Mk19 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV CROWS M2 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M-ATV TOW (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "M113A3 Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "M113A3 M2 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M113A3 Mk19 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1064A3 M121 (SPA)": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "M1126 CROWS M240 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1126 CROWS M2 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M1128 MGS (MGS)": { "type": "MGS", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "M7A3 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "MT-LB Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "MT-LB VMK (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LB PKT (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LBM 6MA (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "MT-LBM 6MB (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-1AM (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-2M (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "BMP-3M (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZSL10 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZBL08 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZBD05 (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Z-8J (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "BMC-185 Transport (TRAN)": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "BMC-185 Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Cobra II MG3 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Cobra II M2 (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Cobra II M2 RWS (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "ACV-15 25mm (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ACV-15 MG3 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ACV-15 M2 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M113A2T M121 (SPA)": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "PARS III Mk19 RWS (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III MG3 RWS (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III M2 RWS (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "PARS III 25mm (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "M60T (MBT)": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "UH60 PKM (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "RHIB MG3 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB M240 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB NSV (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Light Transport (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Light FSV (LTV)": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Coyote (IFV)": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "M113A3 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Tigr-M RWS Kord (MRAP)": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "BTR-80 (APC)": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BRDM-2 Spandrel (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "MT-LB ZU-23-2 (SPAA)": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "Technical AGS-17 (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical SPG-9 (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical Kornet (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Technical UB-32 (SPA)": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Technical Mortar (SPA)": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Technical BMP-1 (TD)": { "type": "TD", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "ZSL92A APC QJZ89": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZSL92A APC QLZ87": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZSL92 IFV": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "ZSD89 QJZ89": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZSD89 QLZ87": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "ZSD89II IFV": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "CSK131 QLZ87": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "Lynx8x8 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Lynx8x8 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "Lynx8x8 QJZ89": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Lynx8x8 QLZ87": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "M113A2T M2": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "M113A2T Mk19": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "Cobra II MG3 RWS": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M1151 Technical DSHK": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "Modern Technical UB-32": { "type": "SPA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Technical ZU-23-2": { "type": "SPAA", "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg" },
+    "MTLB ZU23": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "BMP-1TS": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "FV4034": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "FV432 L11A1": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "FV510": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "LUVW Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "LUVW Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "LUVW C6": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "LUVW M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "MSVS Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "MSVS Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "TAPV": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "LAV III C6 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "LAV III M2 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "LAV 6": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "Leopard 2A6M CAN": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "CH-178": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "PMV Mag58": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "PMV RWS M2": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "ASLAV": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "MRH-90": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "M1A1": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "M1A2": { "type": "MBT", "fallback_icon": "public__img__icons__default__vehicles__map_tank.svg" },
+    "FV520 CTAS40": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
+    "HX60": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "LPPV": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "LPPV RWS": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "M113A3 TLAV": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
+    "CH-146 CAS": { "type": "AH", "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg" },
+    "Mi-8MTV-5 (UH)": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "RHIB PKP (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB NSV (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB AGS-17 (ULTV)": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
+    "RHIB Logistics (LOGI)": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
+    "RHIB QJY88 (LTV)": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" },
+    "RHIB QJZ89 (LTV)": { "type": "LTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg" }
   },
 
   "implementation_hints": {
-    "current_problem": "Vehículos sin mapeo mostrando test.webp",
+    "current_problem": "All vehicles from FactionsDump are now mapped; coverage should be 100%.",
     "solution_steps": [
-      "1. Copiar este archivo actualizado a la raíz del proyecto SquadJS",
-      "2. Reemplazar el plugin antiguo con SquadPanelBroadcast-improved.js",
-      "3. El plugin ahora busca en múltiples ubicaciones (raíz, cwd, relativa)",
-      "4. Si aún faltan vehículos, añadir entradas al detailed_vehicle_mapping con type correspondiente"
+      "1. Replace your vehicle_icon_mapping.json with this file.",
+      "2. Ensure the plugin uses this file (via iconMappingUrl or local).",
+      "3. Restart the plugin and verify that all vehicles show appropriate icons."
     ],
-    "code_pattern": "getVehicleIcon(vehicleName) { return namedIcons[vehicleName] || typeIcons[vehicleType[vehicleName]] || 'test.webp' }",
-    "notes": "Este JSON incluye todos los vehículos chinos (Donggong/Nanyang), británicos (FARP) y vehículos adicionales reportados. Ya no se usan vehicleSpawners."
+    "notes": "All entries use SVG icons for types, with fallback to named icons for specific weapons. MGS and RSV types are now supported."
   }
 }
