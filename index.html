@@ -152,6 +152,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 .ftoggle.t2.active  {color:var(--red);background:#e0584f12;}
 .ftoggle.veh.active {color:var(--amber);background:#d9a44112;}
 .ftoggle.dead.active{color:var(--text-dim);background:#ffffff0d;}
+.ftoggle.empty.active{color:var(--text-dim);background:#ffffff0d;border-color:var(--text-dim);}
 .filter-sep{width:1px;background:var(--panel-edge);margin:2px 2px;}
 .map-ctrl-btn{
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;
@@ -222,6 +223,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
           </div>
           <div class="filter-sep"></div>
           <div class="ftoggle veh active" id="fveh" onclick="toggleFilter('veh')" title="Vehículos">🚗 VEH</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle empty active" id="fempty" onclick="toggleFilter('empty')" title="Vehículos vacíos">🔄 VACÍOS</div>
           <div class="filter-sep"></div>
           <div class="ftoggle dead" id="fdead" onclick="toggleFilter('dead')" title="Mostrar muertos">💀 MUERTOS</div>
         </div>
@@ -599,7 +602,7 @@ function makeObjectiveIcon(owningTeam) {
 }
 
 // ─── FILTROS Y FOLLOW ────────────────────────────────────────────────────────
-const filters = { t1: true, t2: true, veh: true, dead: false };
+const filters = { t1: true, t2: true, veh: true, dead: false, empty: true };
 let lastSnapshot = null;
 let followSelected = false;
 
@@ -665,6 +668,9 @@ function makeVehicleIcon(group, selected) {
   if (!iconUrl.startsWith('resources/')) {
     iconUrl = 'resources/' + iconUrl;
   }
+  // Opacidad para vehículos vacíos
+  const isEmpty = count === 0;
+  const opacityStyle = isEmpty ? 'opacity:0.6;' : '';
   const html = `<div style="
     width:32px;height:32px;
     background:${color};
@@ -673,6 +679,7 @@ function makeVehicleIcon(group, selected) {
     display:flex;align-items:center;justify-content:center;
     box-shadow:0 0 4px rgba(0,0,0,0.8);
     ${ringStyle};
+    ${opacityStyle};
     position:relative;
     overflow:hidden;
   ">
@@ -751,6 +758,7 @@ function groupPlayersByVehicle(players) {
 // ─── NUEVA FUNCIÓN: CREAR MARCADORES PARA VEHÍCULOS ESTÁTICOS ──────────────
 function createStaticVehicleMarkers(vehicles, corners, seenVehicleIds) {
   if (!vehicles || !corners) return;
+  if (!filters.empty) return; // Filtro de vehículos vacíos
   for (const v of vehicles) {
     if (!v.position) continue;
     // Si ya está ocupado (su id aparece en seenVehicleIds), saltamos
@@ -863,8 +871,12 @@ function updateMarkers(players, vehicles, corners) {
     const m = markers[key];
     m._playerData = p;
     m.unbindTooltip();
+    // Tooltip permanente para el jugador seleccionado
     m.bindTooltip(makeTooltipContent(p), {
-      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
+      permanent: isSel, // solo el seleccionado tiene tooltip permanente
+      direction: 'top',
+      offset: [0,-14],
+      className: 'squad-tip'
     });
     m.off('mouseover click');
     m.on('mouseover', () => showPlayerCard(p));
@@ -1092,14 +1104,12 @@ let pendingCmd = null;
 
 function selectPlayer(p) {
   selectedSteamID = p.steamID;
-  for (const id of Object.keys(markers)) {
-    const m = markers[id];
-    const pd = m._playerData;
-    if (pd) m.setIcon(makeIcon(pd, id === selectedSteamID));
+  // Forzar actualización de tooltips para que el seleccionado tenga permanent: true
+  if (lastSnapshot) {
+    const { players, vehicles, corners } = lastSnapshot;
+    updateMarkers(players, vehicles, corners);
   }
-  if (markers[`player_${p.steamID}`] && map.hasLayer(markers[`player_${p.steamID}`])) {
-    map.setView(markers[`player_${p.steamID}`].getLatLng(), Math.max(map.getZoom(), 0), { animate: true, duration: 0.5 });
-  }
+  // Actualizar panel lateral
   document.getElementById('adminNoTarget').style.display = 'none';
   document.getElementById('adminTargetInfo').style.display = 'block';
   document.getElementById('adminTargetName').textContent = p.name;
@@ -1390,11 +1400,9 @@ async function poll() {
     }
 
     // ── Llenar vehicleIconMap de forma segura ──
-    // ── Llenar vehicleIconMap de forma segura ──
     vehicleIconMap = {};
     if (data.vehicles && Array.isArray(data.vehicles)) {
       data.vehicles.forEach(v => {
-        // Usar el icono que envía el worker, o fallback si no viene
         vehicleIconMap[v.id] = v.icon || 'public__img__markers__weapons__test.webp';
       });
     }
