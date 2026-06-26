@@ -197,6 +197,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
       <span class="ticket-num red" id="t2num">—</span>
       <img id="t2flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
     </div>
+    <div id="hudTimer" style="display:none; font-family:'Oswald',sans-serif; font-size:13px; color:var(--amber); letter-spacing:.05em;">⏱ <span id="timerVal">--:--</span></div>
     <div class="hud-block">
       <span class="status-text" id="statusText">Conectando...</span>
     </div>
@@ -942,6 +943,41 @@ function updateMarkers(players, vehicles, corners) {
   }
 }
 
+// ─── TIMER DE PARTIDA ──────────────────────────────────────────────────────
+let matchEndEpoch = null;   // timestamp en ms cuando termina la partida
+let timerInterval = null;
+
+function setMatchTimer(remainingSeconds) {
+  if (remainingSeconds == null || remainingSeconds <= 0) {
+    document.getElementById('hudTimer').style.display = 'none';
+    matchEndEpoch = null;
+    return;
+  }
+  // Calculamos cuándo termina usando Date.now() + los segundos restantes
+  matchEndEpoch = Date.now() + remainingSeconds * 1000;
+  document.getElementById('hudTimer').style.display = 'inline-block';
+  if (!timerInterval) {
+    timerInterval = setInterval(tickTimer, 1000);
+  }
+}
+
+function tickTimer() {
+  if (!matchEndEpoch) return;
+  const remaining = Math.max(0, Math.round((matchEndEpoch - Date.now()) / 1000));
+  const h = Math.floor(remaining / 3600);
+  const m = Math.floor((remaining % 3600) / 60);
+  const s = remaining % 60;
+  const val = h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('timerVal').textContent = val;
+  if (remaining === 0) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('timerVal').textContent = '00:00';
+  }
+}
+
 // ─── OBJECTIVES ──────────────────────────────────────────────────────────────
 const objectiveMarkers = {};
 
@@ -950,19 +986,23 @@ function updateObjectives(objectives, corners) {
   const seen = new Set();
   for (const o of objectives) {
     if (!o.position || !o.name) continue;
-    seen.add(o.name);
+    const key = `${o.name}_t${o.owningTeam}`;   // ← KEY ÚNICA
+    seen.add(key);
     const ll = gameToLatLng(o.position, corners);
     const icon = makeObjectiveIcon(o.owningTeam);
-    if (objectiveMarkers[o.name]) {
-      objectiveMarkers[o.name].setLatLng(ll).setIcon(icon);
+    if (objectiveMarkers[key]) {
+      objectiveMarkers[key].setLatLng(ll).setIcon(icon);
     } else {
       const m = L.marker(ll, { icon, pane: 'objectivesPane' }).addTo(map);
-      m.bindTooltip(esc(o.name), { permanent:false, direction:'top', offset:[0,-26] });
-      objectiveMarkers[o.name] = m;
+      m.bindTooltip(esc(o.name), { permanent: false, direction: 'top', offset: [0, -26] });
+      objectiveMarkers[key] = m;
     }
   }
-  for (const name of Object.keys(objectiveMarkers)) {
-    if (!seen.has(name)) { map.removeLayer(objectiveMarkers[name]); delete objectiveMarkers[name]; }
+  for (const key of Object.keys(objectiveMarkers)) {
+    if (!seen.has(key)) {
+      map.removeLayer(objectiveMarkers[key]);
+      delete objectiveMarkers[key];
+    }
   }
 }
 
@@ -1412,6 +1452,7 @@ function updateHUD(data) {
 
   const ago = data.ts ? Math.round((Date.now() - data.ts) / 1000) : null;
   document.getElementById('statusText').textContent = ago !== null ? `hace ${ago}s` : 'Sin datos';
+  setMatchTimer(data.matchRemainingTime ?? null);
 }
 
 // ─── POLL ─────────────────────────────────────────────────────────────────────
