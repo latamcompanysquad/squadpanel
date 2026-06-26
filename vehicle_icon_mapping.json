@@ -1,7 +1,7 @@
 {
-  "description": "Vehicle-to-Icon mapping strategy for SquadPanel",
+  "description": "Vehicle-to-Icon mapping strategy for SquadPanel - ACTUALIZADO CON VEHÍCULOS DONGGONG, NANYANG Y FARP",
   "strategy": "Hybrid approach: use named icons where available, fall back to type-based icons",
-  "last_updated": "2026-06-25",
+  "last_updated": "2026-06-26",
   
   "vehicles_with_named_icons": {
     "BM-21Grad": "public__img__markers__weapons__BM-21Grad.webp",
@@ -31,20 +31,20 @@
   "vehicle_type_mapping": {
     "TRAN": {
       "icon": "public__img__vehicleSpawners__TRAN.webp",
-      "vehicles": ["M939 Transport", "KamAZ 5350 Transport"]
+      "vehicles": ["M939 Transport", "KamAZ 5350 Transport", "HX60 Transport", "CTM131 Transport"]
     },
     "MRAP": {
       "icon": "public__img__vehicleSpawners__MRAP.webp",
-      "vehicles": ["CPV Transport", "CPV M134 Minigun", "M1117", "Tigr-M Kord"]
+      "vehicles": ["CPV Transport", "CPV M134 Minigun", "M1117", "Tigr-M Kord", "CSK131 QJZ89"]
     },
     "LOGI": {
       "icon": "public__img__vehicleSpawners__LOGI.webp",
-      "vehicles": ["M939 Logistics", "Technical Logistics", "KamAZ 5350 Logistics"]
+      "vehicles": ["M939 Logistics", "Technical Logistics", "KamAZ 5350 Logistics", "HX60 Logistics", "CTM131 Logistics", "Lynx 8x8 Logistics"]
     },
     "LTV": {
       "icon": "public__img__vehicleSpawners__MRAP.webp",
       "comment": "No dedicated LTV icon, use MRAP or jeep_antitank SVG",
-      "vehicles": ["M1151 M240", "M1151 M2", "Technical M2", "BRDM-2"]
+      "vehicles": ["M1151 M240", "M1151 M2", "Technical M2", "BRDM-2", "RHIB QJZ89", "RHIB QJY88"]
     },
     "ULTV": {
       "icon": "public__img__icons__default__vehicles__map_jeep.svg",
@@ -53,20 +53,20 @@
     },
     "APC": {
       "icon": "public__img__vehicleSpawners__APC.webp",
-      "vehicles": ["BTR-80A", "BTR-82A", "BTR-MDM"]
+      "vehicles": ["BTR-80A", "BTR-82A", "BTR-MDM", "ZSD05", "FV107 Scimitar", "FV432 L37A2 RWS", "Lynx 8x8 Transport"]
     },
     "IFV": {
       "icon": "public__img__vehicleSpawners__IFV.webp",
-      "vehicles": ["M2A3 Bradley", "BMP-1", "BMP-2", "BMP-3", "BMD-4M"]
+      "vehicles": ["M2A3 Bradley", "BMP-1", "BMP-2", "BMP-3", "BMD-4M", "ZTD05", "ZBD04A", "FV510 Warrior", "CTM131 QJZ89", "Lynx 8x8 QJZ89"]
     },
     "MBT": {
       "icon": "public__img__vehicleSpawners__MBT.webp",
-      "vehicles": ["M1A1 Abrams", "M1A2 Abrams", "T-72B3", "T-80BVM", "T-90A", "M1151 TOW", "M1150 Assault"]
+      "vehicles": ["M1A1 Abrams", "M1A2 Abrams", "T-72B3", "T-80BVM", "T-90A", "M1151 TOW", "M1150 Assault", "ZTZ99A"]
     },
     "TD": {
       "icon": "public__img__vehicleSpawners__MBT.webp",
       "comment": "Tank Destroyer, use MBT icon or create dedicated TD icon",
-      "vehicles": ["M1151 TOW", "M1150 Assault"]
+      "vehicles": ["M1151 TOW", "M1150 Assault", "WZ-131G FT"]
     },
     "MSV": {
       "icon": "public__img__vehicleSpawners__APC.webp",
@@ -81,17 +81,17 @@
     "SPAA": {
       "icon": "public__img__icons__shared__characteristics__ATGM+.webp",
       "comment": "Self-Propelled AA, needs dedicated SPAA icon or use anti-air",
-      "vehicles": ["Ural-375D ZU-23-2", "M1097 Avenger"]
+      "vehicles": ["Ural-375D ZU-23-2", "M1097 Avenger", "Rapier FSA", "Starstreak HVM"]
     },
     "AH": {
       "icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
       "comment": "Attack Helicopter, use attack helo SVG icon",
-      "vehicles": ["Loach CAS", "Loach CAS Small", "VDV Little Knyaz CAS", "Ka-52 Alligator", "AH-64D Longbow", "Apache"]
+      "vehicles": ["Loach CAS", "Loach CAS Small", "VDV Little Knyaz CAS", "Ka-52 Alligator", "AH-64D Longbow", "Apache", "WZ-10", "Z-19"]
     },
     "UH": {
       "icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
       "comment": "Utility Helicopter, use transport helo SVG icon",
-      "vehicles": ["Raven Transport", "Black Hawk Transport", "Mi-8MT", "Huey Transport"]
+      "vehicles": ["Raven Transport", "Black Hawk Transport", "Mi-8MT", "Huey Transport", "SA330 Puma", "Z-8G Transport"]
     }
   },
 
@@ -378,18 +378,198 @@
     "M1150 Assault": {
       "type": "MBT",
       "fallback_icon": "public__img__vehicleSpawners__MBT.webp"
+    },
+    "ZTD05": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "Chinese IFV - Donggong/Nanyang faction"
+    },
+    "ZSD05": {
+      "type": "APC",
+      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "comment": "Chinese APC - Donggong/Nanyang faction"
+    },
+    "ZSD05 Logistics": {
+      "type": "LOGI",
+      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "comment": "Chinese Logistics variant"
+    },
+    "ZBD04A": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "Chinese IFV variant"
+    },
+    "ZTZ99A": {
+      "type": "MBT",
+      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "comment": "Chinese Main Battle Tank"
+    },
+    "WZ-131G FT": {
+      "type": "TD",
+      "fallback_icon": "public__img__vehicleSpawners__MBT.webp",
+      "comment": "Chinese Tank Destroyer"
+    },
+    "HX60 Transport": {
+      "type": "TRAN",
+      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "comment": "Chinese transport vehicle"
+    },
+    "HX60 Logistics": {
+      "type": "LOGI",
+      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "comment": "Chinese logistics variant"
+    },
+    "CTM131 Transport": {
+      "type": "TRAN",
+      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "comment": "Chinese multipurpose transport"
+    },
+    "CTM131 Transport QJY88": {
+      "type": "TRAN",
+      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "comment": "CTM131 transport variant"
+    },
+    "CTM131 Transport QJZ89": {
+      "type": "TRAN",
+      "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
+      "comment": "CTM131 transport variant"
+    },
+    "CTM131 Logistics": {
+      "type": "LOGI",
+      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "comment": "CTM131 logistics variant"
+    },
+    "CTM131 QJZ89": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "CTM131 with QJZ89 armament"
+    },
+    "CTM131 QJY88": {
+      "type": "MRAP",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "CTM131 with QJY88 armament"
+    },
+    "CSK131 QJZ89": {
+      "type": "MRAP",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "Chinese 6x6 MRAP"
+    },
+    "CSK131 QJC88 RWS": {
+      "type": "MRAP",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "CSK131 with RWS mount"
+    },
+    "CSK131 QJY88": {
+      "type": "MRAP",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "CSK131 variant"
+    },
+    "CSK131 HJ8": {
+      "type": "MRAP",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "CSK131 with HJ8 ATGM"
+    },
+    "Z-8G Transport": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "Chinese transport helicopter"
+    },
+    "WZ-10": {
+      "type": "AH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
+      "comment": "Chinese attack helicopter"
+    },
+    "Z-19": {
+      "type": "AH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_attackhelo.svg",
+      "comment": "Chinese attack helicopter"
+    },
+    "RHIB Logistics": {
+      "type": "LOGI",
+      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "comment": "RHIB logistics variant"
+    },
+    "RHIB QJZ89": {
+      "type": "LTV",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "RHIB with QJZ89 armament"
+    },
+    "RHIB QJY88": {
+      "type": "LTV",
+      "fallback_icon": "public__img__vehicleSpawners__MRAP.webp",
+      "comment": "RHIB with QJY88 armament"
+    },
+    "FV107 Scimitar": {
+      "type": "APC",
+      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "comment": "British light tracked APC - FARP"
+    },
+    "FV510 Warrior": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "British IFV - FARP"
+    },
+    "FV510UA": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "British IFV variant"
+    },
+    "FV432 L37A2 RWS": {
+      "type": "APC",
+      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "comment": "British APC with remote weapon station"
+    },
+    "FV432 L11A1 RWS": {
+      "type": "APC",
+      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "comment": "British APC variant"
+    },
+    "SA330 Puma": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "British transport helicopter - FARP"
+    },
+    "Lynx 8x8 Transport": {
+      "type": "APC",
+      "fallback_icon": "public__img__vehicleSpawners__APC.webp",
+      "comment": "British 8x8 APC - FARP"
+    },
+    "Lynx 8x8 Logistics": {
+      "type": "LOGI",
+      "fallback_icon": "public__img__vehicleSpawners__LOGI.webp",
+      "comment": "Lynx logistics variant"
+    },
+    "Lynx 8x8 QJZ89": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "Lynx with QJZ89 armament"
+    },
+    "Lynx 8x8 QLZ87": {
+      "type": "IFV",
+      "fallback_icon": "public__img__vehicleSpawners__IFV.webp",
+      "comment": "Lynx with QLZ87 armament"
+    },
+    "Rapier FSA": {
+      "type": "SPAA",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
+      "comment": "British self-propelled AA - FARP"
+    },
+    "Starstreak HVM": {
+      "type": "SPAA",
+      "fallback_icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
+      "comment": "British self-propelled AA"
     }
   },
 
   "implementation_hints": {
-    "current_problem": "test.webp is being used as placeholder for all vehicles",
+    "current_problem": "Vehículos sin mapeo mostrando test.webp",
     "solution_steps": [
-      "1. Map each vehicle name to its vehicle type (TRAN, MRAP, IFV, MBT, etc.)",
-      "2. Check if vehicle has a named icon in markers/weapons or weapons/",
-      "3. If yes, use the named icon (e.g., BM-21Grad)",
-      "4. If no, use the type-based icon from vehicleSpawners/ (e.g., MBT → vehicleSpawners/MBT.webp)",
-      "5. Optionally use SVG icons from icons/default|green|red/vehicles/ for better scalability"
+      "1. Copiar este archivo actualizado a la raíz del proyecto SquadJS",
+      "2. Reemplazar el plugin antiguo con SquadPanelBroadcast-improved.js",
+      "3. El plugin ahora busca en múltiples ubicaciones (raíz, cwd, relativa)",
+      "4. Si aún faltan vehículos, añadir entradas al detailed_vehicle_mapping con type correspondiente"
     ],
-    "code_pattern": "getVehicleIcon(vehicleName) { return namedIcons[vehicleName] || typeIcons[vehicleType[vehicleName]] || 'test.webp' }"
+    "code_pattern": "getVehicleIcon(vehicleName) { return namedIcons[vehicleName] || typeIcons[vehicleType[vehicleName]] || 'test.webp' }",
+    "notes": "Este JSON incluye todos los vehículos chinos (Donggong/Nanyang), británicos (FARP) y vehículos adicionales reportados"
   }
 }
