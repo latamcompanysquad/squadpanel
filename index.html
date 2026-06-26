@@ -361,83 +361,134 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // Mapeo de vehículos con iconos específicos
-  const VEHICLES_WITH_NAMED_ICONS = {
-      'BM-21Grad': 'public__img__markers__weapons__BM-21Grad.webp',
-      'BTR4-AGS': 'public__img__markers__weapons__BTR4-AGS.webp',
-      'HIMARS': 'public__img__markers__weapons__HIMARS.webp',
-      'HellCannon': 'public__img__markers__weapons__HellCannon.webp',
-      'M1064M121': 'public__img__markers__weapons__M1064M121.webp',
-      'M109': 'public__img__markers__weapons__M109.webp',
-      'M777': 'public__img__markers__weapons__M777.webp',
-      'MO120RTF1': 'public__img__markers__weapons__MO120RTF1.webp',
-      'MTLB_FAB500': 'public__img__markers__weapons__MTLB_FAB500.webp',
-      'Mk19': 'public__img__markers__weapons__Mk19.webp',
-      'Mortar': 'public__img__markers__weapons__Mortar.webp',
-     'PZL07': 'public__img__markers__weapons__PZL07.webp',
-      'T62.DUMP.TRUCK': 'public__img__markers__weapons__T62.DUMP.TRUCK.webp',
-      'Tech.Mortar': 'public__img__markers__weapons__Tech.Mortar.webp',
-      'Tech.UB-32': 'public__img__markers__weapons__Tech.UB-32.webp',
-      'UB-32': 'public__img__markers__weapons__UB-32.webp',
-      'Ural-HellCannon': 'public__img__markers__weapons__Ural-HellCannon.webp',
-     'type_63': 'public__img__markers__weapons__type_63.webp',
-      'Ural-375D BM-21 Grad': 'public__img__markers__weapons__BM-21Grad.webp',
-      'Ural-375D ZU-23-2': 'public__img__markers__weapons__UB-32.webp',
-      'MT-LB FAB500 Begemot': 'public__img__markers__weapons__MTLB_FAB500.webp',
-    };
-
-    const VEHICLE_TYPE_ICONS = {
-      'TRAN': 'public__img__vehicleSpawners__TRAN.webp',
-      'MRAP': 'public__img__vehicleSpawners__MRAP.webp',
-      'LOGI': 'public__img__vehicleSpawners__LOGI.webp',
-      'LTV': 'public__img__vehicleSpawners__MRAP.webp',
-      'ULTV': 'public__img__icons__default__vehicles__map_jeep.svg',
-      'APC': 'public__img__vehicleSpawners__APC.webp',
-      'IFV': 'public__img__vehicleSpawners__IFV.webp',
-      'MBT': 'public__img__vehicleSpawners__MBT.webp',
-      'TD': 'public__img__vehicleSpawners__MBT.webp',
-      'MSV': 'public__img__vehicleSpawners__APC.webp',
-      'SPA': 'public__img__markers__weapons__Mortar.webp',
-      'SPAA': 'public__img__icons__default__vehicles__map_truck_antiair.svg',
-      'AH': 'public__img__icons__default__vehicles__map_attackhelo.svg',
-      'UH': 'public__img__icons__default__vehicles__map_transporthelo.svg',
-    };
-
-    const VEHICLE_NAME_TO_TYPE = {
-  'M939 Transport': 'TRAN', 'KamAZ 5350 Transport': 'TRAN',
-  'CPV Transport': 'MRAP', 'CPV M134 Minigun': 'MRAP', 'M1117': 'MRAP', 'Tigr-M Kord': 'MRAP',
-  'M939 Logistics': 'LOGI', 'Technical Logistics': 'LOGI', 'KamAZ 5350 Logistics': 'LOGI',
-  'M1151 M240': 'LTV', 'M1151 M2': 'LTV', 'Technical M2': 'LTV', 'BRDM-2': 'LTV',
-  'Quad Bike': 'ULTV', 'RHIB M134': 'ULTV', 'RHIB Mk19': 'ULTV', 'RHIB M2': 'ULTV',
-  'BTR-80A': 'APC', 'BTR-82A': 'APC', 'BTR-MDM': 'APC',
-  'M2A3 Bradley': 'IFV', 'BMP-1': 'IFV', 'BMP-2': 'IFV', 'BMP-3': 'IFV', 'BMD-4M': 'IFV',
-  'M1A1 Abrams': 'MBT', 'M1A2 Abrams': 'MBT', 'T-72B3': 'MBT', 'T-80BVM': 'MBT', 'T-90A': 'MBT', 'M1150 Assault': 'MBT',
-  'M1151 TOW': 'TD',
-  'M113A3 MSV': 'MSV',
-  'Ural-375D BM-21 Grad': 'SPA', 'MT-LB FAB500 Begemot': 'SPA', '2S1 Gvozdika': 'SPA', '2S3 Akatsiya': 'SPA',
-  'Ural-375D ZU-23-2': 'SPAA', 'M1097 Avenger': 'SPAA',
-  'Loach CAS': 'AH', 'Loach CAS Small': 'AH', 'VDV Little Knyaz CAS': 'AH', 'Ka-52 Alligator': 'AH', 'AH-64D Longbow': 'AH', 'Apache': 'AH',
-  'Raven Transport': 'UH', 'Black Hawk Transport': 'UH', 'Mi-8MT': 'UH', 'Huey Transport': 'UH',
+const VEHICLES_WITH_NAMED_ICONS = {
+  "BM-21Grad": "public__img__markers__weapons__BM-21Grad.webp",
+  "BTR4-AGS": "public__img__markers__weapons__BTR4-AGS.webp",
+  "HIMARS": "public__img__markers__weapons__HIMARS.webp",
+  "HellCannon": "public__img__markers__weapons__HellCannon.webp",
+  "M1064M121": "public__img__markers__weapons__M1064M121.webp",
+  "M109": "public__img__markers__weapons__M109.webp",
+  "M777": "public__img__markers__weapons__M777.webp",
+  "MO120RTF1": "public__img__markers__weapons__MO120RTF1.webp",
+  "MTLB_FAB500": "public__img__markers__weapons__MTLB_FAB500.webp",
+  "Mk19": "public__img__markers__weapons__Mk19.webp",
+  "Mortar": "public__img__markers__weapons__Mortar.webp",
+  "PZL07": "public__img__markers__weapons__PZL07.webp",
+  "T62.DUMP.TRUCK": "public__img__markers__weapons__T62.DUMP.TRUCK.webp",
+  "TOS-1A": "public__img__markers__weapons__TOS-1A.webp",
+  "Tech.Mortar": "public__img__markers__weapons__Tech.Mortar.webp",
+  "Tech.UB-32": "public__img__markers__weapons__Tech.UB-32.webp",
+  "UB-32": "public__img__markers__weapons__UB-32.webp",
+  "Ural-HellCannon": "public__img__markers__weapons__Ural-HellCannon.webp",
+  "type_63": "public__img__markers__weapons__type_63.webp",
+  "Ural-375D BM-21 Grad": "public__img__markers__weapons__BM-21Grad.webp",
+  "Ural-375D ZU-23-2": "public__img__markers__weapons__UB-32.webp",
+  "MT-LB FAB500 Begemot": "public__img__markers__weapons__MTLB_FAB500.webp"
 };
 
-  function getVehicleIcon(vehicleName, vehicleType = null) {
+const VEHICLE_TYPE_ICONS = {
+  "TRAN": "public__img__vehicleSpawners__TRAN.webp",
+  "MRAP": "public__img__vehicleSpawners__MRAP.webp",
+  "LOGI": "public__img__vehicleSpawners__LOGI.webp",
+  "LTV": "public__img__vehicleSpawners__MRAP.webp",
+  "ULTV": "public__img__icons__default__vehicles__map_jeep.svg",
+  "APC": "public__img__vehicleSpawners__APC.webp",
+  "IFV": "public__img__vehicleSpawners__IFV.webp",
+  "MBT": "public__img__vehicleSpawners__MBT.webp",
+  "TD": "public__img__vehicleSpawners__MBT.webp",
+  "MSV": "public__img__vehicleSpawners__APC.webp",
+  "SPA": "public__img__markers__weapons__Mortar.webp",
+  "SPAA": "public__img__icons__shared__characteristics__ATGM+.webp",
+  "AH": "public__img__icons__default__vehicles__map_attackhelo.svg",
+  "UH": "public__img__icons__default__vehicles__map_transporthelo.svg"
+};
+
+ const VEHICLE_NAME_TO_TYPE = {
+  "M939 Transport": "TRAN",
+  "KamAZ 5350 Transport": "TRAN",
+  "CPV Transport": "MRAP",
+  "CPV M134 Minigun": "MRAP",
+  "M1117": "MRAP",
+  "Tigr-M Kord": "MRAP",
+  "M939 Logistics": "LOGI",
+  "Technical Logistics": "LOGI",
+  "KamAZ 5350 Logistics": "LOGI",
+  "M1151 M240": "LTV",
+  "M1151 M2": "LTV",
+  "Technical M2": "LTV",
+  "BRDM-2": "LTV",
+  "Quad Bike": "ULTV",
+  "RHIB M134": "ULTV",
+  "RHIB Mk19": "ULTV",
+  "RHIB M2": "ULTV",
+  "BTR-80A": "APC",
+  "BTR-82A": "APC",
+  "BTR-MDM": "APC",
+  "M2A3 Bradley": "IFV",
+  "BMP-1": "IFV",
+  "BMP-2": "IFV",
+  "BMP-3": "IFV",
+  "BMD-4M": "IFV",
+  "M1A1 Abrams": "MBT",
+  "M1A2 Abrams": "MBT",
+  "T-72B3": "MBT",
+  "T-80BVM": "MBT",
+  "T-90A": "MBT",
+  "M1150 Assault": "MBT",
+  "M1151 TOW": "TD",
+  "M113A3 MSV": "MSV",
+  "Ural-375D BM-21 Grad": "SPA",
+  "MT-LB FAB500 Begemot": "SPA",
+  "2S1 Gvozdika": "SPA",
+  "2S3 Akatsiya": "SPA",
+  "Ural-375D ZU-23-2": "SPAA",
+  "M1097 Avenger": "SPAA",
+  "Loach CAS": "AH",
+  "Loach CAS Small": "AH",
+  "VDV Little Knyaz CAS": "AH",
+  "Ka-52 Alligator": "AH",
+  "AH-64D Longbow": "AH",
+  "Apache": "AH",
+  "Raven Transport": "UH",
+  "Black Hawk Transport": "UH",
+  "Mi-8MT": "UH",
+  "Huey Transport": "UH",
+  // Estos son los que faltaban y aparecen en tu JSON
+  "HX60Transport": "TRAN",
+  "HX60Logistics": "LOGI",
+  "FV107": "APC",
+  "FV510": "IFV",
+  "FV510UA": "IFV",
+  "FV432L37A2RWS": "APC",
+  "FV432L11A1RWS": "APC",
+  "SA330": "UH",
+  "Lynx8x8Transport": "APC",
+  "Lynx8x8Logistics": "LOGI",
+  "Lynx8x8QJZ89": "IFV",
+  "Lynx8x8QLZ87": "IFV",
+  "Z-8G": "UH",
+  "CSK131QJZ89": "MRAP",
+  "CSK131QLZ87": "MRAP",
+  "CSK131HJ8": "MRAP",
+  "CTM131Logistics": "LOGI",
+  "RHIBLogistics": "LOGI",
+  "RHIBQJZ89": "LTV",
+  "RHIBQJY88": "LTV"
+};
+
+ function getVehicleIcon(vehicleName, vehicleType = null) {
   if (!vehicleName) return 'resources/public__img__markers__weapons__test.webp';
   
-  // 1. Icono específico nombrado
   if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
-    return `resources/${VEHICLES_WITH_NAMED_ICONS[vehicleName]}`;
+    return 'resources/' + VEHICLES_WITH_NAMED_ICONS[vehicleName];
   }
-  
-  // 2. Usar tipo proporcionado
   if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
-    return `resources/${VEHICLE_TYPE_ICONS[vehicleType]}`;
+    return 'resources/' + VEHICLE_TYPE_ICONS[vehicleType];
   }
-  
-  // 3. Deducir tipo del nombre (usando VEHICLE_NAME_TO_TYPE)
   const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName];
   if (deducedType && VEHICLE_TYPE_ICONS[deducedType]) {
-    return `resources/${VEHICLE_TYPE_ICONS[deducedType]}`;
+    return 'resources/' + VEHICLE_TYPE_ICONS[deducedType];
   }
-  
   return 'resources/public__img__markers__weapons__test.webp';
 }
 
@@ -726,7 +777,14 @@ function makeVehicleIcon(group, selected) {
   const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
   const count = group.occupants.length;
-  const iconUrl = group.icon || 'resources/public__img__markers__weapons__test.webp';
+  
+  // Obtener el icono desde los datos del grupo
+  let iconUrl = group.icon || 'resources/public__img__markers__weapons__test.webp';
+  // Si no viene 'icon', calcularlo con getVehicleIcon (por si acaso)
+  if (!group.icon || group.icon.includes('test.webp')) {
+    const vehicleType = VEHICLE_NAME_TO_TYPE[group.vehicleName] || null;
+    iconUrl = getVehicleIcon(group.vehicleName, vehicleType);
+  }
 
   const html = `<div style="
     width:32px;height:32px;
@@ -813,10 +871,11 @@ function updateMarkers(players, corners) {
   const key = `veh_${g.vehicleId}`;
   seen.add(key);
 
-  // 🔥 Calcular el icono del vehículo
-  const vehicleType = VEHICLE_NAME_TO_TYPE[g.vehicleName] || null;
-  const iconUrl = getVehicleIcon(g.vehicleName, vehicleType);
-  g.icon = iconUrl; // lo guardamos en el grupo para pasarlo a makeVehicleIcon
+  // 🔥 Asegurar que el grupo tenga un icono
+  if (!g.icon) {
+    const vehicleType = VEHICLE_NAME_TO_TYPE[g.vehicleName] || null;
+    g.icon = getVehicleIcon(g.vehicleName, vehicleType);
+  }
 
   const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
   const icon = makeVehicleIcon(g, isSelected);
