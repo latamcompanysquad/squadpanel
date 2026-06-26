@@ -1,0 +1,150 @@
+diff --git a/index.html b/index.html
+index fe37ee2..67a2f46 100644
+--- a/index.html
++++ b/index.html
+@@ -79,8 +79,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+ .player-card .row{display:flex;justify-content:space-between;color:var(--text-dim);}
+ .player-card .val{color:var(--text);}
+ .no-data{color:var(--text-dim);font-size:11px;text-align:center;padding:20px 0;}
+-#tabPlayers,#tabAdmin{display:none;}
+-#tabPlayers.show,#tabAdmin.show{display:block;}
++#tabPlayers,#tabSearch,#tabAdmin{display:none;}
++#tabPlayers.show,#tabSearch.show,#tabAdmin.show{display:block;}
+ .admin-section{margin-bottom:16px;}
+ .admin-section .panel-title{color:var(--amber);}
+ .btn{
+@@ -113,8 +113,21 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+ }
+ #adminTarget .target-name{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;font-size:13px;}
+ #adminTarget .target-steam{font-size:10px;color:var(--olive-dim);}
++#searchPanel{padding:6px 0 2px;}
++#searchInput{width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 8px;border-radius:3px;box-sizing:border-box;}
++#searchInput:focus{outline:none;border-color:var(--olive);}
++#searchInput::placeholder{color:var(--text-dim);}
++#searchDropdown{max-height:180px;overflow-y:auto;margin-top:4px;border:1px solid var(--panel-edge);border-radius:3px;background:#0d120b;}
++#searchDropdown:empty{display:none;}
++.search-item{padding:5px 8px;cursor:pointer;font-size:11px;border-bottom:1px solid #1a1f18;display:flex;align-items:center;gap:6px;}
++.search-item:last-child{border-bottom:none;}
++.search-item:hover{background:#1a2518;}
++.search-item .si-name{flex:1;color:var(--text);}
++.search-item .si-tag{font-size:9px;padding:1px 4px;border-radius:2px;font-weight:700;}
++.si-tag.blue{background:var(--blue-dim);color:var(--blue);}
++.si-tag.red{background:var(--red-dim);color:var(--red);}
++.search-item .si-dead{color:var(--text-dim);font-size:9px;}
+ #adminToast{
+-  position:fixed;bottom:20px;right:320px;
+   background:#1a2518;border:1px solid var(--olive);
+   color:var(--olive);padding:8px 14px;border-radius:3px;
+   font-size:11px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;
+@@ -242,6 +255,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+     <div id="side">
+       <div id="sideTabs">
+         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
++        <div class="side-tab" onclick="switchTab('search')">Buscar</div>
+         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
+       </div>
+       <div id="sideContent">
+@@ -255,6 +269,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+             <div id="playerList"></div>
+           </div>
+         </div>
++        <div id="tabSearch">
++          <div id="searchPanel">
++            <div class="panel-title">Buscar jugador</div>
++            <input id="searchInput" type="text" placeholder="Nombre o Steam ID..." oninput="onSearchInput(this.value)" autocomplete="off"/>
++            <div id="searchDropdown"></div>
++          </div>
++        </div>
+         <div id="tabAdmin">
+           <div class="admin-section">
+             <div class="panel-title">Objetivo seleccionado</div>
+@@ -1222,11 +1243,52 @@ function updateFobs(fobArray, corners) {
+ 
+ // ─── TABS ──────────────────────────────────────────────────────────────────────
+ function switchTab(tab) {
+-  document.querySelectorAll('.side-tab').forEach((el,i) => {
+-    el.classList.toggle('active', (i===0 && tab==='players') || (i===1 && tab==='admin'));
++  const tabs = ['players', 'search', 'admin'];
++  document.querySelectorAll('.side-tab').forEach((el, i) => {
++    el.classList.toggle('active', tabs[i] === tab);
+   });
+-  document.getElementById('tabPlayers').classList.toggle('show', tab==='players');
+-  document.getElementById('tabAdmin').classList.toggle('show', tab==='admin');
++  document.getElementById('tabPlayers').classList.toggle('show', tab === 'players');
++  document.getElementById('tabSearch').classList.toggle('show', tab === 'search');
++  document.getElementById('tabAdmin').classList.toggle('show', tab === 'admin');
++  if (tab === 'search') renderSearchDropdown(document.getElementById('searchInput').value);
++}
++
++let allPlayersCache = [];
++
++function onSearchInput(val) {
++  renderSearchDropdown(val);
++}
++
++function renderSearchDropdown(val) {
++  const dd = document.getElementById('searchDropdown');
++  const q = val.trim().toLowerCase();
++  const list = q
++    ? allPlayersCache.filter(p => p.name.toLowerCase().includes(q) || String(p.steamID).includes(q))
++    : allPlayersCache;
++  if (!list.length) { dd.innerHTML = '<div class="search-item"><span class="si-name" style="color:var(--text-dim)">Sin resultados</span></div>'; return; }
++  dd.innerHTML = list.slice(0, 50).map(p => {
++    const tc = p.teamID === 1 ? 'blue' : 'red';
++    const dead = !p.isAlive ? '<span class="si-dead">💀</span>' : '';
++    return `<div class="search-item" onclick="searchSelectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
++      <span class="si-tag ${tc}">T${p.teamID} S${p.squadID ?? '?'}</span>
++      <span class="si-name">${esc(p.name)}</span>${dead}
++    </div>`;
++  }).join('');
++}
++
++function searchSelectPlayer(p) {
++  selectPlayer(p);
++  // Zoom al jugador en el mapa
++  for (const key of Object.keys(markers)) {
++    const m = markers[key];
++    const match = (m._playerData && m._playerData.steamID === p.steamID) ||
++      (m._vehicleData && m._vehicleData.occupants && m._vehicleData.occupants.some(o => o.steamID === p.steamID));
++    if (match) {
++      map.setView(m.getLatLng(), Math.max(map.getZoom(), 1), { animate: true });
++      break;
++    }
++  }
++  switchTab('admin');
+ }
+ 
+ // ─── PLAYER CARD ──────────────────────────────────────────────────────────────
+@@ -1430,6 +1492,14 @@ function toast(msg, type='ok') {
+ 
+ // ─── PLAYER LIST ─────────────────────────────────────────────────────────────
+ function updatePlayerList(players) {
++  // Actualizar caché para búsqueda (todos, sin filtros)
++  allPlayersCache = [...players].sort((a,b) => {
++    if (a.teamID !== b.teamID) return a.teamID - b.teamID;
++    return a.name.localeCompare(b.name);
++  });
++  if (document.getElementById('tabSearch').classList.contains('show')) {
++    renderSearchDropdown(document.getElementById('searchInput').value);
++  }
+   const list = document.getElementById('playerList');
+   let visible = players.filter(p => {
+     if (!filters.t1 && p.teamID === 1) return false;
+@@ -1648,6 +1718,17 @@ async function poll() {
+   poll();
+   setInterval(poll, POLL_MS);
+ 
++  // Zoom centrado en seleccionado
++  map.on('zoom', function() {
++    if (!selectedSteamID) return;
++    for (const key of Object.keys(markers)) {
++      const m = markers[key];
++      const match = (m._playerData && m._playerData.steamID === selectedSteamID) ||
++        (m._vehicleData && m._vehicleData.occupants && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID));
++      if (match) { map.panTo(m.getLatLng(), { animate: false }); return; }
++    }
++  });
++
+   // Click en mapa para deseleccionar
+   map.on('click', function() {
+     if (selectedSteamID !== null) {
