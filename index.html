@@ -1436,14 +1436,20 @@ function updateHUD(data) {
   const ticketsEl = document.getElementById('hudTickets');
   if (t1 != null && t2 != null) {
     ticketsEl.style.display = 'flex';
-    const f1 = data.factions?.team1, f2 = data.factions?.team2;
-    const flag1 = document.getElementById('t1flag');
-    const flag2 = document.getElementById('t2flag');
-    if (f1) { flag1.src = `./resources/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
-    else { flag1.style.display = 'none'; }
-    if (f2) { flag2.src = `./resources/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
-    else { flag2.style.display = 'none'; }
-    const total = t1 + t2 || 1;
+// Normalizar faction (puede llegar como objeto o string)
+const f1Raw = data.factions?.team1;
+const f2Raw = data.factions?.team2;
+const f1 = typeof f1Raw === 'object' && f1Raw !== null ? (f1Raw.faction ?? f1Raw.name ?? null) : f1Raw;
+const f2 = typeof f2Raw === 'object' && f2Raw !== null ? (f2Raw.faction ?? f2Raw.name ?? null) : f2Raw;
+
+const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
+
+const flag1 = document.getElementById('t1flag');
+const flag2 = document.getElementById('t2flag');
+if (f1) { flag1.src = `${BASE}/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
+else { flag1.style.display = 'none'; }
+if (f2) { flag2.src = `${BASE}/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
+else { flag2.style.display = 'none'; }
     document.getElementById('t1num').textContent = t1;
     document.getElementById('t2num').textContent = t2;
     document.getElementById('t1bar').style.width = (t1/total*100) + '%';
