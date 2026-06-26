@@ -411,9 +411,9 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
 
 // ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO, REPAIR) ────────────────────
 function getDeployableIcon(type, teamID, isActive = true) {
-  // type: 'fob', 'hab', 'ammo'
-  // Asegurar que teamID sea número
+  console.log('getDeployableIcon llamado con teamID:', teamID);
   const tid = parseInt(teamID, 10);
+  console.log('tid:', tid);
   let suffix = 'WHITE';
   if (tid === 1) suffix = 'BLUE';
   else if (tid === 2) suffix = 'RED';
@@ -1020,8 +1020,13 @@ function updateRallies(rallyArray, corners) {
 function renderAmmoMarker(ammo, corners) {
   if (!ammoLayer) return;
   const pos = ammo.pos || { x: 0, y: 0 };
+  console.log('=== renderAmmoMarker ===');
+  console.log('ammo.teamID original:', ammo.teamID);
   let teamID = parseInt(ammo.teamID, 10);
-  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
+  console.log('teamID after parseInt:', teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
+    console.warn('teamID inválido, usando 1');
+    teamID = 1;
   const state = ammo.state || 'Completed';
   const latLng = gameToLatLng(pos, corners);
   const isBuilt = state === 'Completed';
@@ -1052,8 +1057,16 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
   const pos = fob.pos || { x: 0, y: 0 };
+  console.log('=== renderFobMarker ===');
+  console.log('fob.teamID original:', fob.teamID);
+  console.log('fob.habName:', fob.habName);
+  console.log('fob.isHab:', fob.isHab);
   let teamID = parseInt(fob.teamID, 10);
-  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
+  console.log('teamID after parseInt:', teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2))
+    console.warn('teamID inválido, usando 1');
+    teamID = 1;
+
 
   const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
@@ -1512,7 +1525,7 @@ async function poll() {
       cancelPendingCmd();
     }
   });
-})();
+})();}
 </script>
 </body>
 </html>
