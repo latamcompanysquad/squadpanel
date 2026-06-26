@@ -188,16 +188,18 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
       <div class="map-name" id="hudMap">—</div>
       <div id="hudTimer" style="display:none; font-family:'Oswald',sans-serif; font-size:13px; color:var(--amber); letter-spacing:.05em;">⏱ <span id="timerVal">--:--</span></div>
     </div>
-<div class="hud-block tickets" id="hudTickets" style="display:none">
-  <img id="t1flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain; margin-right:4px;"/>
+<div class="hud-block tickets" id="hudTickets" style="display:none; align-items:center; gap:6px;">
+  <span id="t1faction" style="font-family:'Oswald',sans-serif; font-size:15px; font-weight:600; color:var(--blue); min-width:28px; text-align:right;">—</span>
+  <img id="t1flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain;"/>
   <span class="ticket-num blue" id="t1num">—</span>
-  <div class="ticket-bar">
+  <div class="ticket-bar" style="flex:1; min-width:60px;">
     <div class="ticket-fill-blue" id="t1bar" style="width:50%"></div>
     <div class="ticket-fill-red"  id="t2bar" style="width:50%"></div>
   </div>
   <span class="ticket-num red" id="t2num">—</span>
-  <img id="t2flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain; margin-left:4px;"/>
-</div>
+  <img id="t2flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain;"/>
+  <span id="t2faction" style="font-family:'Oswald',sans-serif; font-size:15px; font-weight:600; color:var(--red); min-width:28px; text-align:left;">—</span>
+</div></div>
     <div class="hud-block">
       <span class="status-text" id="statusText">Conectando...</span>
     </div>
@@ -1467,6 +1469,8 @@ function updateHUD(data) {
     const f2Str = typeof f2Raw === 'object' && f2Raw !== null ? (f2Raw.faction ?? f2Raw.name ?? null) : f2Raw;
     const f1 = FACTION_CODE[f1Str] ?? f1Str;
     const f2 = FACTION_CODE[f2Str] ?? f2Str;
+    document.getElementById('t1faction').textContent = f1 || '—';
+    document.getElementById('t2faction').textContent = f2 || '—';
 
     const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
     const flag1 = document.getElementById('t1flag');
