@@ -423,15 +423,38 @@ const VEHICLE_NAME_TO_TYPE = {
   "RHIBQJY88": "LTV"
 };
 
+// El mod del servidor manda vehicle_name SIN espacios (ej "M939Logistics"),
+// pero estos diccionarios usan nombres "display" con espacios (ej "M939
+// Logistics"). normalizeVehicleKey() + los índices *_NORM permiten matchear
+// ambos formatos sin tener que reescribir todo el diccionario.
+function normalizeVehicleKey(str) {
+  if (!str) return '';
+  return String(str).toLowerCase().replace(/[\s\-_.]+/g, '');
+}
+function buildNormalizedVehicleIndex(dict) {
+  const idx = {};
+  for (const key in dict) idx[normalizeVehicleKey(key)] = dict[key];
+  return idx;
+}
+const VEHICLES_WITH_NAMED_ICONS_NORM = buildNormalizedVehicleIndex(VEHICLES_WITH_NAMED_ICONS);
+const VEHICLE_NAME_TO_TYPE_NORM = buildNormalizedVehicleIndex(VEHICLE_NAME_TO_TYPE);
+
 function getVehicleIcon(vehicleName, vehicleType = null) {
   if (!vehicleName) return 'resources/public__img__markers__weapons__test.webp';
   if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
     return 'resources/' + VEHICLES_WITH_NAMED_ICONS[vehicleName];
   }
+  // Coincidencia normalizada (sin espacios/guiones/puntos): el mod manda
+  // nombres pegados como "M939Logistics" pero los diccionarios usan
+  // nombres "display" como "M939 Logistics".
+  const normName = normalizeVehicleKey(vehicleName);
+  if (VEHICLES_WITH_NAMED_ICONS_NORM[normName]) {
+    return 'resources/' + VEHICLES_WITH_NAMED_ICONS_NORM[normName];
+  }
   if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
     return 'resources/' + VEHICLE_TYPE_ICONS[vehicleType];
   }
-  const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName];
+  const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName] ?? VEHICLE_NAME_TO_TYPE_NORM[normName];
   if (deducedType && VEHICLE_TYPE_ICONS[deducedType]) {
     return 'resources/' + VEHICLE_TYPE_ICONS[deducedType];
   }
