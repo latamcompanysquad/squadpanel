@@ -435,6 +435,29 @@ const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
 const POLL_MS    = 2000;
 const MAP_UNITS  = 1000;
 
+// Agrega este mapeo FUERA de updateHUD, junto a las otras constantes arriba
+const FACTION_CODE = {
+  'United States Marine Corps': 'USMC',
+  'United States Army': 'USA',
+  'Australian Defence Force': 'ADF',
+  'Canadian Army Forces': 'CAF',
+  'British Armed Forces': 'BAF',
+  'Russian Ground Forces': 'RGF',
+  'Russian Airborne Forces': 'VDV',
+  'Insurgent Forces': 'INS',
+  'Middle Eastern Alliance': 'MEA',
+  'Middle Eastern Insurgents': 'MEI',
+  'Turkish Land Forces': 'TLF',
+  'Irregular Militia Forces': 'IMF',
+  'Global Freedom Incarnate': 'GFI',
+  "People's Liberation Army": 'PLA',
+  'PLA Air Ground Forces': 'PLAAGF',
+  'PLA Naval Marine Corps': 'PLANMC',
+  'Western PMC': 'WPMC',
+  'Armed Forces of Ukraine': 'AFU',
+  'Combined Russian Forces': 'CRF',
+};
+
 const MAP_CORNERS = {
   'albasrah':     { c0:[-200000,-200000], c1:[200000,200000] },
   'anvil':        { c0:[-204000,-204000], c1:[102000,102000] },
@@ -1436,31 +1459,36 @@ function updateHUD(data) {
   const ticketsEl = document.getElementById('hudTickets');
   if (t1 != null && t2 != null) {
     ticketsEl.style.display = 'flex';
-// Normalizar faction (puede llegar como objeto o string)
-const f1Raw = data.factions?.team1;
-const f2Raw = data.factions?.team2;
-const f1 = typeof f1Raw === 'object' && f1Raw !== null ? (f1Raw.faction ?? f1Raw.name ?? null) : f1Raw;
-const f2 = typeof f2Raw === 'object' && f2Raw !== null ? (f2Raw.faction ?? f2Raw.name ?? null) : f2Raw;
 
-const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
+    const f1Raw = data.factions?.team1;
+    const f2Raw = data.factions?.team2;
+    // Normalizar objeto → string, luego nombre completo → código corto
+    const f1Str = typeof f1Raw === 'object' && f1Raw !== null ? (f1Raw.faction ?? f1Raw.name ?? null) : f1Raw;
+    const f2Str = typeof f2Raw === 'object' && f2Raw !== null ? (f2Raw.faction ?? f2Raw.name ?? null) : f2Raw;
+    const f1 = FACTION_CODE[f1Str] ?? f1Str;
+    const f2 = FACTION_CODE[f2Str] ?? f2Str;
 
-const flag1 = document.getElementById('t1flag');
-const flag2 = document.getElementById('t2flag');
-if (f1) { flag1.src = `${BASE}/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
-else { flag1.style.display = 'none'; }
-if (f2) { flag2.src = `${BASE}/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
-else { flag2.style.display = 'none'; }
+    const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
+    const flag1 = document.getElementById('t1flag');
+    const flag2 = document.getElementById('t2flag');
+    if (f1) { flag1.src = `${BASE}/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
+    else { flag1.style.display = 'none'; }
+    if (f2) { flag2.src = `${BASE}/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
+    else { flag2.style.display = 'none'; }
+
+    const total = t1 + t2 || 1;   // ← estaba faltando esto
     document.getElementById('t1num').textContent = t1;
     document.getElementById('t2num').textContent = t2;
-    document.getElementById('t1bar').style.width = (t1/total*100) + '%';
-    document.getElementById('t2bar').style.width = (t2/total*100) + '%';
-  } else { ticketsEl.style.display = 'none'; }
+    document.getElementById('t1bar').style.width = (t1 / total * 100) + '%';
+    document.getElementById('t2bar').style.width = (t2 / total * 100) + '%';
+  } else {
+    ticketsEl.style.display = 'none';
+  }
 
   const ago = data.ts ? Math.round((Date.now() - data.ts) / 1000) : null;
   document.getElementById('statusText').textContent = ago !== null ? `hace ${ago}s` : 'Sin datos';
   setMatchTimer(data.matchRemainingTime ?? null);
 }
-
 // ─── POLL ─────────────────────────────────────────────────────────────────────
 async function poll() {
   try {
