@@ -1333,17 +1333,22 @@ async function poll() {
       loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
     }
 
-    if (corners && data.players?.length) {
-      vehicleIconMap = {};
-      if (data.vehicles) {
-        data.vehicles.forEach(v => { vehicleIconMap[v.id] = v.icon; });
+vehicleIconMap = {};
+if (data.vehicles) {
+  data.vehicles.forEach(v => {
+    let icon = v.icon;
+    // Si es el icono genérico, intentar deducir
+    if (icon === 'public__img__markers__weapons__test.webp') {
+      const deduced = getVehicleIcon(v.type, null);
+      // getVehicleIcon devuelve algo como 'resources/public__img_...'
+      // quitamos 'resources/' para que coincida con el formato usado por makeVehicleIcon
+      if (deduced && !deduced.includes('test.webp')) {
+        icon = deduced.replace('resources/', '');
       }
-      lastSnapshot = { players: data.players, corners };
-      updateMarkers(data.players, corners);
-    } else if (!data.players?.length) {
-      lastSnapshot = null;
-      for (const id of Object.keys(markers)) { map.removeLayer(markers[id]); delete markers[id]; }
     }
+    vehicleIconMap[v.id] = icon;
+  });
+}
 
     if (corners && data.objectives?.length) {
       updateObjectives(data.objectives, corners);
