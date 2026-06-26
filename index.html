@@ -1351,11 +1351,27 @@ function updateHUD(data) {
   dot.className = 'live-dot' + (isLive ? '' : ' offline');
   document.getElementById('hudMap').textContent =
     data.layer && data.layer !== 'Unknown' ? data.layer : (data.map || '—');
-
+<div class="hud-block tickets" id="hudTickets" style="display:none">
+  <img id="t1flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
+  <span class="ticket-num blue" id="t1num">—</span>
+  <div class="ticket-bar">
+    <div class="ticket-fill-blue" id="t1bar" style="width:50%"></div>
+    <div class="ticket-fill-red"  id="t2bar" style="width:50%"></div>
+  </div>
+  <span class="ticket-num red" id="t2num">—</span>
+  <img id="t2flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
+</div>
   const t1 = data.tickets?.team1, t2 = data.tickets?.team2;
   const ticketsEl = document.getElementById('hudTickets');
   if (t1 != null && t2 != null) {
     ticketsEl.style.display = 'flex';
+    const f1 = data.factions?.team1, f2 = data.factions?.team2;
+const flag1 = document.getElementById('t1flag');
+const flag2 = document.getElementById('t2flag');
+if (f1) { flag1.src = `./resources/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
+else { flag1.style.display = 'none'; }
+if (f2) { flag2.src = `./resources/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
+else { flag2.style.display = 'none'; }
     const total = t1 + t2 || 1;
     document.getElementById('t1num').textContent = t1;
     document.getElementById('t2num').textContent = t2;
