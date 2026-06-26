@@ -412,15 +412,18 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
 // ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO) ────────────────────────────
 function getDeployableIcon(type, teamID, isActive = true) {
   // type: 'fob', 'hab', 'ammo'
-  const teamSuffix = teamID === 1 ? 'BLUE' : (teamID === 2 ? 'RED' : 'WHITE');
+  let teamSuffix = 'WHITE';
+  if (teamID === 1) teamSuffix = 'BLUE';
+  else if (teamID === 2) teamSuffix = 'RED';
+  else teamSuffix = 'WHITE'; // fallback
+
   let baseName = '';
   if (type === 'fob') baseName = 'MAP_FOB';
   else if (type === 'hab') baseName = 'MAP_HAB';
   else if (type === 'ammo') baseName = 'MAP_AMMOCRATE';
   else return '';
 
-  // Si está inactivo, usar WHITE o gris? Usamos WHITE para inactivo (o podríamos mantener color y poner overlay)
-  // Pero para HAB inactivo ya tenemos el overlay X, así que mantenemos el color.
+  // Si está inactivo, usar WHITE
   const suffix = isActive ? teamSuffix : 'WHITE';
   return `./resources/${baseName}_${suffix}.svg`;
 }
@@ -994,14 +997,11 @@ function renderRallyMarker(rally, corners) {
   const teamID = rally.teamID || 1;
   const squadID = rally.squadID || '?';
   const latLng = gameToLatLng(pos, corners);
-  const iconColor = teamID === 1 ? '#4fa6e8' : '#e0584f';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="28" viewBox="0 0 22 28">
-    <line x1="4" y1="2" x2="4" y2="26" stroke="#000" stroke-width="2"/>
-    <path d="M4 3 L20 6 L4 11 Z" fill="${iconColor}" stroke="#000" stroke-width="0.5" opacity=".9"/>
-    <text x="12" y="9" font-size="6" fill="#fff" font-weight="bold" text-anchor="middle">${squadID}</text>
-    <circle cx="4" cy="26" r="2" fill="#000"/>
-  </svg>`;
-  const icon = L.divIcon({ html: svg, iconSize: [22, 28], iconAnchor: [4, 26], className: 'rally-icon' });
+  // Usar el icono de FOB en blanco (o con color según equipo)
+  const iconUrl = getDeployableIcon('fob', teamID, true);
+  const iconSize = 22;
+  const iconHtml = `<img src="${iconUrl}" style="width:${iconSize}px;height:${iconSize}px;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" />`;
+  const icon = L.divIcon({ html: iconHtml, iconSize: [iconSize, iconSize], iconAnchor: [iconSize/2, iconSize/2], className: 'rally-icon' });
   const marker = L.marker(latLng, { icon }).addTo(rallyLayer);
   marker.bindTooltip(`Squad ${squadID} Rally (T${teamID})`, { className: "squad-tip", direction: "top" });
 }
@@ -1018,11 +1018,12 @@ function updateRallies(rallyArray, corners) {
 function renderAmmoMarker(ammo, corners) {
   if (!ammoLayer) return;
   const pos = ammo.pos || { x: 0, y: 0 };
-  const teamID = ammo.teamID || 1;
+  let teamID = ammo.teamID;
+  if (teamID !== 1 && teamID !== 2) teamID = 1; // fallback
   const state = ammo.state || 'Completed';
   const latLng = gameToLatLng(pos, corners);
   const isBuilt = state === 'Completed';
-  // Usar icono SVG de ammo
+
   const iconUrl = getDeployableIcon('ammo', teamID, true);
   const iconSize = 24;
   const iconHtml = `<img src="${iconUrl}" style="width:${iconSize}px;height:${iconSize}px;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));${!isBuilt ? 'opacity:0.5;' : ''}" />`;
@@ -1049,7 +1050,9 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
   const pos = fob.pos || { x: 0, y: 0 };
-  const teamID = fob.teamID || 1;
+  let teamID = fob.teamID;
+  if (teamID !== 1 && teamID !== 2) teamID = 1; // fallback
+
   const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
   const exclusionRadius = fob.exclusion_radius || 30000;
@@ -1058,14 +1061,12 @@ function renderFobMarker(fob, corners) {
   const latLng = gameToLatLng(pos, corners);
   if (!latLng) { console.warn('FOB sin posición válida:', fob); return; }
 
-  // Dibujar círculos de exclusión/construcción solo para FOB radio (no-HAB)
   if (!isHab) {
     const colors = teamID === 1 ? { exclusion: '#2a7ab0', construct: '#4fa6e8' } : { exclusion: '#b33a30', construct: '#e0584f' };
     L.circle(latLng, { radius: metersToMapUnits(exclusionRadius, corners), color: colors.exclusion, weight: 2.5, fillOpacity: 0.03, dashArray: "4,5" }).addTo(fobMarkersLayer);
     L.circle(latLng, { radius: metersToMapUnits(constructRadius, corners), color: colors.construct, weight: 2.5, fillOpacity: 0.05 }).addTo(fobMarkersLayer);
   }
 
-  // Icono SVG según tipo
   const iconType = isHab ? 'hab' : 'fob';
   const iconUrl = getDeployableIcon(iconType, teamID, isActive);
   const iconSize = isHab ? 30 : 24;
