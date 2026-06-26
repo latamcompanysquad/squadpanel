@@ -1,0 +1,33 @@
+--- a/index.html
++++ b/index.html
+@@ -1473,7 +1473,11 @@
+   const dot = document.getElementById('liveDot');
+   const isLive = data.live && data.players !== undefined;
+   dot.className = 'live-dot' + (isLive ? '' : ' offline');
+-  document.getElementById('hudMap').textContent = data.layer && data.layer !== 'Unknown' ? data.layer : (data.map || '—');
++  const rawLayer = data.layer && data.layer !== 'Unknown' ? data.layer : null;
++  const layerDisplay = rawLayer
++    ? rawLayer.split('/').filter(Boolean).pop().replace(/_/g, ' ')
++    : null;
++  document.getElementById('hudMap').textContent = layerDisplay || data.map || '—';
+ 
+   const t1 = data.tickets?.team1, t2 = data.tickets?.team2;
+   const ticketsEl = document.getElementById('hudTickets');
+@@ -1526,7 +1530,7 @@
+       const ys = [data.cornerZero.y, data.cornerOne.y];
+       corners = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+     } else {
+-      const mapKey = normalizeMapName(data.layer || data.map);
++      const mapKey = normalizeMapName(data.map || data.layer);
+       if (mapKey && MAP_CORNERS[mapKey]) {
+         const { c0, c1 } = MAP_CORNERS[mapKey];
+         corners = { minX: Math.min(c0[0], c1[0]), maxX: Math.max(c0[0], c1[0]), minY: Math.min(c0[1], c1[1]), maxY: Math.max(c0[1], c1[1]) };
+@@ -1534,7 +1538,7 @@
+     }
+ 
+     // ── Cargar mapa base ──
+-    const mapKey = normalizeMapName(data.layer || data.map);
++    const mapKey = normalizeMapName(data.map || data.layer);
+     if (mapKey) {
+       const mapChanged = currentMapKey && mapKey !== currentMapKey;
+       if (mapChanged) {

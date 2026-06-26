@@ -1,0 +1,143 @@
+diff --git a/index.html b/index.html
+index af0e49f..86c11bb 100644
+--- a/index.html
++++ b/index.html
+@@ -233,6 +233,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+           <div class="ftoggle empty active" id="fempty" onclick="toggleFilter('empty')" title="Vehículos vacíos">🔄 VACÍOS</div>
+           <div class="filter-sep"></div>
+           <div class="ftoggle dead" id="fdead" onclick="toggleFilter('dead')" title="Mostrar muertos">💀 MUERTOS</div>
++          <div class="filter-sep"></div>
++          <div class="ftoggle flags active" id="fflags" onclick="toggleFilter('flags')" title="Banderas/Objetivos">🏳 FLAGS</div>
+         </div>
+       </div>
+     </div>
+@@ -638,7 +640,8 @@ function makeIcon(p, selected) {
+ }
+ 
+ function objectiveColor(owningTeam) {
+-  return owningTeam === 1 ? '#4fa6e8' : owningTeam === 2 ? '#e0584f' : '#9aa092';
++  const t = parseInt(owningTeam, 10);
++  return t === 1 ? '#4fa6e8' : t === 2 ? '#e0584f' : '#9aa092';
+ }
+ function makeObjectiveIcon(owningTeam) {
+   const color = objectiveColor(owningTeam);
+@@ -651,7 +654,7 @@ function makeObjectiveIcon(owningTeam) {
+ }
+ 
+ // ─── FILTROS Y FOLLOW ────────────────────────────────────────────────────────
+-const filters = { t1: true, t2: true, veh: true, dead: false, empty: true };
++const filters = { t1: true, t2: true, veh: true, dead: false, empty: true, flags: true };
+ let lastSnapshot = null;
+ let followSelected = false;
+ 
+@@ -659,9 +662,10 @@ function toggleFilter(key) {
+   filters[key] = !filters[key];
+   document.getElementById('f' + key).classList.toggle('active', filters[key]);
+   if (lastSnapshot) {
+-    const { players, vehicles, corners } = lastSnapshot;
++    const { players, vehicles, corners, objectives } = lastSnapshot;
+     updateMarkers(players, vehicles, corners);
+     updatePlayerList(players);
++    if (objectives) updateObjectives(objectives, corners);
+   }
+ }
+ 
+@@ -1024,12 +1028,37 @@ function tickTimer() {
+ // ─── OBJECTIVES ──────────────────────────────────────────────────────────────
+ const objectiveMarkers = {};
+ 
++let objectiveLine = null;
++
+ function updateObjectives(objectives, corners) {
+   ensureObjectivesPane();
+   const seen = new Set();
++
++  if (!filters.flags) {
++    if (objectiveLine) { map.removeLayer(objectiveLine); objectiveLine = null; }
++    for (const key of Object.keys(objectiveMarkers)) {
++      map.removeLayer(objectiveMarkers[key]);
++      delete objectiveMarkers[key];
++    }
++    return;
++  }
++
++  const linePoints = objectives.filter(o => o.position).map(o => gameToLatLng(o.position, corners));
++  if (linePoints.length >= 2) {
++    if (objectiveLine) {
++      objectiveLine.setLatLngs(linePoints);
++    } else {
++      objectiveLine = L.polyline(linePoints, {
++        color: '#ffffff', weight: 1.5, opacity: 0.7, dashArray: '6, 6', pane: 'objectivesPane',
++      }).addTo(map);
++    }
++  } else if (objectiveLine) {
++    map.removeLayer(objectiveLine); objectiveLine = null;
++  }
++
+   for (const o of objectives) {
+     if (!o.position || !o.name) continue;
+-    const key = o.name;   // clave por nombre (estable entre cambios de equipo)
++    const key = o.name;
+     seen.add(key);
+     const ll = gameToLatLng(o.position, corners);
+     const icon = makeObjectiveIcon(o.owningTeam);
+@@ -1042,10 +1071,7 @@ function updateObjectives(objectives, corners) {
+     }
+   }
+   for (const key of Object.keys(objectiveMarkers)) {
+-    if (!seen.has(key)) {
+-      map.removeLayer(objectiveMarkers[key]);
+-      delete objectiveMarkers[key];
+-    }
++    if (!seen.has(key)) { map.removeLayer(objectiveMarkers[key]); delete objectiveMarkers[key]; }
+   }
+ }
+ 
+@@ -1473,7 +1499,12 @@ function updateHUD(data) {
+   const dot = document.getElementById('liveDot');
+   const isLive = data.live && data.players !== undefined;
+   dot.className = 'live-dot' + (isLive ? '' : ' offline');
+-  document.getElementById('hudMap').textContent = data.layer && data.layer !== 'Unknown' ? data.layer : (data.map || '—');
++  // Extraer nombre legible: si layer es una ruta, usar solo el último segmento
++  const rawLayer = data.layer && data.layer !== 'Unknown' ? data.layer : null;
++  const layerDisplay = rawLayer
++    ? rawLayer.split('/').filter(Boolean).pop().replace(/_/g, ' ')
++    : null;
++  document.getElementById('hudMap').textContent = layerDisplay || data.map || '—';
+ 
+   const t1 = data.tickets?.team1, t2 = data.tickets?.team2;
+   const ticketsEl = document.getElementById('hudTickets');
+@@ -1526,7 +1557,7 @@ async function poll() {
+       const ys = [data.cornerZero.y, data.cornerOne.y];
+       corners = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+     } else {
+-      const mapKey = normalizeMapName(data.layer || data.map);
++      const mapKey = normalizeMapName(data.map || data.layer);
+       if (mapKey && MAP_CORNERS[mapKey]) {
+         const { c0, c1 } = MAP_CORNERS[mapKey];
+         corners = { minX: Math.min(c0[0], c1[0]), maxX: Math.max(c0[0], c1[0]), minY: Math.min(c0[1], c1[1]), maxY: Math.max(c0[1], c1[1]) };
+@@ -1534,13 +1565,14 @@ async function poll() {
+     }
+ 
+     // ── Cargar mapa base ──
+-    const mapKey = normalizeMapName(data.layer || data.map);
++    const mapKey = normalizeMapName(data.map || data.layer);
+     if (mapKey) {
+       const mapChanged = currentMapKey && mapKey !== currentMapKey;
+       if (mapChanged) {
+         // Limpiar todos los marcadores al cambiar de mapa
+         for (const id of Object.keys(markers)) { map.removeLayer(markers[id]); delete markers[id]; }
+         for (const id of Object.keys(objectiveMarkers)) { map.removeLayer(objectiveMarkers[id]); delete objectiveMarkers[id]; }
++        if (objectiveLine) { map.removeLayer(objectiveLine); objectiveLine = null; }
+         clearFobMarkers();
+         clearRallyMarkers();
+         clearAmmoMarkers();
+@@ -1559,7 +1591,7 @@ async function poll() {
+ 
+     // ── Actualizar marcadores de jugadores, vehículos ocupados y estáticos ──
+     if (corners && data.players && data.players.length > 0) {
+-      lastSnapshot = { players: data.players, vehicles: data.vehicles, corners };
++      lastSnapshot = { players: data.players, vehicles: data.vehicles, corners, objectives: data.objectives };
+       updateMarkers(data.players, data.vehicles, corners);
+     } else if (!data.players || data.players.length === 0) {
+       lastSnapshot = null;
