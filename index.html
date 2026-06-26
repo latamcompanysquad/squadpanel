@@ -813,7 +813,7 @@ function selectStaticVehicle(group) {
 function updateMarkers(players, vehicles, corners) {
   // 1. Procesar vehículos ocupados (como antes)
   const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
-  const seen = new Set();
+  const seen = new Set(); // ahora almacenará claves completas
 
   for (const g of vehicleGroups) {
     if (!g.position) continue;
@@ -822,7 +822,8 @@ function updateMarkers(players, vehicles, corners) {
     if (!filters.t2 && g.teamID === 2) continue;
     const ll = gameToLatLng(g.position, corners);
     const key = `veh_${g.vehicleId}`;
-    seen.add(g.vehicleId);
+    seen.add(key); // guardamos la clave completa
+
     g.icon = vehicleIconMap[g.vehicleId] || g.icon;
     const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
     const icon = makeVehicleIcon(g, isSelected);
@@ -849,7 +850,7 @@ function updateMarkers(players, vehicles, corners) {
     if (!p.position) continue;
     if (!playerPassesFilter(p)) continue;
     const key = `player_${p.steamID}`;
-    seen.add(`player_${p.steamID}`);
+    seen.add(key); // guardamos la clave completa
     const ll = gameToLatLng(p.position, corners);
     const isSel = p.steamID === selectedSteamID;
     const icon = makeIcon(p, isSel);
@@ -883,20 +884,11 @@ function updateMarkers(players, vehicles, corners) {
   // 4. Limpiar marcadores obsoletos
   for (const id of Object.keys(markers)) {
     if (!seen.has(id) && !id.startsWith('static_veh_')) {
-      // Para estáticos, no los removemos aquí; los manejamos en createStaticVehicleMarkers
-      // pero podemos verificar si el id estático sigue existiendo en vehicles
-      if (id.startsWith('static_veh_')) {
-        const vehId = id.replace('static_veh_', '');
-        const stillExists = vehicles && vehicles.some(v => v.id === vehId);
-        if (!stillExists) {
-          map.removeLayer(markers[id]);
-          delete markers[id];
-        }
-      } else {
-        map.removeLayer(markers[id]);
-        delete markers[id];
-      }
+      // Para estáticos, ya se manejan en createStaticVehicleMarkers
+      map.removeLayer(markers[id]);
+      delete markers[id];
     }
+    // Los estáticos se limpian en createStaticVehicleMarkers si ya no existen
   }
 
   // 5. Follow selected
