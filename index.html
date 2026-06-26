@@ -948,6 +948,97 @@ function updateMarkers(players, corners) {
     }
   }
 }
+
+  const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
+  const seen = new Set();
+
+  // ---- Marcadores de vehículos ----
+  for (const g of vehicleGroups) {
+    if (!g.position) continue;
+    if (!filters.veh) continue;
+    if (!filters.t1 && g.teamID === 1) continue;
+    if (!filters.t2 && g.teamID === 2) continue;
+    const ll = gameToLatLng(g.position, corners);
+    const key = `veh_${g.vehicleId}`;
+    seen.add(key);
+
+    // 🔥 Asignar el icono desde el mapa de vehículos (global)
+    g.icon = vehicleIconMap[g.vehicleId] || null;
+
+    const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
+    const icon = makeVehicleIcon(g, isSelected);
+
+    if (markers[key]) {
+      markers[key].setLatLng(ll).setIcon(icon);
+    } else {
+      const m = L.marker(ll, { icon });
+      markers[key] = m;
+    }
+    const m = markers[key];
+    m._vehicleData = g;
+    m.unbindTooltip();
+    m.bindTooltip(makeVehicleTooltip(g), {
+      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
+    });
+    m.off('mouseover click');
+    m.on('mouseover', () => showVehicleCard(g));
+    m.on('click', () => selectVehicle(g));
+    if (!map.hasLayer(m)) map.addLayer(m);
+  }
+
+  // ---- Marcadores individuales (sin vehículo) ----
+  for (const p of individualPlayers) {
+    if (!p.position) continue;
+    if (!playerPassesFilter(p)) continue;
+    seen.add(`player_${p.steamID}`);
+    const ll = gameToLatLng(p.position, corners);
+    const isSel = p.steamID === selectedSteamID;
+    const icon = makeIcon(p, isSel);
+    if (markers[`player_${p.steamID}`]) {
+      markers[`player_${p.steamID}`].setLatLng(ll).setIcon(icon);
+    } else {
+      const m = L.marker(ll, { icon });
+      markers[`player_${p.steamID}`] = m;
+    }
+    const m = markers[`player_${p.steamID}`];
+    m._playerData = p;
+    m.unbindTooltip();
+    m.bindTooltip(makeTooltipContent(p), {
+      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
+    });
+    m.off('mouseover click');
+    m.on('mouseover', () => showPlayerCard(p));
+    m.on('click', () => selectPlayer(p));
+    if (!map.hasLayer(m)) map.addLayer(m);
+  }
+
+  // ---- Limpiar marcadores ya no presentes ----
+  for (const id of Object.keys(markers)) {
+    if (!seen.has(id)) {
+      map.removeLayer(markers[id]);
+      delete markers[id];
+    }
+  }
+
+  // Follow mode
+  if (followSelected && selectedSteamID) {
+    let targetMarker = null;
+    for (const key of Object.keys(markers)) {
+      const m = markers[key];
+      if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+        targetMarker = m;
+        break;
+      }
+      if (m._playerData && m._playerData.steamID === selectedSteamID) {
+        targetMarker = m;
+        break;
+      }
+    }
+    if (targetMarker && map.hasLayer(targetMarker)) {
+      map.panTo(targetMarker.getLatLng(), { animate: true, duration: 0.4 });
+    }
+  }
+}
   // ---- Marcadores individuales (sin vehículo) ----
   for (const p of individualPlayers) {
     if (!p.position) continue;
@@ -1005,6 +1096,7 @@ function updateMarkers(players, corners) {
 
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 const objectiveMarkers = {};
+
 
 function updateObjectives(objectives, corners) {
   ensureObjectivesPane();
