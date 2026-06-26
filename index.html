@@ -236,8 +236,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
       <div id="sideContent">
         <div id="tabPlayers" class="show">
           <div>
-            <div class="panel-title">Jugador seleccionado</div>
-            <div id="playerPanel"><div class="no-data">Hover sobre un ícono</div></div>
+            <div class="panel-title">Seleccionado</div>
+            <div id="playerPanel"><div class="no-data">Hover sobre un marcador</div></div>
           </div>
           <div>
             <div class="panel-title">En mapa (<span id="playerCount">0</span>)</div>
@@ -306,7 +306,9 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-// ─── MAPEO DE VEHÍCULOS (cargado desde JSON) ──────────────────────────────
+// ─── CARGA DEL MAPEO DESDE GITHUB ──────────────────────────────────────────
+const MAPPING_URL = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/refs/heads/main/vehicle_icon_mapping.json';
+
 let VEHICLES_WITH_NAMED_ICONS = {};
 let VEHICLE_TYPE_ICONS = {};
 let VEHICLE_NAME_TO_TYPE = {};
@@ -326,7 +328,7 @@ function buildNormalizedIndex(dict) {
 
 async function loadVehicleMapping() {
   try {
-    const resp = await fetch('vehicle_icon_mapping.json');
+    const resp = await fetch(MAPPING_URL);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
@@ -346,33 +348,36 @@ async function loadVehicleMapping() {
     }
     VEHICLE_NAME_TO_TYPE_NORM = buildNormalizedIndex(VEHICLE_NAME_TO_TYPE);
 
-    console.log('✅ Mapeo de vehículos cargado desde JSON');
+    console.log('✅ Mapeo de vehículos cargado desde GitHub');
   } catch (e) {
-    console.error('❌ Error al cargar vehicle_icon_mapping.json:', e);
-    // Los diccionarios quedan vacíos, se usará test.webp como fallback
+    console.warn('❌ No se pudo cargar mapeo desde GitHub, usando fallback local:', e);
+    // Fallback: intentar cargar localmente
+    try {
+      const resp = await fetch('vehicle_icon_mapping.json');
+      if (resp.ok) {
+        const data = await resp.json();
+        VEHICLES_WITH_NAMED_ICONS = data.vehicles_with_named_icons || {};
+        VEHICLES_WITH_NAMED_ICONS_NORM = buildNormalizedIndex(VEHICLES_WITH_NAMED_ICONS);
+        const typeMap = data.vehicle_type_mapping || {};
+        VEHICLE_TYPE_ICONS = {};
+        for (const [type, info] of Object.entries(typeMap)) {
+          if (info.icon) VEHICLE_TYPE_ICONS[type] = info.icon;
+        }
+        const detailMap = data.detailed_vehicle_mapping || {};
+        VEHICLE_NAME_TO_TYPE = {};
+        for (const [vehicle, info] of Object.entries(detailMap)) {
+          if (info.type) VEHICLE_NAME_TO_TYPE[vehicle] = info.type;
+        }
+        VEHICLE_NAME_TO_TYPE_NORM = buildNormalizedIndex(VEHICLE_NAME_TO_TYPE);
+        console.log('✅ Mapeo cargado localmente como fallback');
+      }
+    } catch (e2) {
+      console.warn('⚠️ No se pudo cargar mapeo local, usando fallbacks internos.');
+    }
   }
 }
 
-function getVehicleIcon(vehicleName, vehicleType = null) {
-  if (!vehicleName) return 'resources/public__img__markers__weapons__test.webp';
-  if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
-    return 'resources/' + VEHICLES_WITH_NAMED_ICONS[vehicleName];
-  }
-  const normName = normalizeVehicleKey(vehicleName);
-  if (VEHICLES_WITH_NAMED_ICONS_NORM[normName]) {
-    return 'resources/' + VEHICLES_WITH_NAMED_ICONS_NORM[normName];
-  }
-  if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
-    return 'resources/' + VEHICLE_TYPE_ICONS[vehicleType];
-  }
-  const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName] || VEHICLE_NAME_TO_TYPE_NORM[normName];
-  if (deducedType && VEHICLE_TYPE_ICONS[deducedType]) {
-    return 'resources/' + VEHICLE_TYPE_ICONS[deducedType];
-  }
-  return 'resources/public__img__markers__weapons__test.webp';
-}
-
-// ─── CONFIGURACIÓN ─────────────────────────────────────────────────────────────
+// ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
 const POLL_MS    = 2000;
 const MAP_UNITS  = 1000;
@@ -573,8 +578,8 @@ function toggleFilter(key) {
   filters[key] = !filters[key];
   document.getElementById('f' + key).classList.toggle('active', filters[key]);
   if (lastSnapshot) {
-    const { players, corners } = lastSnapshot;
-    updateMarkers(players, corners);
+    const { players, vehicles, corners } = lastSnapshot;
+    updateMarkers(players, vehicles, corners);
     updatePlayerList(players);
   }
 }
@@ -626,7 +631,7 @@ function playerPassesFilter(p) {
 function makeVehicleIcon(group, selected) {
   const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
-  const count = group.occupants.length;
+  const count = group.occupants ? group.occupants.length : 0;
   let iconUrl = group.icon || 'public__img__markers__weapons__test.webp';
   if (!iconUrl.startsWith('resources/')) {
     iconUrl = 'resources/' + iconUrl;
@@ -643,13 +648,13 @@ function makeVehicleIcon(group, selected) {
     overflow:hidden;
   ">
     <img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;" />
-    <span style="
+    ${count > 0 ? `<span style="
       position:absolute;bottom:-2px;right:-2px;
       background:#1a1a1a;color:#fff;border-radius:50%;
       width:14px;height:14px;font-size:8px;font-weight:bold;
       display:flex;align-items:center;justify-content:center;
       border:1px solid #000;
-    ">${count}</span>
+    ">${count}</span>` : ''}
   </div>`;
   return L.divIcon({ html, iconSize: [32, 32], iconAnchor: [16, 16], className: '' });
 }
@@ -657,7 +662,8 @@ function makeVehicleIcon(group, selected) {
 function showVehicleCard(group) {
   const teamColor = group.teamID === 1 ? 'blue' : 'red';
   const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
-  const occupantsHtml = group.occupants.map(p =>
+  const occ = group.occupants || [];
+  const occupantsHtml = occ.map(p =>
     `<div style="display:flex;justify-content:space-between;font-size:10px;border-bottom:1px solid #1a1f18;padding:2px 0;">
       <span>${esc(p.name)}</span>
       <span style="color:var(--text-dim);">asiento ${p.seat ?? '?'}</span>
@@ -666,20 +672,21 @@ function showVehicleCard(group) {
   document.getElementById('playerPanel').innerHTML = `
     <div class="player-card">
       <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> 🚗 ${esc(group.vehicleName)}</div>
-      <div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Ocupantes (${group.occupants.length})</div>
-      ${occupantsHtml}
+      ${occ.length ? `<div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Ocupantes (${occ.length})</div>
+      ${occupantsHtml}` : `<div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Vehículo vacío</div>`}
     </div>`;
 }
 
 function makeVehicleTooltip(group) {
   const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
-  const occupantsList = group.occupants.map(p => {
+  const occ = group.occupants || [];
+  const occupantsList = occ.map(p => {
     const statusEmoji = p.isAlive ? '🟢' : (p.position ? '🟡' : '🔴');
     return `  ${statusEmoji} ${p.name} (asiento ${p.seat ?? '?'})`;
   }).join('\n');
   return `<div style="font-weight:600;color:var(--amber);">🚗 ${group.vehicleName}</div>
-<div style="color:var(--text-dim);">[${teamLabel}] · ${group.occupants.length} ocupantes</div>
-<pre style="font-size:9px;margin:4px 0 0;color:var(--text);">${occupantsList}</pre>`;
+<div style="color:var(--text-dim);">[${teamLabel}] · ${occ.length} ocupantes</div>
+${occupantsList ? `<pre style="font-size:9px;margin:4px 0 0;color:var(--text);">${occupantsList}</pre>` : '<div style="font-size:9px;color:var(--text-dim);">Sin tripulación</div>'}`;
 }
 
 function groupPlayersByVehicle(players) {
@@ -698,6 +705,7 @@ function groupPlayersByVehicle(players) {
         teamID: p.teamID,
         occupants: [],
         position: null,
+        icon: vehicleIconMap[p.vehicle.id] || null,
       };
     }
     groups[key].occupants.push(p);
@@ -711,7 +719,70 @@ function groupPlayersByVehicle(players) {
   return { vehicleGroups: Object.values(groups), individualPlayers: withoutVehicle };
 }
 
-function updateMarkers(players, corners) {
+// ─── NUEVA FUNCIÓN: CREAR MARCADORES PARA VEHÍCULOS ESTÁTICOS ──────────────
+function createStaticVehicleMarkers(vehicles, corners, seenVehicleIds) {
+  if (!vehicles || !corners) return;
+  for (const v of vehicles) {
+    if (!v.position) continue;
+    // Si ya está ocupado (su id aparece en seenVehicleIds), saltamos
+    if (seenVehicleIds.has(v.id)) continue;
+    // Aplicar filtros de equipo
+    if (!filters.t1 && v.teamID === 1) continue;
+    if (!filters.t2 && v.teamID === 2) continue;
+    if (!filters.veh) continue;  // mismo filtro que vehículos ocupados
+
+    const key = `static_veh_${v.id}`;
+    const ll = gameToLatLng(v.position, corners);
+    const group = {
+      vehicleId: v.id,
+      vehicleName: v.type || 'Vehículo',
+      teamID: v.teamID,
+      occupants: [],
+      position: v.position,
+      icon: v.icon || 'public__img__markers__weapons__test.webp',
+    };
+    const isSelected = false;  // no hay jugador asociado
+    const icon = makeVehicleIcon(group, false);
+    if (markers[key]) {
+      markers[key].setLatLng(ll).setIcon(icon);
+    } else {
+      const m = L.marker(ll, { icon });
+      markers[key] = m;
+    }
+    const m = markers[key];
+    m._vehicleData = group;
+    m.unbindTooltip();
+    m.bindTooltip(makeVehicleTooltip(group), {
+      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
+    });
+    m.off('mouseover click');
+    m.on('mouseover', () => showVehicleCard(group));
+    m.on('click', () => selectStaticVehicle(group));
+    if (!map.hasLayer(m)) map.addLayer(m);
+  }
+}
+
+// ─── SELECCIÓN DE VEHÍCULO ESTÁTICO ─────────────────────────────────────────
+function selectStaticVehicle(group) {
+  // Limpiar selección previa de jugador
+  selectedSteamID = null;
+  // Actualizar panel de admin
+  document.getElementById('adminNoTarget').style.display = 'none';
+  document.getElementById('adminTargetInfo').style.display = 'block';
+  document.getElementById('adminTargetName').textContent = `🚗 ${group.vehicleName}`;
+  document.getElementById('adminTargetSteam').textContent = 'Vehículo sin tripulación';
+  document.getElementById('adminTargetTeam').textContent = `Team ${group.teamID}`;
+  document.getElementById('adminTargetSquad').textContent = '—';
+  document.getElementById('adminTargetRole').textContent = 'Vehículo';
+  document.getElementById('playerActionBtns').style.display = 'none';  // sin acciones
+  cancelPendingCmd();
+  showVehicleCard(group);
+  // Refrescar selección en marcadores
+  refreshMarkerSelection();
+}
+
+function updateMarkers(players, vehicles, corners) {
+  // 1. Procesar vehículos ocupados (como antes)
   const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
   const seen = new Set();
 
@@ -722,8 +793,8 @@ function updateMarkers(players, corners) {
     if (!filters.t2 && g.teamID === 2) continue;
     const ll = gameToLatLng(g.position, corners);
     const key = `veh_${g.vehicleId}`;
-    seen.add(key);
-    g.icon = vehicleIconMap[g.vehicleId] || null;
+    seen.add(g.vehicleId);
+    g.icon = vehicleIconMap[g.vehicleId] || g.icon;
     const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
     const icon = makeVehicleIcon(g, isSelected);
     if (markers[key]) {
@@ -744,20 +815,22 @@ function updateMarkers(players, corners) {
     if (!map.hasLayer(m)) map.addLayer(m);
   }
 
+  // 2. Procesar jugadores individuales (fuera de vehículo)
   for (const p of individualPlayers) {
     if (!p.position) continue;
     if (!playerPassesFilter(p)) continue;
+    const key = `player_${p.steamID}`;
     seen.add(`player_${p.steamID}`);
     const ll = gameToLatLng(p.position, corners);
     const isSel = p.steamID === selectedSteamID;
     const icon = makeIcon(p, isSel);
-    if (markers[`player_${p.steamID}`]) {
-      markers[`player_${p.steamID}`].setLatLng(ll).setIcon(icon);
+    if (markers[key]) {
+      markers[key].setLatLng(ll).setIcon(icon);
     } else {
       const m = L.marker(ll, { icon });
-      markers[`player_${p.steamID}`] = m;
+      markers[key] = m;
     }
-    const m = markers[`player_${p.steamID}`];
+    const m = markers[key];
     m._playerData = p;
     m.unbindTooltip();
     m.bindTooltip(makeTooltipContent(p), {
@@ -769,18 +842,40 @@ function updateMarkers(players, corners) {
     if (!map.hasLayer(m)) map.addLayer(m);
   }
 
+  // 3. Crear marcadores para vehículos estáticos (no ocupados)
+  if (vehicles && corners) {
+    const occupiedIds = new Set();
+    for (const g of vehicleGroups) {
+      if (g.vehicleId) occupiedIds.add(g.vehicleId);
+    }
+    createStaticVehicleMarkers(vehicles, corners, occupiedIds);
+  }
+
+  // 4. Limpiar marcadores obsoletos
   for (const id of Object.keys(markers)) {
-    if (!seen.has(id)) {
-      map.removeLayer(markers[id]);
-      delete markers[id];
+    if (!seen.has(id) && !id.startsWith('static_veh_')) {
+      // Para estáticos, no los removemos aquí; los manejamos en createStaticVehicleMarkers
+      // pero podemos verificar si el id estático sigue existiendo en vehicles
+      if (id.startsWith('static_veh_')) {
+        const vehId = id.replace('static_veh_', '');
+        const stillExists = vehicles && vehicles.some(v => v.id === vehId);
+        if (!stillExists) {
+          map.removeLayer(markers[id]);
+          delete markers[id];
+        }
+      } else {
+        map.removeLayer(markers[id]);
+        delete markers[id];
+      }
     }
   }
 
+  // 5. Follow selected
   if (followSelected && selectedSteamID) {
     let targetMarker = null;
     for (const key of Object.keys(markers)) {
       const m = markers[key];
-      if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+      if (m._vehicleData && m._vehicleData.occupants && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
         targetMarker = m;
         break;
       }
@@ -949,7 +1044,7 @@ function switchTab(tab) {
   document.getElementById('tabAdmin').classList.toggle('show', tab==='admin');
 }
 
-// ─── PLAYER CARD (UNIFICADA) ──────────────────────────────────────────────────
+// ─── PLAYER CARD ──────────────────────────────────────────────────────────────
 function showPlayerCard(p) {
   const teamColor = p.teamID === 1 ? 'blue' : 'red';
   const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
@@ -999,13 +1094,17 @@ function selectPlayer(p) {
 function selectVehicle(group) {
   const primary = group.occupants.find(p => p.isLeader) || group.occupants[0];
   if (primary) selectPlayer(primary);
+  else {
+    // Vehículo ocupado pero sin jugadores (raro, pero por si acaso)
+    selectStaticVehicle(group);
+  }
 }
 
 function refreshMarkerSelection() {
   for (const key of Object.keys(markers)) {
     const m = markers[key];
     if (m._vehicleData) {
-      const sel = m._vehicleData.occupants.some(p => p.steamID === selectedSteamID);
+      const sel = m._vehicleData.occupants && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID);
       m.setIcon(makeVehicleIcon(m._vehicleData, sel));
     } else if (m._playerData) {
       const sel = m._playerData.steamID === selectedSteamID;
@@ -1018,7 +1117,7 @@ function centerOnSelected() {
   if (!followSelected) return;
   for (const key of Object.keys(markers)) {
     const m = markers[key];
-    if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+    if (m._vehicleData && m._vehicleData.occupants && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
       map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
       return;
     }
@@ -1285,10 +1384,10 @@ async function poll() {
       });
     }
 
-    // ── Actualizar marcadores de jugadores y vehículos ──
+    // ── Actualizar marcadores de jugadores, vehículos ocupados y estáticos ──
     if (corners && data.players && data.players.length > 0) {
-      lastSnapshot = { players: data.players, corners };
-      updateMarkers(data.players, corners);
+      lastSnapshot = { players: data.players, vehicles: data.vehicles, corners };
+      updateMarkers(data.players, data.vehicles, corners);
     } else if (!data.players || data.players.length === 0) {
       lastSnapshot = null;
       // Eliminar todos los marcadores
