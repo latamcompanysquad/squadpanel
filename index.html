@@ -425,7 +425,9 @@ function getDeployableIcon(type, teamID, isActive = true) {
   else return '';
 
   const finalSuffix = isActive ? suffix : 'WHITE';
-  return `./resources/${baseName}_${finalSuffix}.svg`;
+  const url = `./resources/${baseName}_${finalSuffix}.svg?t=${Date.now()}`;
+  console.log('URL generada:', url);
+  return url;
 }
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
@@ -1088,7 +1090,9 @@ function renderFobMarker(fob, corners) {
   const iconSize = isHab ? 30 : 24;
   const overlayX = isHab && !isActive ? `<div style="position:absolute;top:-6px;right:-6px;font-size:16px;color:#ff0000;font-weight:bold;text-shadow:0 0 3px #000;line-height:1;">✕</div>` : '';
   const iconHtml = `<div style="position:relative;width:${iconSize}px;height:${iconSize}px;">
-    <img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" />
+    <img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" 
+         onerror="this.onerror=null; this.style.display='none'; console.error('❌ SVG falló:', '${iconUrl}');" 
+         onload="console.log('✅ SVG cargado:', '${iconUrl}');" />
     ${overlayX}
   </div>`;
   const icon = L.divIcon({
