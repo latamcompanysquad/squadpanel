@@ -730,6 +730,9 @@ function updateMarkers(players, corners) {
   // ---- Marcadores de vehículos ----
   for (const g of vehicleGroups) {
     if (!g.position) continue;
+    if (!filters.veh) continue;
+    if (!filters.t1 && g.teamID === 1) continue;
+    if (!filters.t2 && g.teamID === 2) continue;
     const ll = gameToLatLng(g.position, corners);
     const key = `veh_${g.vehicleId}`;
     seen.add(key);
@@ -759,6 +762,7 @@ function updateMarkers(players, corners) {
   // ---- Marcadores individuales (sin vehículo) ----
   for (const p of individualPlayers) {
     if (!p.position) continue;
+    if (!playerPassesFilter(p)) continue;
     seen.add(`player_${p.steamID}`);
     const ll = gameToLatLng(p.position, corners);
     const isSel = p.steamID === selectedSteamID;
@@ -1263,11 +1267,14 @@ function toast(msg, type='ok') {
 // ── PLAYER LIST ───────────────────────────────────────────────────────────────
 function updatePlayerList(players) {
   const list = document.getElementById('playerList');
-  // Filtrar según estado de muertos: si dead filter está activo, mostramos todos; si no, solo vivos
-  let visible = players;
-  if (!filters.dead) {
-    visible = players.filter(p => p.isAlive === true);
-  }
+  // Filtrar según los 4 toggles (t1, t2, veh, dead)
+  let visible = players.filter(p => {
+    if (!filters.t1 && p.teamID === 1) return false;
+    if (!filters.t2 && p.teamID === 2) return false;
+    if (!filters.veh && p.vehicle) return false;
+    if (!filters.dead && !p.isAlive) return false;
+    return true;
+  });
   // Ordenar: por equipo, luego por squadID (numérico), líder primero, luego nombre
   const sorted = [...visible].sort((a,b) => {
     if (a.teamID !== b.teamID) return a.teamID - b.teamID;
