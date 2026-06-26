@@ -342,6 +342,26 @@
       "type": "UH",
       "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg"
     },
+    "UH-60M": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "Black Hawk transport helicopter"
+    },
+    "Z-8G": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "Chinese transport helicopter"
+    },
+    "Z-9A": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "Chinese utility helicopter"
+    },
+    "CH-146": {
+      "type": "UH",
+      "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg",
+      "comment": "Canadian Griffon"
+    },
     "KamAZ 5350 Transport": {
       "type": "TRAN",
       "fallback_icon": "public__img__vehicleSpawners__TRAN.webp",
