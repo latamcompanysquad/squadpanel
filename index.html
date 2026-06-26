@@ -413,11 +413,10 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
 function getDeployableIcon(type, teamID, isActive = true) {
   // type: 'fob', 'hab', 'ammo'
   // Asegurar que teamID sea número
-  const tid = Number(teamID);
-  let teamSuffix = 'WHITE';
-  if (tid === 1) teamSuffix = 'BLUE';
-  else if (tid === 2) teamSuffix = 'RED';
-  else teamSuffix = 'WHITE';
+  const tid = parseInt(teamID, 10);
+  let suffix = 'WHITE';
+  if (tid === 1) suffix = 'BLUE';
+  else if (tid === 2) suffix = 'RED';
 
   let baseName = '';
   if (type === 'fob') baseName = 'MAP_FOB';
@@ -425,10 +424,8 @@ function getDeployableIcon(type, teamID, isActive = true) {
   else if (type === 'ammo') baseName = 'MAP_AMMOCRATE';
   else return '';
 
-  const suffix = isActive ? teamSuffix : 'WHITE';
-  const path = `./resources/${baseName}_${suffix}.svg`;
-  // console.log(`getDeployableIcon: type=${type}, teamID=${tid}, isActive=${isActive} -> ${path}`);
-  return path;
+  const finalSuffix = isActive ? suffix : 'WHITE';
+  return `./resources/${baseName}_${finalSuffix}.svg`;
 }
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
@@ -998,7 +995,7 @@ function renderRallyMarker(rally, corners) {
   if (!rallyLayer) return;
   const pos = rally.pos || { x: 0, y: 0 };
   // Asegurar teamID como número
-  let teamID = Number(rally.teamID);
+  let teamID = parseInt(rally.teamID, 10);
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
   const squadID = rally.squadID || '?';
   const latLng = gameToLatLng(pos, corners);
@@ -1023,7 +1020,7 @@ function updateRallies(rallyArray, corners) {
 function renderAmmoMarker(ammo, corners) {
   if (!ammoLayer) return;
   const pos = ammo.pos || { x: 0, y: 0 };
-  let teamID = Number(ammo.teamID);
+  let teamID = parseInt(ammo.teamID, 10);
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
   const state = ammo.state || 'Completed';
   const latLng = gameToLatLng(pos, corners);
@@ -1055,7 +1052,7 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
   const pos = fob.pos || { x: 0, y: 0 };
-  let teamID = Number(fob.teamID);
+  let teamID = parseInt(fob.teamID, 10);
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
 
   const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
