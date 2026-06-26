@@ -30,19 +30,19 @@
 
   "vehicle_type_mapping": {
     "TRAN": {
-      "icon": "public__img__vehicleSpawners__TRAN.webp",
+      "icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "vehicles": ["M939 Transport", "KamAZ 5350 Transport", "HX60 Transport", "CTM131 Transport"]
     },
     "MRAP": {
-      "icon": "public__img__vehicleSpawners__MRAP.webp",
+      "icon": "public__img__icons__default__vehicles__map_jeep.svg",
       "vehicles": ["CPV Transport", "CPV M134 Minigun", "M1117", "Tigr-M Kord", "CSK131 QJZ89"]
     },
     "LOGI": {
-      "icon": "public__img__vehicleSpawners__LOGI.webp",
+      "icon": "public__img__icons__default__vehicles__map_truck_logistics.svg",
       "vehicles": ["M939 Logistics", "Technical Logistics", "KamAZ 5350 Logistics", "HX60 Logistics", "CTM131 Logistics", "Lynx 8x8 Logistics"]
     },
     "LTV": {
-      "icon": "public__img__vehicleSpawners__MRAP.webp",
+      "icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "comment": "No dedicated LTV icon, use MRAP or jeep_antitank SVG",
       "vehicles": ["M1151 M240", "M1151 M2", "Technical M2", "BRDM-2", "RHIB QJZ89", "RHIB QJY88"]
     },
@@ -52,34 +52,34 @@
       "vehicles": ["Quad Bike", "RHIB M134", "RHIB Mk19", "RHIB M2"]
     },
     "APC": {
-      "icon": "public__img__vehicleSpawners__APC.webp",
+      "icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "vehicles": ["BTR-80A", "BTR-82A", "BTR-MDM", "ZSD05", "FV107 Scimitar", "FV432 L37A2 RWS", "Lynx 8x8 Transport"]
     },
     "IFV": {
-      "icon": "public__img__vehicleSpawners__IFV.webp",
+      "icon": "public__img__icons__default__vehicles__map_trackedifv.svg",
       "vehicles": ["M2A3 Bradley", "BMP-1", "BMP-2", "BMP-3", "BMD-4M", "ZTD05", "ZBD04A", "FV510 Warrior", "CTM131 QJZ89", "Lynx 8x8 QJZ89"]
     },
     "MBT": {
-      "icon": "public__img__vehicleSpawners__MBT.webp",
+      "icon": "public__img__icons__default__vehicles__map_tank.svg",
       "vehicles": ["M1A1 Abrams", "M1A2 Abrams", "T-72B3", "T-80BVM", "T-90A", "M1151 TOW", "M1150 Assault", "ZTZ99A"]
     },
     "TD": {
-      "icon": "public__img__vehicleSpawners__MBT.webp",
+      "icon": "public__img__icons__default__vehicles__map_jeep_antitank.svg",
       "comment": "Tank Destroyer, use MBT icon or create dedicated TD icon",
       "vehicles": ["M1151 TOW", "M1150 Assault", "WZ-131G FT"]
     },
     "MSV": {
-      "icon": "public__img__vehicleSpawners__APC.webp",
+      "icon": "public__img__icons__default__vehicles__map_trackedapc.svg",
       "comment": "Multi-role Support Vehicle, use APC icon",
       "vehicles": ["M113A3 MSV"]
     },
     "SPA": {
-      "icon": "public__img__markers__weapons__Mortar.webp",
+      "icon": "public__img__icons__default__vehicles__map_truck_transport.svg",
       "comment": "Self-Propelled Artillery, use artillery marker",
       "vehicles": ["Ural-375D BM-21 Grad", "MT-LB FAB500 Begemot", "2S1 Gvozdika", "2S3 Akatsiya"]
     },
     "SPAA": {
-      "icon": "public__img__icons__shared__characteristics__ATGM+.webp",
+      "icon": "public__img__icons__default__vehicles__map_truck_antiair.svg",
       "comment": "Self-Propelled AA, needs dedicated SPAA icon or use anti-air",
       "vehicles": ["Ural-375D ZU-23-2", "M1097 Avenger", "Rapier FSA", "Starstreak HVM"]
     },
