@@ -409,13 +409,15 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
   return 'public__img__markers__weapons__test.webp';
 }
 
-// ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO) ────────────────────────────
+// ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO, REPAIR) ────────────────────
 function getDeployableIcon(type, teamID, isActive = true) {
   // type: 'fob', 'hab', 'ammo'
+  // Asegurar que teamID sea número
+  const tid = Number(teamID);
   let teamSuffix = 'WHITE';
-  if (teamID === 1) teamSuffix = 'BLUE';
-  else if (teamID === 2) teamSuffix = 'RED';
-  else teamSuffix = 'WHITE'; // fallback
+  if (tid === 1) teamSuffix = 'BLUE';
+  else if (tid === 2) teamSuffix = 'RED';
+  else teamSuffix = 'WHITE';
 
   let baseName = '';
   if (type === 'fob') baseName = 'MAP_FOB';
@@ -423,9 +425,10 @@ function getDeployableIcon(type, teamID, isActive = true) {
   else if (type === 'ammo') baseName = 'MAP_AMMOCRATE';
   else return '';
 
-  // Si está inactivo, usar WHITE
   const suffix = isActive ? teamSuffix : 'WHITE';
-  return `./resources/${baseName}_${suffix}.svg`;
+  const path = `./resources/${baseName}_${suffix}.svg`;
+  // console.log(`getDeployableIcon: type=${type}, teamID=${tid}, isActive=${isActive} -> ${path}`);
+  return path;
 }
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
@@ -994,10 +997,12 @@ function clearFobMarkers() { if (fobMarkersLayer) fobMarkersLayer.clearLayers();
 function renderRallyMarker(rally, corners) {
   if (!rallyLayer) return;
   const pos = rally.pos || { x: 0, y: 0 };
-  const teamID = rally.teamID || 1;
+  // Asegurar teamID como número
+  let teamID = Number(rally.teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
   const squadID = rally.squadID || '?';
   const latLng = gameToLatLng(pos, corners);
-  // Usar el icono de FOB en blanco (o con color según equipo)
+  // Usar el icono de FOB con color según equipo
   const iconUrl = getDeployableIcon('fob', teamID, true);
   const iconSize = 22;
   const iconHtml = `<img src="${iconUrl}" style="width:${iconSize}px;height:${iconSize}px;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" />`;
@@ -1018,8 +1023,8 @@ function updateRallies(rallyArray, corners) {
 function renderAmmoMarker(ammo, corners) {
   if (!ammoLayer) return;
   const pos = ammo.pos || { x: 0, y: 0 };
-  let teamID = ammo.teamID;
-  if (teamID !== 1 && teamID !== 2) teamID = 1; // fallback
+  let teamID = Number(ammo.teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
   const state = ammo.state || 'Completed';
   const latLng = gameToLatLng(pos, corners);
   const isBuilt = state === 'Completed';
@@ -1050,8 +1055,8 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
   const pos = fob.pos || { x: 0, y: 0 };
-  let teamID = fob.teamID;
-  if (teamID !== 1 && teamID !== 2) teamID = 1; // fallback
+  let teamID = Number(fob.teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
 
   const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
   const constructRadius = fob.construct_radius || 15000;
