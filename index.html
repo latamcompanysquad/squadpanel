@@ -1315,64 +1315,97 @@ async function poll() {
     const data = await res.json();
     updateHUD(data);
 
+    // ── Calcular corners ──
     let corners = null;
     if (data.cornerZero && data.cornerOne) {
       const xs = [data.cornerZero.x, data.cornerOne.x];
       const ys = [data.cornerZero.y, data.cornerOne.y];
-      corners = { minX:Math.min(...xs), maxX:Math.max(...xs), minY:Math.min(...ys), maxY:Math.max(...ys) };
+      corners = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
     } else {
       const mapKey = normalizeMapName(data.layer || data.map);
       if (mapKey && MAP_CORNERS[mapKey]) {
         const { c0, c1 } = MAP_CORNERS[mapKey];
-        corners = { minX:Math.min(c0[0],c1[0]), maxX:Math.max(c0[0],c1[0]), minY:Math.min(c0[1],c1[1]), maxY:Math.max(c0[1],c1[1]) };
+        corners = { minX: Math.min(c0[0], c1[0]), maxX: Math.max(c0[0], c1[0]), minY: Math.min(c0[1], c1[1]), maxY: Math.max(c0[1], c1[1]) };
       }
     }
 
+    // ── Cargar mapa base ──
     const mapKey = normalizeMapName(data.layer || data.map);
     if (mapKey) {
       loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
     }
 
-vehicleIconMap = {};
-if (data.vehicles) {
-  data.vehicles.forEach(v => {
-    let icon = v.icon;
-    // Si es el icono genérico, intentar deducir
-    if (icon === 'public__img__markers__weapons__test.webp') {
-      const deduced = getVehicleIcon(v.type, null);
-      // getVehicleIcon devuelve algo como 'resources/public__img_...'
-      // quitamos 'resources/' para que coincida con el formato usado por makeVehicleIcon
-      if (deduced && !deduced.includes('test.webp')) {
-        icon = deduced.replace('resources/', '');
+    // ── Llenar vehicleIconMap de forma segura ──
+    vehicleIconMap = {};
+    if (data.vehicles && Array.isArray(data.vehicles)) {
+      data.vehicles.forEach(v => {
+        let icon = v.icon || 'public__img__markers__weapons__test.webp';
+        // Si es el genérico, intentamos deducir uno mejor usando el tipo o nombre
+        if (icon === 'public__img__markers__weapons__test.webp') {
+          // Usamos getVehicleIcon con el nombre del vehículo (v.type o v.id)
+          const deduced = getVehicleIcon(v.type || v.id, null);
+          if (deduced && !deduced.includes('test.webp')) {
+            // Quitamos 'resources/' para que makeVehicleIcon lo use directamente
+            icon = deduced.replace('resources/', '');
+          }
+        }
+        vehicleIconMap[v.id] = icon;
+      });
+    }
+
+    // ── Actualizar marcadores de jugadores y vehículos ──
+    if (corners && data.players && data.players.length > 0) {
+      lastSnapshot = { players: data.players, corners };
+      updateMarkers(data.players, corners);
+    } else if (!data.players || data.players.length === 0) {
+      lastSnapshot = null;
+      // Eliminar todos los marcadores
+      for (const id of Object.keys(markers)) {
+        map.removeLayer(markers[id]);
+        delete markers[id];
       }
     }
-    vehicleIconMap[v.id] = icon;
-  });
-}
 
-    if (corners && data.objectives?.length) {
+    // ── Actualizar objetivos ──
+    if (corners && data.objectives && data.objectives.length > 0) {
       updateObjectives(data.objectives, corners);
-    } else if (!data.objectives?.length) {
-      for (const name of Object.keys(objectiveMarkers)) { map.removeLayer(objectiveMarkers[name]); delete objectiveMarkers[name]; }
+    } else {
+      for (const name of Object.keys(objectiveMarkers)) {
+        map.removeLayer(objectiveMarkers[name]);
+        delete objectiveMarkers[name];
+      }
     }
 
-    if (corners && data.fobs?.length) updateFobs(data.fobs, corners);
-    else clearFobMarkers();
+    // ── FOBs ──
+    if (corners && data.fobs && data.fobs.length > 0) {
+      updateFobs(data.fobs, corners);
+    } else {
+      clearFobMarkers();
+    }
 
-    if (corners && data.rallyPoints?.length) updateRallies(data.rallyPoints, corners);
-    else clearRallyMarkers();
+    // ── Rally Points ──
+    if (corners && data.rallyPoints && data.rallyPoints.length > 0) {
+      updateRallies(data.rallyPoints, corners);
+    } else {
+      clearRallyMarkers();
+    }
 
-    if (corners && data.ammocrates?.length) updateAmmo(data.ammocrates, corners);
-    else clearAmmoMarkers();
+    // ── Ammo Crates ──
+    if (corners && data.ammocrates && data.ammocrates.length > 0) {
+      updateAmmo(data.ammocrates, corners);
+    } else {
+      clearAmmoMarkers();
+    }
 
+    // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
-  } catch(e) {
+
+  } catch (e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
     document.getElementById('liveDot').className = 'live-dot offline';
   }
 }
-
 // ─── INICIO ──────────────────────────────────────────────────────────────────
 poll();
 setInterval(poll, POLL_MS);
