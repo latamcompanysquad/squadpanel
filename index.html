@@ -1471,9 +1471,9 @@ function updateHUD(data) {
     const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
     const flag1 = document.getElementById('t1flag');
     const flag2 = document.getElementById('t2flag');
-    if (f1) { flag1.src = `${BASE}/public__img__flags__circles__${f1}.webp`; flag1.style.display = 'inline-block'; }
+    if (f1) { flag1.src = `${BASE}/public__img__flags__${f1}.webp`; flag1.style.display = 'inline-block'; }
     else { flag1.style.display = 'none'; }
-    if (f2) { flag2.src = `${BASE}/public__img__flags__circles__${f2}.webp`; flag2.style.display = 'inline-block'; }
+    if (f2) { flag2.src = `${BASE}/public__img__flags__${f2}.webp`; flag2.style.display = 'inline-block'; }
     else { flag2.style.display = 'none'; }
 
     const total = t1 + t2 || 1;   // ← estaba faltando esto
