@@ -409,6 +409,7 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
   return 'public__img__markers__weapons__test.webp';
 }
 
+// ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO, RALLY) ────────────────────
 function getDeployableIcon(type, teamID, isActive = true) {
   console.log('getDeployableIcon llamado con teamID:', teamID);
   const tid = parseInt(teamID, 10);
@@ -421,7 +422,7 @@ function getDeployableIcon(type, teamID, isActive = true) {
   if (type === 'fob') baseName = 'MAP_FOB';
   else if (type === 'hab') baseName = 'MAP_HAB';
   else if (type === 'ammo') baseName = 'MAP_AMMOCRATE';
-  else if (type === 'rally') baseName = 'MAP_RALLY';  // <-- NUEVO TIPO PARA RALLY
+  else if (type === 'rally') baseName = 'MAP_RALLY';
   else return '';
 
   const finalSuffix = isActive ? suffix : 'WHITE';
@@ -998,7 +999,6 @@ function renderRallyMarker(rally, corners) {
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) teamID = 1;
   const squadID = rally.squadID || '?';
   const latLng = gameToLatLng(pos, corners);
-  // Usar el icono de rally con color según equipo
   const iconUrl = getDeployableIcon('rally', teamID, true);
   const iconSize = 24;
   const iconHtml = `<img src="${iconUrl}" style="width:${iconSize}px;height:${iconSize}px;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" />`;
@@ -1054,23 +1054,52 @@ function updateAmmo(ammoArray, corners) {
   ammoArray.forEach(a => { try { renderAmmoMarker(a, corners); } catch(e) { console.warn('Ammo error:', e); } });
 }
 
-function getDeployableIcon(type, teamID, isActive = true) {
-  console.log('getDeployableIcon llamado con teamID:', teamID);
-  const tid = parseInt(teamID, 10);
-  console.log('tid:', tid);
-  let suffix = 'WHITE';
-  if (tid === 1) suffix = 'BLUE';
-  else if (tid === 2) suffix = 'RED';
+function renderFobMarker(fob, corners) {
+  if (!fobMarkersLayer) return;
+  const pos = fob.pos || { x: 0, y: 0 };
+  console.log('=== renderFobMarker ===');
+  console.log('fob.teamID original:', fob.teamID);
+  console.log('fob.habName:', fob.habName);
+  console.log('fob.isHab:', fob.isHab);
+  let teamID = parseInt(fob.teamID, 10);
+  console.log('teamID after parseInt:', teamID);
+  if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
+    console.warn('teamID inválido, usando 1');
+    teamID = 1;
+  }
 
-  let baseName = '';
-  if (type === 'fob') baseName = 'MAP_FOB';
-  else if (type === 'hab') baseName = 'MAP_HAB';
-  else if (type === 'ammo') baseName = 'MAP_AMMOCRATE';
-  else if (type === 'rally') baseName = 'MAP_RALLY';  // <-- NUEVO TIPO
-  else return '';
+  const habName = fob.habName || (fob.isHab ? `HAB${teamID}` : `FOB${teamID}`);
+  const constructRadius = fob.construct_radius || 15000;
+  const exclusionRadius = fob.exclusion_radius || 30000;
+  const isHab = fob.isHab === true;
+  const isActive = fob.isActive !== false;
+  const latLng = gameToLatLng(pos, corners);
+  if (!latLng) { console.warn('FOB sin posición válida:', fob); return; }
 
-  const finalSuffix = isActive ? suffix : 'WHITE';
-  return `./resources/${baseName}_${finalSuffix}.svg`;
+  if (!isHab) {
+    const colors = teamID === 1 ? { exclusion: '#2a7ab0', construct: '#4fa6e8' } : { exclusion: '#b33a30', construct: '#e0584f' };
+    L.circle(latLng, { radius: metersToMapUnits(exclusionRadius, corners), color: colors.exclusion, weight: 2.5, fillOpacity: 0.03, dashArray: "4,5" }).addTo(fobMarkersLayer);
+    L.circle(latLng, { radius: metersToMapUnits(constructRadius, corners), color: colors.construct, weight: 2.5, fillOpacity: 0.05 }).addTo(fobMarkersLayer);
+  }
+
+  const iconType = isHab ? 'hab' : 'fob';
+  const iconUrl = getDeployableIcon(iconType, teamID, isActive);
+  const iconSize = isHab ? 30 : 24;
+  const overlayX = isHab && !isActive ? `<div style="position:absolute;top:-6px;right:-6px;font-size:16px;color:#ff0000;font-weight:bold;text-shadow:0 0 3px #000;line-height:1;">✕</div>` : '';
+  const iconHtml = `<div style="position:relative;width:${iconSize}px;height:${iconSize}px;">
+    <img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,0.6));" />
+    ${overlayX}
+  </div>`;
+  const icon = L.divIcon({
+    html: iconHtml,
+    iconSize: [iconSize, iconSize],
+    iconAnchor: [iconSize/2, iconSize/2],
+    className: "fob-icon"
+  });
+  const marker = L.marker(latLng, { icon }).addTo(fobMarkersLayer);
+  let statusText = '';
+  if (isHab) statusText = isActive ? '🟢 Activo' : '🔴 Inactivo';
+  marker.bindTooltip(`<strong>${habName}</strong><br/>Team ${teamID}${isHab ? '<br/>' + statusText : ''}`, { className: "squad-tip", direction: "top" });
 }
 
 function updateFobs(fobArray, corners) {
@@ -1497,7 +1526,6 @@ async function poll() {
     }
   });
 })();
-// No hay llave extra aquí
 </script>
 </body>
 </html>
