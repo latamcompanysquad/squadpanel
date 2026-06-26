@@ -145,7 +145,7 @@
     "KamAZ 5350 Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
     "KamAZ 5350 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
     "Ural-375D Transport": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
-    "Ural-375D Logistics": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_transport.svg" },
+    "Ural-375D Logistics": { "type": "TRAN", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
     "Tigr-M Kord": { "type": "MRAP", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
     "RHIB M134": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
     "RHIB Mk19": { "type": "ULTV", "fallback_icon": "public__img__icons__default__vehicles__map_jeep.svg" },
