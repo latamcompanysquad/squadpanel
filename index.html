@@ -810,6 +810,7 @@ function makeVehicleIcon(group, selected) {
   return L.divIcon({ html, iconSize: [32, 32], iconAnchor: [16, 16], className: '' });
 }
 
+// Esta función showVehicleCard se usa para el tooltip del vehículo
 function showVehicleCard(group) {
   const teamColor = group.teamID === 1 ? 'blue' : 'red';
   const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
@@ -827,25 +828,6 @@ function showVehicleCard(group) {
     </div>`;
 }
 
-function showPlayerCard(p) {
-  const teamColor = p.teamID === 1 ? 'blue' : 'red';
-  const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
-  let vehicleLine = '';
-  if (p.vehicle) {
-    const seat = p.seat !== undefined ? ` (asiento ${p.seat})` : '';
-    vehicleLine = `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle.name)}${seat}</span></div>`;
-  }
-  document.getElementById('playerPanel').innerHTML = `
-    <div class="player-card">
-      <div class="pname"><span class="ptag ${teamColor}">[${teamLabel}]</span> ${esc(p.name)}</div>
-      <div class="row"><span>Estado</span><span class="val">${p.isAlive ? (p.vehicle ? '🚗 Vehículo' : '🚶 A pie') : '💀 Muerto'}</span></div>
-      <div class="row"><span>Rol</span><span class="val">${esc(p.role ?? '—')}</span></div>
-      ${vehicleLine}
-      <div class="row"><span>Squad</span><span class="val">${p.squadID ?? '—'}</span></div>
-      <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
-    </div>`;
-}
-
 function makeVehicleTooltip(group) {
   const teamLabel = group.teamID === 1 ? 'T1' : 'T2';
   const occupantsList = group.occupants.map(p => {
@@ -857,6 +839,7 @@ function makeVehicleTooltip(group) {
 <pre style="font-size:9px;margin:4px 0 0;color:var(--text);">${occupantsList}</pre>`;
 }
 
+// ── ACTUALIZACIÓN DE MARCADORES ──────────────────────────────────────────────
 function updateMarkers(players, corners) {
   const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
   const seen = new Set();
@@ -949,103 +932,8 @@ function updateMarkers(players, corners) {
   }
 }
 
-  const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
-  const seen = new Set();
-
-  // ---- Marcadores de vehículos ----
-  for (const g of vehicleGroups) {
-    if (!g.position) continue;
-    if (!filters.veh) continue;
-    if (!filters.t1 && g.teamID === 1) continue;
-    if (!filters.t2 && g.teamID === 2) continue;
-    const ll = gameToLatLng(g.position, corners);
-    const key = `veh_${g.vehicleId}`;
-    seen.add(key);
-
-    // 🔥 Asignar el icono desde el mapa de vehículos (global)
-    g.icon = vehicleIconMap[g.vehicleId] || null;
-
-    const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
-    const icon = makeVehicleIcon(g, isSelected);
-
-    if (markers[key]) {
-      markers[key].setLatLng(ll).setIcon(icon);
-    } else {
-      const m = L.marker(ll, { icon });
-      markers[key] = m;
-    }
-    const m = markers[key];
-    m._vehicleData = g;
-    m.unbindTooltip();
-    m.bindTooltip(makeVehicleTooltip(g), {
-      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
-    });
-    m.off('mouseover click');
-    m.on('mouseover', () => showVehicleCard(g));
-    m.on('click', () => selectVehicle(g));
-    if (!map.hasLayer(m)) map.addLayer(m);
-  }
-
-  // ---- Limpiar marcadores ya no presentes ----
-  for (const id of Object.keys(markers)) {
-    if (!seen.has(id)) {
-      map.removeLayer(markers[id]);
-      delete markers[id];
-    }
-  }
-
-  // Follow mode
-  if (followSelected && selectedSteamID) {
-    let targetMarker = null;
-    for (const key of Object.keys(markers)) {
-      const m = markers[key];
-      if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
-        targetMarker = m;
-        break;
-      }
-      if (m._playerData && m._playerData.steamID === selectedSteamID) {
-        targetMarker = m;
-        break;
-      }
-    }
-    if (targetMarker && map.hasLayer(targetMarker)) {
-      map.panTo(targetMarker.getLatLng(), { animate: true, duration: 0.4 });
-    }
-  }
-
-
-  // ---- Limpiar marcadores ya no presentes ----
-  for (const id of Object.keys(markers)) {
-    if (!seen.has(id)) {
-      map.removeLayer(markers[id]);
-      delete markers[id];
-    }
-  }
-
-  // Follow mode
-  if (followSelected && selectedSteamID) {
-    // Buscar si el seleccionado está en un vehículo
-    let targetMarker = null;
-    for (const key of Object.keys(markers)) {
-      const m = markers[key];
-      if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
-        targetMarker = m;
-        break;
-      }
-      if (m._playerData && m._playerData.steamID === selectedSteamID) {
-        targetMarker = m;
-        break;
-      }
-    }
-    if (targetMarker && map.hasLayer(targetMarker)) {
-      map.panTo(targetMarker.getLatLng(), { animate: true, duration: 0.4 });
-    }
-  }
-
-
 // ── OBJECTIVES ────────────────────────────────────────────────────────────────
 const objectiveMarkers = {};
-
 
 function updateObjectives(objectives, corners) {
   ensureObjectivesPane();
@@ -1068,6 +956,7 @@ function updateObjectives(objectives, corners) {
   }
 }
 
+// ── AGRUPAR JUGADORES POR VEHÍCULO ──────────────────────────────────────────
 function groupPlayersByVehicle(players) {
   const groups = {};
   const withoutVehicle = [];
@@ -1103,7 +992,7 @@ function groupPlayersByVehicle(players) {
   return { vehicleGroups: Object.values(groups), individualPlayers: withoutVehicle };
 }
 
-// ── FOB/HAB MARKERS (rescatado de maqueta antigua) ──────────────────────────────
+// ── FOB/HAB MARKERS ──────────────────────────────────────────────────────────
 let fobMarkersLayer = null;
 
 function initRallyLayer() {
@@ -1334,7 +1223,7 @@ function switchTab(tab) {
   document.getElementById('tabAdmin').classList.toggle('show', tab==='admin');
 }
 
-// ── PLAYER CARD (tab jugadores) ───────────────────────────────────────────────
+// ── SHOW PLAYER CARD (tab jugadores) ────────────────────────────────────────
 function showPlayerCard(p) {
   const teamColor = p.teamID === 1 ? 'blue' : 'red';
   const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
@@ -1362,29 +1251,66 @@ function showPlayerCard(p) {
 // ── SELECT PLAYER (admin target) ──────────────────────────────────────────────
 let pendingCmd = null;
 
+// Esta es la definición principal de selectPlayer (usada en el mapa y en la lista)
 function selectPlayer(p) {
   selectedSteamID = p.steamID;
   // Refresh iconos para mostrar anillo dorado
-  for (const id of Object.keys(markers)) {
-    const m = markers[id];
-    const pd = m._playerData;
-    if (pd) m.setIcon(makeIcon(pd, id === selectedSteamID));
-  }
-  // Click-to-center: volar al marcador en el mapa
-  if (markers[p.steamID] && map.hasLayer(markers[p.steamID])) {
-    map.setView(markers[p.steamID].getLatLng(), Math.max(map.getZoom(), 0), { animate: true, duration: 0.5 });
-  }
+  refreshMarkerSelection();
+  // Centrar en el marcador correspondiente
+  centerOnSelected();
   // Actualizar panel admin
+  updateAdminTarget(p);
+  // Mostrar card en el panel de jugadores
+  showPlayerCard(p);
+}
+
+function selectVehicle(group) {
+  // Seleccionar al primer ocupante (o al líder)
+  const primary = group.occupants.find(p => p.isLeader) || group.occupants[0];
+  if (primary) selectPlayer(primary);
+}
+
+function refreshMarkerSelection() {
+  for (const key of Object.keys(markers)) {
+    const m = markers[key];
+    if (m._vehicleData) {
+      const sel = m._vehicleData.occupants.some(p => p.steamID === selectedSteamID);
+      m.setIcon(makeVehicleIcon(m._vehicleData, sel));
+    } else if (m._playerData) {
+      const sel = m._playerData.steamID === selectedSteamID;
+      m.setIcon(makeIcon(m._playerData, sel));
+    }
+  }
+}
+
+function centerOnSelected() {
+  if (!followSelected) return;
+  for (const key of Object.keys(markers)) {
+    const m = markers[key];
+    if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
+      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
+      return;
+    }
+    if (m._playerData && m._playerData.steamID === selectedSteamID) {
+      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
+      return;
+    }
+  }
+}
+
+function updateAdminTarget(p) {
   document.getElementById('adminNoTarget').style.display = 'none';
   document.getElementById('adminTargetInfo').style.display = 'block';
   document.getElementById('adminTargetName').textContent = p.name;
   document.getElementById('adminTargetSteam').textContent = p.steamID;
-  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID}`;
-  document.getElementById('adminTargetSquad').textContent = p.squadID ?? '—';
-  document.getElementById('adminTargetRole').textContent = p.role ?? '—';
+  const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
+  const squadDisplay = p.squadName || (p.squadID != null ? `Squad ${p.squadID}` : '—');
+  const status = p.isAlive ? 'Vivo' : (p.position ? 'Herido' : 'Muerto');
+  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID} (${teamLabel})`;
+  document.getElementById('adminTargetSquad').textContent = squadDisplay;
+  document.getElementById('adminTargetRole').textContent = `${p.role ?? '—'} · ${status}`;
   document.getElementById('playerActionBtns').style.display = 'grid';
   cancelPendingCmd();
-  showPlayerCard(p);
 }
 
 // ── ADMIN COMMANDS ────────────────────────────────────────────────────────────
@@ -1606,66 +1532,6 @@ else { flag2.style.display = 'none'; }
 
   const ago = data.ts ? Math.round((Date.now() - data.ts) / 1000) : null;
   document.getElementById('statusText').textContent = ago !== null ? `hace ${ago}s` : 'Sin datos';
-}
-
-function selectPlayer(p) {
-  selectedSteamID = p.steamID;
-  // Actualizar todos los marcadores para reflejar selección
-  refreshMarkerSelection();
-  // Centrar en el marcador correspondiente (vehículo o individual)
-  centerOnSelected();
-  // Actualizar panel admin y card
-  updateAdminTarget(p);
-  showPlayerCard(p);
-}
-
-function selectVehicle(group) {
-  // Seleccionar al primer ocupante (o al líder)
-  const primary = group.occupants.find(p => p.isLeader) || group.occupants[0];
-  if (primary) selectPlayer(primary);
-}
-
-function refreshMarkerSelection() {
-  for (const key of Object.keys(markers)) {
-    const m = markers[key];
-    if (m._vehicleData) {
-      const sel = m._vehicleData.occupants.some(p => p.steamID === selectedSteamID);
-      m.setIcon(makeVehicleIcon(m._vehicleData, sel));
-    } else if (m._playerData) {
-      const sel = m._playerData.steamID === selectedSteamID;
-      m.setIcon(makeIcon(m._playerData, sel));
-    }
-  }
-}
-
-function centerOnSelected() {
-  if (!followSelected) return;
-  for (const key of Object.keys(markers)) {
-    const m = markers[key];
-    if (m._vehicleData && m._vehicleData.occupants.some(p => p.steamID === selectedSteamID)) {
-      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
-      return;
-    }
-    if (m._playerData && m._playerData.steamID === selectedSteamID) {
-      map.panTo(m.getLatLng(), { animate: true, duration: 0.4 });
-      return;
-    }
-  }
-}
-
-function updateAdminTarget(p) {
-  document.getElementById('adminNoTarget').style.display = 'none';
-  document.getElementById('adminTargetInfo').style.display = 'block';
-  document.getElementById('adminTargetName').textContent = p.name;
-  document.getElementById('adminTargetSteam').textContent = p.steamID;
-  const teamLabel = p.teamID === 1 ? 'T1' : 'T2';
-  const squadDisplay = p.squadName || (p.squadID != null ? `Squad ${p.squadID}` : '—');
-  const status = p.isAlive ? 'Vivo' : (p.position ? 'Herido' : 'Muerto');
-  document.getElementById('adminTargetTeam').textContent = `Team ${p.teamID} (${teamLabel})`;
-  document.getElementById('adminTargetSquad').textContent = squadDisplay;
-  document.getElementById('adminTargetRole').textContent = `${p.role ?? '—'} · ${status}`;
-  document.getElementById('playerActionBtns').style.display = 'grid';
-  cancelPendingCmd();
 }
 
 // ── POLL ─────────────────────────────────────────────────────────────────────
