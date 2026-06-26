@@ -777,10 +777,16 @@ function makeVehicleIcon(group, selected) {
   const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
   const count = group.occupants.length;
-  
+
   // Obtener el icono desde los datos del grupo
-  let iconUrl = group.icon || 'resources/public__img__markers__weapons__test.webp';
-  // Si no viene 'icon', calcularlo con getVehicleIcon (por si acaso)
+  let iconUrl = group.icon || 'public__img__markers__weapons__test.webp';
+  
+  // Si no tiene 'resources/' al inicio, agregarlo
+  if (!iconUrl.startsWith('resources/')) {
+    iconUrl = 'resources/' + iconUrl;
+  }
+
+  // Si es test.webp o no hay icono, recalcular usando getVehicleIcon (ya incluye resources/)
   if (!group.icon || group.icon.includes('test.webp')) {
     const vehicleType = VEHICLE_NAME_TO_TYPE[group.vehicleName] || null;
     iconUrl = getVehicleIcon(group.vehicleName, vehicleType);
