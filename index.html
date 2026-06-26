@@ -263,7 +263,16 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
         </div>
       </div>
     </div>
-
+<div class="hud-block tickets" id="hudTickets" style="display:none">
+  <img id="t1flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
+  <span class="ticket-num blue" id="t1num">—</span>
+  <div class="ticket-bar">
+    <div class="ticket-fill-blue" id="t1bar" style="width:50%"></div>
+    <div class="ticket-fill-red"  id="t2bar" style="width:50%"></div>
+  </div>
+  <span class="ticket-num red" id="t2num">—</span>
+  <img id="t2flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
+</div>
     <div id="side">
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
@@ -1346,21 +1355,13 @@ function updatePlayerList(players) {
 
 // ── HUD ───────────────────────────────────────────────────────────────────────
 function updateHUD(data) {
+  
   const dot = document.getElementById('liveDot');
   const isLive = data.live && data.players !== undefined;
   dot.className = 'live-dot' + (isLive ? '' : ' offline');
   document.getElementById('hudMap').textContent =
     data.layer && data.layer !== 'Unknown' ? data.layer : (data.map || '—');
-<div class="hud-block tickets" id="hudTickets" style="display:none">
-  <img id="t1flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
-  <span class="ticket-num blue" id="t1num">—</span>
-  <div class="ticket-bar">
-    <div class="ticket-fill-blue" id="t1bar" style="width:50%"></div>
-    <div class="ticket-fill-red"  id="t2bar" style="width:50%"></div>
-  </div>
-  <span class="ticket-num red" id="t2num">—</span>
-  <img id="t2flag" src="" alt="" style="width:18px;height:18px;border-radius:50%;display:none;"/>
-</div>
+
   const t1 = data.tickets?.team1, t2 = data.tickets?.team2;
   const ticketsEl = document.getElementById('hudTickets');
   if (t1 != null && t2 != null) {
