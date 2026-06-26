@@ -1390,18 +1390,12 @@ async function poll() {
     }
 
     // ── Llenar vehicleIconMap de forma segura ──
+    // ── Llenar vehicleIconMap de forma segura ──
     vehicleIconMap = {};
     if (data.vehicles && Array.isArray(data.vehicles)) {
       data.vehicles.forEach(v => {
-        let icon = v.icon || 'public__img__markers__weapons__test.webp';
-        // Si es el genérico, intentamos deducir uno mejor usando el tipo o nombre
-        if (icon === 'public__img__markers__weapons__test.webp') {
-          const deduced = getVehicleIcon(v.type || v.id, null);
-          if (deduced && !deduced.includes('test.webp')) {
-            icon = deduced.replace('resources/', '');
-          }
-        }
-        vehicleIconMap[v.id] = icon;
+        // Usar el icono que envía el worker, o fallback si no viene
+        vehicleIconMap[v.id] = v.icon || 'public__img__markers__weapons__test.webp';
       });
     }
 
