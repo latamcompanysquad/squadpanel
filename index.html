@@ -664,9 +664,24 @@ function objectiveColor(owningTeam) {
   const t = parseInt(owningTeam, 10);
   return t === 1 ? '#4fa6e8' : t === 2 ? '#e0584f' : '#9aa092';
 }
-function makeObjectiveIcon(owningTeam) {
+function isMainObjective(o) {
+  return o.name && o.name.toLowerCase().includes('main');
+}
+
+function makeObjectiveIcon(owningTeam, isMain) {
   const color = objectiveColor(owningTeam);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32">
+  let svg;
+  if (isMain) {
+    // Ícono distinto para main: círculo con base
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+      <line x1="14" y1="4" x2="14" y2="33" stroke="#1a1a1a" stroke-width="2"/>
+      <circle cx="14" cy="13" r="9" fill="${color}" stroke="#000" stroke-width="1.5" opacity=".95"/>
+      <text x="14" y="17" text-anchor="middle" font-size="8" fill="#fff" font-family="sans-serif" font-weight="bold">M</text>
+      <circle cx="14" cy="33" r="2.5" fill="#000"/>
+    </svg>`;
+    return L.divIcon({ html: svg, iconSize:[28,36], iconAnchor:[14,33], className:'' });
+  }
+  svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32">
       <line x1="4" y1="2" x2="4" y2="29" stroke="#1a1a1a" stroke-width="2"/>
       <path d="M4 3 L22 7.5 L4 13 Z" fill="${color}" stroke="#000" stroke-width="1" opacity=".95"/>
       <circle cx="4" cy="29" r="2.5" fill="#000"/>
@@ -1055,21 +1070,14 @@ function updateObjectives(objectives, corners) {
   ensureObjectivesPane();
   const seen = new Set();
 
-  if (!filters.flags) {
-    if (objectiveLine) { map.removeLayer(objectiveLine); objectiveLine = null; }
-    for (const key of Object.keys(objectiveMarkers)) {
-      map.removeLayer(objectiveMarkers[key]);
-      delete objectiveMarkers[key];
-    }
-    return;
-  }
-
-  const linePoints = objectives.filter(o => o.position).map(o => gameToLatLng(o.position, corners));
-  if (linePoints.length >= 2) {
+  // Línea punteada solo entre flags (no mains), solo si flags visible
+  const flagPoints = objectives.filter(o => o.position && !isMainObjective(o)).map(o => gameToLatLng(o.position, corners));
+  if (filters.flags && flagPoints.length >= 2) {
     if (objectiveLine) {
-      objectiveLine.setLatLngs(linePoints);
+      objectiveLine.setLatLngs(flagPoints);
+      if (!map.hasLayer(objectiveLine)) map.addLayer(objectiveLine);
     } else {
-      objectiveLine = L.polyline(linePoints, {
+      objectiveLine = L.polyline(flagPoints, {
         color: '#ffffff', weight: 1.5, opacity: 0.7, dashArray: '6, 6', pane: 'objectivesPane',
       }).addTo(map);
     }
@@ -1079,18 +1087,23 @@ function updateObjectives(objectives, corners) {
 
   for (const o of objectives) {
     if (!o.position || !o.name) continue;
-    const key = o.name;
+    const main = isMainObjective(o);
+    // Mains siempre visibles; flags respetan el filtro
+    if (!main && !filters.flags) continue;
+    const key = `${o.name}_t${parseInt(o.owningTeam, 10)}`;  // key única por nombre+equipo
     seen.add(key);
     const ll = gameToLatLng(o.position, corners);
-    const icon = makeObjectiveIcon(o.owningTeam);
+    const icon = makeObjectiveIcon(o.owningTeam, main);
     if (objectiveMarkers[key]) {
       objectiveMarkers[key].setLatLng(ll).setIcon(icon);
+      if (!map.hasLayer(objectiveMarkers[key])) map.addLayer(objectiveMarkers[key]);
     } else {
       const m = L.marker(ll, { icon, pane: 'objectivesPane' }).addTo(map);
       m.bindTooltip(esc(o.name), { permanent: true, direction: 'top', offset: [0, -30], className: 'obj-label' });
       objectiveMarkers[key] = m;
     }
   }
+  // Limpiar los que ya no están — pero nunca remover mains aunque flags esté off
   for (const key of Object.keys(objectiveMarkers)) {
     if (!seen.has(key)) { map.removeLayer(objectiveMarkers[key]); delete objectiveMarkers[key]; }
   }
