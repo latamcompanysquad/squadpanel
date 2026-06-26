@@ -402,22 +402,44 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
       'UH': 'public__img__icons__default__vehicles__map_transporthelo.svg',
     };
 
-    function getVehicleIcon(vehicleName, vehicleType = null) {
-      if (!vehicleName) return 'resources/public__img__markers__weapons__test.webp';
-      
-      // 1. Buscar por nombre específico
-      if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
-        return `resources/${VEHICLES_WITH_NAMED_ICONS[vehicleName]}`;
-      }
-      
-      // 2. Usar tipo si se proporciona
-      if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
-        return `resources/${VEHICLE_TYPE_ICONS[vehicleType]}`;
-      }
-      
-      // 3. Fallback: test.webp
-      return 'resources/public__img__markers__weapons__test.webp';
-    }
+    const VEHICLE_NAME_TO_TYPE = {
+  'M939 Transport': 'TRAN', 'KamAZ 5350 Transport': 'TRAN',
+  'CPV Transport': 'MRAP', 'CPV M134 Minigun': 'MRAP', 'M1117': 'MRAP', 'Tigr-M Kord': 'MRAP',
+  'M939 Logistics': 'LOGI', 'Technical Logistics': 'LOGI', 'KamAZ 5350 Logistics': 'LOGI',
+  'M1151 M240': 'LTV', 'M1151 M2': 'LTV', 'Technical M2': 'LTV', 'BRDM-2': 'LTV',
+  'Quad Bike': 'ULTV', 'RHIB M134': 'ULTV', 'RHIB Mk19': 'ULTV', 'RHIB M2': 'ULTV',
+  'BTR-80A': 'APC', 'BTR-82A': 'APC', 'BTR-MDM': 'APC',
+  'M2A3 Bradley': 'IFV', 'BMP-1': 'IFV', 'BMP-2': 'IFV', 'BMP-3': 'IFV', 'BMD-4M': 'IFV',
+  'M1A1 Abrams': 'MBT', 'M1A2 Abrams': 'MBT', 'T-72B3': 'MBT', 'T-80BVM': 'MBT', 'T-90A': 'MBT', 'M1150 Assault': 'MBT',
+  'M1151 TOW': 'TD',
+  'M113A3 MSV': 'MSV',
+  'Ural-375D BM-21 Grad': 'SPA', 'MT-LB FAB500 Begemot': 'SPA', '2S1 Gvozdika': 'SPA', '2S3 Akatsiya': 'SPA',
+  'Ural-375D ZU-23-2': 'SPAA', 'M1097 Avenger': 'SPAA',
+  'Loach CAS': 'AH', 'Loach CAS Small': 'AH', 'VDV Little Knyaz CAS': 'AH', 'Ka-52 Alligator': 'AH', 'AH-64D Longbow': 'AH', 'Apache': 'AH',
+  'Raven Transport': 'UH', 'Black Hawk Transport': 'UH', 'Mi-8MT': 'UH', 'Huey Transport': 'UH',
+};
+
+  function getVehicleIcon(vehicleName, vehicleType = null) {
+  if (!vehicleName) return 'resources/public__img__markers__weapons__test.webp';
+  
+  // 1. Icono específico nombrado
+  if (VEHICLES_WITH_NAMED_ICONS[vehicleName]) {
+    return `resources/${VEHICLES_WITH_NAMED_ICONS[vehicleName]}`;
+  }
+  
+  // 2. Usar tipo proporcionado
+  if (vehicleType && VEHICLE_TYPE_ICONS[vehicleType]) {
+    return `resources/${VEHICLE_TYPE_ICONS[vehicleType]}`;
+  }
+  
+  // 3. Deducir tipo del nombre (usando VEHICLE_NAME_TO_TYPE)
+  const deducedType = VEHICLE_NAME_TO_TYPE[vehicleName];
+  if (deducedType && VEHICLE_TYPE_ICONS[deducedType]) {
+    return `resources/${VEHICLE_TYPE_ICONS[deducedType]}`;
+  }
+  
+  return 'resources/public__img__markers__weapons__test.webp';
+}
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
@@ -704,15 +726,7 @@ function makeVehicleIcon(group, selected) {
   const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
   const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
   const count = group.occupants.length;
-
-  // Obtén el icono desde los datos del grupo (deberías haberlo almacenado)
-  // Suponiendo que group.icon viene del snapshot
-  let iconUrl = group.icon || 'resources/public__img__markers__weapons__test.webp';
-  // Si no hay icono específico, usa un fallback por tipo (ya tienes getVehicleIcon)
-  if (!group.icon) {
-    const deducedType = VEHICLE_NAME_TO_TYPE[group.vehicleName] || null;
-    iconUrl = getVehicleIcon(group.vehicleName, deducedType);
-  }
+  const iconUrl = group.icon || 'resources/public__img__markers__weapons__test.webp';
 
   const html = `<div style="
     width:32px;height:32px;
@@ -791,18 +805,21 @@ function updateMarkers(players, corners) {
 
   // ---- Marcadores de vehículos ----
   for (const g of vehicleGroups) {
-    const iconUrl = g.icon || getVehicleIcon(g.vehicleName, VEHICLE_NAME_TO_TYPE[g.vehicleName]);
-    const icon = makeVehicleIcon({ ...g, icon: iconUrl }, isSelected);
-    if (!g.position) continue;
-    if (!filters.veh) continue;
-    if (!filters.t1 && g.teamID === 1) continue;
-    if (!filters.t2 && g.teamID === 2) continue;
-    const ll = gameToLatLng(g.position, corners);
-    const key = `veh_${g.vehicleId}`;
-    seen.add(key);
+  if (!g.position) continue;
+  if (!filters.veh) continue;
+  if (!filters.t1 && g.teamID === 1) continue;
+  if (!filters.t2 && g.teamID === 2) continue;
+  const ll = gameToLatLng(g.position, corners);
+  const key = `veh_${g.vehicleId}`;
+  seen.add(key);
 
-    // Determinar si algún ocupante está seleccionado
-    const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
+  // 🔥 Calcular el icono del vehículo
+  const vehicleType = VEHICLE_NAME_TO_TYPE[g.vehicleName] || null;
+  const iconUrl = getVehicleIcon(g.vehicleName, vehicleType);
+  g.icon = iconUrl; // lo guardamos en el grupo para pasarlo a makeVehicleIcon
+
+  const isSelected = g.occupants.some(p => p.steamID === selectedSteamID);
+  const icon = makeVehicleIcon(g, isSelected);
 
 
     if (markers[key]) {
