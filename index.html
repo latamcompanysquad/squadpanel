@@ -1039,31 +1039,6 @@ function updateMarkers(players, corners) {
     }
   }
 
-  // ---- Marcadores individuales (sin vehículo) ----
-  for (const p of individualPlayers) {
-    if (!p.position) continue;
-    if (!playerPassesFilter(p)) continue;
-    seen.add(`player_${p.steamID}`);
-    const ll = gameToLatLng(p.position, corners);
-    const isSel = p.steamID === selectedSteamID;
-    const icon = makeIcon(p, isSel);
-    if (markers[`player_${p.steamID}`]) {
-      markers[`player_${p.steamID}`].setLatLng(ll).setIcon(icon);
-    } else {
-      const m = L.marker(ll, { icon });
-      markers[`player_${p.steamID}`] = m;
-    }
-    const m = markers[`player_${p.steamID}`];
-    m._playerData = p;
-    m.unbindTooltip();
-    m.bindTooltip(makeTooltipContent(p), {
-      permanent: false, direction: 'top', offset: [0,-14], className: 'squad-tip',
-    });
-    m.off('mouseover click');
-    m.on('mouseover', () => showPlayerCard(p));
-    m.on('click', () => selectPlayer(p));
-    if (!map.hasLayer(m)) map.addLayer(m);
-  }
 
   // ---- Limpiar marcadores ya no presentes ----
   for (const id of Object.keys(markers)) {
