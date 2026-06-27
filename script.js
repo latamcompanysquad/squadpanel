@@ -1443,6 +1443,7 @@ async function poll() {
         lastSnapshot = null;
       }
       loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
+      const chatMapKey = mapKey || currentMapKey;
     }
 
     // ── Llenar vehicleIconMap de forma segura ──
@@ -1512,19 +1513,16 @@ async function poll() {
       lastSavedMessages = currentMessages.slice();
       lastSavedMap = currentMap;
     }
-    
-    // Si la pestaña de chat está abierta, recargar desde Supabase
-    const chatTab = document.getElementById('tabChat');
-    if (chatTab && chatTab.classList.contains('show') && currentMap) {
-      loadChatHistory(currentMap).then(m => {
-        if (m) {
-          updateChatMessages(m);
-        } else {
-          // Si no hay historial, mostrar mensaje vacío
-          updateChatMessages([]);
-        }
-      });
+
+// Si la pestaña de chat está abierta, recargar desde Supabase
+const chatTab = document.getElementById('tabChat');
+if (chatTab && chatTab.classList.contains('show') && chatMapKey) {
+  loadChatHistory(chatMapKey).then(m => {
+    if (m) {
+      updateChatMessages(m);
     }
+  });
+}
 
   } catch (e) {
     console.error('Error en poll:', e);
