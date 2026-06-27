@@ -1288,6 +1288,11 @@ function updatePlayerList(players) {
   let html = '';
   let currentTeam = null;
   let currentSquad = null;
+  
+  // DEBUG: Log de primeros jugadores para ver estructura
+  if (sorted.length > 0) {
+    console.log('🔍 Primeros 3 jugadores con squadName:', sorted.slice(0, 3).map(p => ({ name: p.name, squadID: p.squadID, squadName: p.squadName })));
+  }
   for (let i = 0; i < sorted.length; i++) {
     const p = sorted[i];
     const teamChanged = p.teamID !== currentTeam;
@@ -1306,6 +1311,7 @@ function updatePlayerList(players) {
       } else if (p.squadName && !p.squadName.startsWith('Squad ')) {
         squadName = `Squad ${p.squadID} - ${p.squadName}`;
       }
+      console.log(`🔍 Squad T${p.teamID}_${p.squadID}: p.squadName="${p.squadName}" -> final="${squadName}"`);
       if (p.squadID != null) {
         const squadKey = `${currentTeam}_${p.squadID}`;
         const isExpanded = expandedSquads[squadKey] === true;

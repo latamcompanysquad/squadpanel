@@ -504,6 +504,14 @@ export default class SquadPanelBroadcast extends BasePlugin {
         }
       }
     }
+    
+    // DEBUG: Log de squadNameMap
+    this.verbose(1, `🔍 squadNameMap: ${JSON.stringify(squadNameMap)}`);
+    if (server.squads && server.squads.length > 0) {
+      this.verbose(1, `🔍 server.squads (primeros 3): ${JSON.stringify(server.squads.slice(0, 3).map(s => ({ id: s.squadID, name: s.squadName, teamID: s.teamID })))}`);
+    } else {
+      this.verbose(1, `⚠️  No hay squads disponibles en server.squads`);
+    }
 
     // ── VEHÍCULOS (SIEMPRE DESDE MODDATA) ──
     const vehicles = [];
