@@ -1514,31 +1514,47 @@ async function poll() {
   });
 })();
 
+
 function updateChatMessages(chatMessages) {
   const chatDiv = document.getElementById('chatMessages');
-  if (!chatDiv) return;
+  const chatPanelDiv = document.getElementById('chatPanelMessages');
+  const showLegacy = chatDiv !== null;
+  const showPanel = chatPanelDiv !== null;
+  
+  if (!showLegacy && !showPanel) return;
   
   if (!chatMessages || chatMessages.length === 0) {
-    chatDiv.innerHTML = '<div style="color:var(--text-dim);padding:6px;">Sin mensajes</div>';
+    const emptyMsg = '<div style="color:var(--text-dim);padding:6px;">Sin mensajes</div>';
+    if (showLegacy) chatDiv.innerHTML = emptyMsg;
+    if (showPanel) chatPanelDiv.innerHTML = emptyMsg;
     return;
   }
   
-  chatDiv.innerHTML = chatMessages.map(msg => {
+  const html = chatMessages.map(msg => {
     const color = msg.color || '#FFF';
     const timestamp = new Date(msg.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     const displayChannel = msg.channel === 'all' ? '[ALL]' : msg.channel === 'squad' ? '[SQ]' : msg.channel === 'team' ? '[T]' : '[ADMIN]';
-    return `<div style="color:${color};margin-bottom:3px;word-break:break-word;">
-      <span style="color:var(--text-dim);font-size:9px;">${timestamp}</span>
-      <span style="color:${color};font-weight:600;margin:0 3px;">${displayChannel}</span>
-      <span style="color:var(--amber);">${esc(msg.name)}:</span>
-      <span style="color:${color};">${esc(msg.message)}</span>
-    </div>`;
+    return `<div style="color:${color};margin-bottom:3px;word-break:break-word;"><span style="color:var(--text-dim);font-size:9px;">${timestamp}</span> <span style="color:${color};font-weight:600;margin:0 3px;">${displayChannel}</span> <span style="color:var(--amber);">${esc(msg.name)}:</span> <span style="color:${color};">${esc(msg.message)}</span></div>`;
   }).join('');
+  
+  if (showLegacy) chatDiv.innerHTML = html;
+  if (showPanel) chatPanelDiv.innerHTML = html;
   
   scrollChatToBottom();
 }
 
+function toggleChatPanel() {
+  const panel = document.getElementById('chatPanel');
+  if (panel) {
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'flex' : 'none';
+    if (isHidden) setTimeout(function() { scrollChatToBottom(); }, 100);
+  }
+}
+
 function scrollChatToBottom() {
   const chatDiv = document.getElementById('chatMessages');
+  const chatPanelDiv = document.getElementById('chatPanelMessages');
   if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+  if (chatPanelDiv) chatPanelDiv.scrollTop = chatPanelDiv.scrollHeight;
 }
