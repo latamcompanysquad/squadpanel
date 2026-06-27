@@ -150,6 +150,17 @@ export default class SquadPanelBroadcast extends BasePlugin {
           if (data.raw.includes('[ChatTeam]')) channel = 'team';
           else if (data.raw.includes('[ChatSquad]')) channel = 'squad';
           else if (data.raw.includes('[ChatAdmin]')) channel = 'admin';
+        let teamID = data.player.teamID;
+        if (!teamID) {
+          const found = this.server.players.find(p => p.eosID === data.player.eosID || p.steamID === data.player.steamID);
+          teamID = found?.teamID || null;
+        }
+        let color = null;
+        if (channel === 'team') {
+          color = teamID === 1 ? 'blue' : 'red';
+        } else if (channel === 'squad') {
+          color = teamID === 1 ? 'green' : 'yellow';
+        }
         }
         
         const msg = {
@@ -157,7 +168,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
           name: data.player.name,
           message: data.message,
           channel: channel,
-          teamID: data.player.teamID || null,
+          teamID,
+          color,
           timestamp: Date.now(),
         };
         this.chatBuffer.push(msg);
