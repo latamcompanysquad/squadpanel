@@ -1498,7 +1498,7 @@ async function poll() {
 
   // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
-    updateChatMessages(data.chatMessages ?? []);
+    //updateChatMessages(data.chatMessages ?? []);
     // Guardar en Supabase solo si hay mensajes nuevos o cambia el mapa
     const currentMessages = data.chatMessages ?? [];
     const currentMap = data.map ?? data.layer ?? 'unknown';
