@@ -123,15 +123,22 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.server.on('POSSESSED_ADMIN_CAMERA', (info) => {
       if (info.player && info.player.steamID) {
         this.adminsInCamera.add(info.player.steamID);
-        this.verbose(2, `📷 Admin ${info.player.name} entered camera`);
+        this.verbose(1, `📷 [CAMERA IN] ${info.player.name} (SteamID: ${info.player.steamID})`);
+        this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ')}`);
+      } else {
+        this.verbose(1, `📷 [CAMERA IN] Sin steamID válido`);
       }
     });
     this.server.on('UNPOSSESSED_ADMIN_CAMERA', (info) => {
       if (info.player && info.player.steamID) {
         this.adminsInCamera.delete(info.player.steamID);
-        this.verbose(2, `📷 Admin ${info.player.name} left camera`);
+        this.verbose(1, `📷 [CAMERA OUT] ${info.player.name} (SteamID: ${info.player.steamID})`);
+        this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ') || '(vacío)'}`);
+      } else {
+        this.verbose(1, `📷 [CAMERA OUT] Sin steamID válido`);
       }
     });
+    this.verbose(1, `📷 Listeners de cámara registrados`);
     this.timer = setInterval(async () => {
       await this.broadcast();
       await this.pollAdminCommands();
@@ -529,6 +536,11 @@ export default class SquadPanelBroadcast extends BasePlugin {
       const total = players.length;
       const withPos = players.filter(p => p.position !== null).length;
       const withVeh = players.filter(p => p.vehicle !== null).length;
+      const withSpectating = players.filter(p => p.isSpectating).length;
+      if (withSpectating > 0) {
+        const spectNames = players.filter(p => p.isSpectating).map(p => p.name).join(', ');
+        this.verbose(1, `📷 [SPECTATORS] ${withSpectating} en cámara: ${spectNames}`);
+      }
       this.verbose(1, `📊 Jugadores: ${total} total, ${withPos} con posición, ${withVeh} en vehículo`);
     }
 
