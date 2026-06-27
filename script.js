@@ -1306,7 +1306,7 @@ function updatePlayerList(players) {
         const isExpanded = expandedSquads[squadKey] === true;
         const chevron = isExpanded ? '▼' : '▶';
         const squadCount = sorted.filter(x => x.teamID === currentTeam && x.squadID === p.squadID).length;
-        html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span><span class="squad-center-btn" onclick="event.stopPropagation(); centerMapOnSquad(${currentTeam}, ${p.squadID})" title="Centrar squad en mapa">🎯</span></div>`;
+        html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span></div>`;
         if (!isExpanded) {
           html += `<div class="squad-collapsed"></div>`;
           // Saltar todos los jugadores de esta escuadra colapsada
