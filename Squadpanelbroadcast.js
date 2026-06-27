@@ -97,6 +97,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.nameToType = {};
     this.namedIconsNorm = {};
     this.nameToTypeNorm = {};
+    this.chatBuffer = [];
+    this.chatBuffer = [];
     this._unmatchedVehicleNames = new Set();
   }
 
@@ -139,6 +141,28 @@ export default class SquadPanelBroadcast extends BasePlugin {
       }
     });
     this.verbose(1, `📷 Listeners de cámara registrados`);
+
+    this.server.on('CHAT_MESSAGE', (data) => {
+      if (data.player && data.message) {
+        const msg = {
+          steamID: data.player.steamID,
+          name: data.player.name,
+          message: data.message,
+          channel: data.channel || 'all',
+          timestamp: Date.now(),
+        };
+        this.chatBuffer.push(msg);
+        if (this.chatBuffer.length > 100) this.chatBuffer.shift();
+        this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
+      }
+    });
+
+    this.server.on('NEW_GAME', () => {
+      this.chatBuffer = [];
+      this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
+    });
+
+    this.verbose(1, `💬 Listeners de chat registrados`);
     this.timer = setInterval(async () => {
       await this.broadcast();
       await this.pollAdminCommands();
@@ -678,6 +702,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       }
 
     return {
+      chatMessages: this.chatBuffer.map(m => ({ ...m, color: ({ all: '#FFF', squad: '#FFFF00', team: '#FF0000', admin: '#00FFFF' })[m.channel] || '#FFF' })),
       serverName: server.serverName ?? '',
       map: mapName,
       layer: layerName,
