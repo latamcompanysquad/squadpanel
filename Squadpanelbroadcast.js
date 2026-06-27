@@ -88,6 +88,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
   constructor(server, options, connectors) {
     super(server, options, connectors);
     this.timer = null;
+    this.adminsInCamera = new Set();
     this.modData = null;
     this.broadcastCount = 0;
 
@@ -119,6 +120,18 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
     await this.loadIconMappings();
 
+    this.server.on('POSSESSED_ADMIN_CAMERA', (info) => {
+      if (info.player && info.player.steamID) {
+        this.adminsInCamera.add(info.player.steamID);
+        this.verbose(2, `📷 Admin ${info.player.name} entered camera`);
+      }
+    });
+    this.server.on('UNPOSSESSED_ADMIN_CAMERA', (info) => {
+      if (info.player && info.player.steamID) {
+        this.adminsInCamera.delete(info.player.steamID);
+        this.verbose(2, `📷 Admin ${info.player.name} left camera`);
+      }
+    });
     this.timer = setInterval(async () => {
       await this.broadcast();
       await this.pollAdminCommands();
@@ -508,6 +521,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         vehicle,
         seat,
         isAlive,
+        isSpectating: this.adminsInCamera.has(player.steamID),
       };
     });
 
