@@ -212,10 +212,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 }
 
 /* FASE 3.3: Squad Header Interactivo */
+.panel-title{
+  margin-top:16px;padding:10px 8px;border-radius:3px;font-weight:700;border-left:3px solid;
+}
+.panel-title[style*="blue"]{background:rgba(79,166,232,.08);}
+.panel-title[style*="red"]{background:rgba(224,88,79,.08);}
+
 .squad-header{
   font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.05em;
-  color:var(--olive);margin:8px 0 2px;display:flex;align-items:center;gap:6px;
-  user-select:none;padding:4px 0;transition:opacity .15s;
+  color:var(--text);margin:12px 0 4px;display:flex;align-items:center;gap:6px;
+  user-select:none;padding:6px 6px;border-radius:2px;transition:opacity .15s;
+  background:rgba(255,255,255,.04);border-left:2px solid var(--olive-dim);
 }
 .squad-header:hover{opacity:.85;color:var(--amber);}
 .squad-chevron{

@@ -1,0 +1,67 @@
+diff --git a/script.js b/script.js
+index f389a04..d189a30 100644
+--- a/script.js
++++ b/script.js
+@@ -1171,9 +1171,11 @@ function toggleSquadExpand(key) {
+ 
+ function centerMapOnPlayer(p) {
+   if (!p || !p.position || !Array.isArray(p.position) || p.position.length < 2) return;
+-  const latlng = L.latLng(p.position[1], p.position[0]);
+-  map.flyTo(latlng, 4, { duration: 0.8 });
+-  setTimeout(() => map.invalidateSize(), 100);
++  map.invalidateSize();
++  setTimeout(() => {
++    const latlng = L.latLng(p.position[1], p.position[0]);
++    map.flyTo(latlng, 4, { duration: 0.8 });
++  }, 50);
+ }
+ 
+ function centerMapOnSquad(teamID, squadID) {
+@@ -1186,9 +1188,11 @@ function centerMapOnSquad(teamID, squadID) {
+     squadPlayers.reduce((s, p) => s + p.position[0], 0) / squadPlayers.length,
+     squadPlayers.reduce((s, p) => s + p.position[1], 0) / squadPlayers.length
+   ];
+-  const latlng = L.latLng(avgPos[1], avgPos[0]);
+-  map.flyTo(latlng, 3.5, { duration: 0.8 });
+-  setTimeout(() => map.invalidateSize(), 100);
++  map.invalidateSize();
++  setTimeout(() => {
++    const latlng = L.latLng(avgPos[1], avgPos[0]);
++    map.flyTo(latlng, 3.5, { duration: 0.8 });
++  }, 50);
+ }
+ 
+ // ─── PLAYER LIST ─────────────────────────────────────────────────────────────
+@@ -1236,7 +1240,7 @@ function updatePlayerList(players) {
+       const squadName = p.squadName || `Squad ${p.squadID}`;
+       if (p.squadID != null) {
+         const squadKey = `${currentTeam}_${p.squadID}`;
+-        const isExpanded = expandedSquads[squadKey] !== false;
++        const isExpanded = expandedSquads[squadKey] === true;
+         const chevron = isExpanded ? '▼' : '▶';
+         const squadCount = sorted.filter(x => x.teamID === currentTeam && x.squadID === p.squadID).length;
+         html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span><span class="squad-center-btn" onclick="event.stopPropagation(); centerMapOnSquad(${currentTeam}, ${p.squadID})" title="Centrar squad en mapa">🎯</span></div>`;
+diff --git a/styles.css b/styles.css
+index 1bf0ea4..d6b43b5 100644
+--- a/styles.css
++++ b/styles.css
+@@ -212,10 +212,17 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
+ }
+ 
+ /* FASE 3.3: Squad Header Interactivo */
++.panel-title{
++  margin-top:16px;padding:10px 8px;border-radius:3px;font-weight:700;border-left:3px solid;
++}
++.panel-title[style*="blue"]{background:rgba(79,166,232,.08);}
++.panel-title[style*="red"]{background:rgba(224,88,79,.08);}
++
+ .squad-header{
+   font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.05em;
+-  color:var(--olive);margin:8px 0 2px;display:flex;align-items:center;gap:6px;
+-  user-select:none;padding:4px 0;transition:opacity .15s;
++  color:var(--text);margin:12px 0 4px;display:flex;align-items:center;gap:6px;
++  user-select:none;padding:6px 6px;border-radius:2px;transition:opacity .15s;
++  background:rgba(255,255,255,.04);border-left:2px solid var(--olive-dim);
+ }
+ .squad-header:hover{opacity:.85;color:var(--amber);}
+ .squad-chevron{

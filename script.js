@@ -1171,9 +1171,11 @@ function toggleSquadExpand(key) {
 
 function centerMapOnPlayer(p) {
   if (!p || !p.position || !Array.isArray(p.position) || p.position.length < 2) return;
-  const latlng = L.latLng(p.position[1], p.position[0]);
-  map.flyTo(latlng, 4, { duration: 0.8 });
-  setTimeout(() => map.invalidateSize(), 100);
+  map.invalidateSize();
+  setTimeout(() => {
+    const latlng = L.latLng(p.position[1], p.position[0]);
+    map.flyTo(latlng, 4, { duration: 0.8 });
+  }, 50);
 }
 
 function centerMapOnSquad(teamID, squadID) {
@@ -1186,9 +1188,11 @@ function centerMapOnSquad(teamID, squadID) {
     squadPlayers.reduce((s, p) => s + p.position[0], 0) / squadPlayers.length,
     squadPlayers.reduce((s, p) => s + p.position[1], 0) / squadPlayers.length
   ];
-  const latlng = L.latLng(avgPos[1], avgPos[0]);
-  map.flyTo(latlng, 3.5, { duration: 0.8 });
-  setTimeout(() => map.invalidateSize(), 100);
+  map.invalidateSize();
+  setTimeout(() => {
+    const latlng = L.latLng(avgPos[1], avgPos[0]);
+    map.flyTo(latlng, 3.5, { duration: 0.8 });
+  }, 50);
 }
 
 // ─── PLAYER LIST ─────────────────────────────────────────────────────────────
@@ -1236,7 +1240,7 @@ function updatePlayerList(players) {
       const squadName = p.squadName || `Squad ${p.squadID}`;
       if (p.squadID != null) {
         const squadKey = `${currentTeam}_${p.squadID}`;
-        const isExpanded = expandedSquads[squadKey] !== false;
+        const isExpanded = expandedSquads[squadKey] === true;
         const chevron = isExpanded ? '▼' : '▶';
         const squadCount = sorted.filter(x => x.teamID === currentTeam && x.squadID === p.squadID).length;
         html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span><span class="squad-center-btn" onclick="event.stopPropagation(); centerMapOnSquad(${currentTeam}, ${p.squadID})" title="Centrar squad en mapa">🎯</span></div>`;
