@@ -1,0 +1,48 @@
+diff --git a/script.js b/script.js
+index 5e897e2..f389a04 100644
+--- a/script.js
++++ b/script.js
+@@ -1170,9 +1170,10 @@ function toggleSquadExpand(key) {
+ }
+ 
+ function centerMapOnPlayer(p) {
+-  if (!p || !p.position) return;
++  if (!p || !p.position || !Array.isArray(p.position) || p.position.length < 2) return;
+   const latlng = L.latLng(p.position[1], p.position[0]);
+-  map.setView(latlng, 4, { animate: true, duration: 0.8 });
++  map.flyTo(latlng, 4, { duration: 0.8 });
++  setTimeout(() => map.invalidateSize(), 100);
+ }
+ 
+ function centerMapOnSquad(teamID, squadID) {
+@@ -1186,7 +1187,8 @@ function centerMapOnSquad(teamID, squadID) {
+     squadPlayers.reduce((s, p) => s + p.position[1], 0) / squadPlayers.length
+   ];
+   const latlng = L.latLng(avgPos[1], avgPos[0]);
+-  map.setView(latlng, 3.5, { animate: true, duration: 0.8 });
++  map.flyTo(latlng, 3.5, { duration: 0.8 });
++  setTimeout(() => map.invalidateSize(), 100);
+ }
+ 
+ // ─── PLAYER LIST ─────────────────────────────────────────────────────────────
+@@ -1219,7 +1221,8 @@ function updatePlayerList(players) {
+   let html = '';
+   let currentTeam = null;
+   let currentSquad = null;
+-  for (const p of sorted) {
++  for (let i = 0; i < sorted.length; i++) {
++    const p = sorted[i];
+     const teamChanged = p.teamID !== currentTeam;
+     const squadChanged = p.squadID !== currentSquad || teamChanged;
+     if (teamChanged) {
+@@ -1239,6 +1242,10 @@ function updatePlayerList(players) {
+         html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span><span class="squad-center-btn" onclick="event.stopPropagation(); centerMapOnSquad(${currentTeam}, ${p.squadID})" title="Centrar squad en mapa">🎯</span></div>`;
+         if (!isExpanded) {
+           html += `<div class="squad-collapsed"></div>`;
++          // Saltar todos los jugadores de esta escuadra colapsada
++          while (i + 1 < sorted.length && sorted[i + 1].teamID === currentTeam && sorted[i + 1].squadID === currentSquad) {
++            i++;
++          }
+           continue;
+         }
+       } else {
