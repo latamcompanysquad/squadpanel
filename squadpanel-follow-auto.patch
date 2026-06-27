@@ -1,0 +1,23 @@
+diff --git a/script.js b/script.js
+index d189a30..feb4054 100644
+--- a/script.js
++++ b/script.js
+@@ -992,6 +992,9 @@ let pendingCmd = null;
+ 
+ function selectPlayer(p) {
+   selectedSteamID = p.steamID;
++  followSelected = true;
++  const btn = document.getElementById('btnFollowSel');
++  if (btn) btn.style.color = 'var(--amber)';
+   // Forzar actualización de tooltips para que el seleccionado tenga permanent: true
+   if (lastSnapshot) {
+     const { players, vehicles, corners } = lastSnapshot;
+@@ -1269,7 +1272,7 @@ function updatePlayerList(players) {
+     const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)}</span>` : '';
+     const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
+     const deadOpacity = (!p.isAlive && !p.position) ? 'opacity:.4;' : '';
+-    html += `<div class="player-card" style="cursor:pointer;margin-left:8px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')}); centerMapOnPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
++    html += `<div class="player-card" style="cursor:pointer;margin-left:8px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+       <div style="display:flex;align-items:center;gap:6px;">
+         <img src="${roleIcon}" alt="" style="width:16px;height:16px;flex-shrink:0;"/>
+         <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>
