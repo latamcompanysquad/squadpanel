@@ -1300,7 +1300,12 @@ function updatePlayerList(players) {
     }
     if (squadChanged) {
       currentSquad = p.squadID;
-      const squadName = p.squadName || `Squad ${p.squadID}`;
+      let squadName = `Squad ${p.squadID}`;
+      if (p.squadName && p.squadName !== `Squad ${p.squadID}` && p.squadName.startsWith('Squad ') === false) {
+        squadName = `Squad ${p.squadID} - ${p.squadName}`;
+      } else if (p.squadName && !p.squadName.startsWith('Squad ')) {
+        squadName = `Squad ${p.squadID} - ${p.squadName}`;
+      }
       if (p.squadID != null) {
         const squadKey = `${currentTeam}_${p.squadID}`;
         const isExpanded = expandedSquads[squadKey] === true;

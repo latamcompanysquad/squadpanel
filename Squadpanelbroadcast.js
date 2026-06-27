@@ -466,6 +466,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
     const { eosMap, steamMap, vehicleMap, aliveMap } = this.buildPositionMaps(modData);
 
     const squadNameMap = {};
+    // Primero intenta desde modData
     if (modData?.teams_data) {
       for (const [teamKey, team] of Object.entries(modData.teams_data)) {
         const teamID = parseInt(teamKey);
@@ -474,8 +475,32 @@ export default class SquadPanelBroadcast extends BasePlugin {
           const sid = squad.squad_id;
           if (sid != null) {
             if (!squadNameMap[teamID]) squadNameMap[teamID] = {};
-            squadNameMap[teamID][sid] = squad.squad_name || `Squad ${sid}`;
+            squadNameMap[teamID][sid] = squad.squad_name || null;
           }
+        }
+      }
+    }
+    
+    // Fallback a SquadJS si falta información
+    if (server.squads && Array.isArray(server.squads)) {
+      for (const squad of server.squads) {
+        const teamID = squad.teamID;
+        const sid = squad.squadID;
+        if (teamID != null && sid != null) {
+          if (!squadNameMap[teamID]) squadNameMap[teamID] = {};
+          // Solo asigna desde SquadJS si aún no hay valor o el valor es null
+          if (!squadNameMap[teamID][sid] || squadNameMap[teamID][sid] === null) {
+            squadNameMap[teamID][sid] = squad.squadName || `Squad ${sid}`;
+          }
+        }
+      }
+    }
+    
+    // Asegurar que todos los valores tengan un fallback
+    for (const teamID in squadNameMap) {
+      for (const sid in squadNameMap[teamID]) {
+        if (!squadNameMap[teamID][sid]) {
+          squadNameMap[teamID][sid] = `Squad ${sid}`;
         }
       }
     }
