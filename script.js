@@ -924,6 +924,8 @@ const SUPABASE_CONFIG = {
   table: 'match_state'
 };
 const CHAT_TABLE = 'squad_chat_logs';
+let lastSavedMessages = null;
+let lastSavedMap = null;
 
 async function loadChatHistory(mapName) {
   if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.key.startsWith('eyJ') === false) return null;
@@ -1494,12 +1496,24 @@ async function poll() {
       clearAmmoMarkers();
     }
 
-    // ── Lista de jugadores en el panel ──
+  // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
     updateChatMessages(data.chatMessages ?? []);
-    // Guardar en Supabase
-    saveChatSnapshot(data.serverName ?? 'unknown', data.map ?? data.layer ?? 'unknown', data.chatMessages ?? []);
+    // Guardar en Supabase solo si hay mensajes nuevos o cambia el mapa
+    const currentMessages = data.chatMessages ?? [];
+    const currentMap = data.map ?? data.layer ?? 'unknown';
+    const currentServer = data.serverName ?? 'unknown';
+    const currentStr = JSON.stringify(currentMessages);
+    const lastStr = lastSavedMessages ? JSON.stringify(lastSavedMessages) : null;
 
+    if (currentMessages.length > 0) {
+      // Si el mapa cambió o los mensajes son diferentes, guardamos
+      if (currentMap !== lastSavedMap || currentStr !== lastStr) {
+        saveChatSnapshot(currentServer, currentMap, currentMessages);
+        lastSavedMessages = currentMessages.slice();
+        lastSavedMap = currentMap;
+      }
+    }
   } catch (e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
