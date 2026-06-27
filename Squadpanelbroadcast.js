@@ -513,6 +513,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       const isAlive = isAliveFromMod !== undefined ? isAliveFromMod : (player.isAlive ?? true);
 
 
+      const isSpectating = this.adminsInCamera.has(player.steamID);
       
       return {
         steamID:  player.steamID,
@@ -524,11 +525,11 @@ export default class SquadPanelBroadcast extends BasePlugin {
         playerID: player.playerID ?? player.index ?? null,
         isLeader: player.isLeader ?? false,
         role:     player.role ?? null,
-        position,
+        position: isSpectating ? null : position,
         vehicle,
         seat,
         isAlive,
-        isSpectating: this.adminsInCamera.has(player.steamID),
+        isSpectating,
       };
     });
 
