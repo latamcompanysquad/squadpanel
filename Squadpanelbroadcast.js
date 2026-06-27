@@ -143,14 +143,19 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
     this.server.on('CHAT_MESSAGE', (data) => {
       if (data.player && data.message) {
+        // DEBUG: Log estructura completa
+        this.verbose(1, `🔍 [CHAT_DEBUG] data keys: ${Object.keys(data).join(', ')}`);
+        this.verbose(1, `🔍 [CHAT_DEBUG] data.channel=${data.channel}, data.squadID=${data.squadID}, data.visibleTo=${data.visibleTo}`);
+        
         const msg = {
           steamID: data.player.steamID,
           name: data.player.name,
           message: data.message,
-          channel: data.channel || 'all',
+          channel: data.channel || data.squadID ? 'squad' : data.teamID ? 'team' : 'all',
           teamID: data.player.teamID || null,
           timestamp: Date.now(),
         };
+        this.verbose(1, `💬 Final channel: ${msg.channel}`);
         this.chatBuffer.push(msg);
         if (this.chatBuffer.length > 100) this.chatBuffer.shift();
         this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
