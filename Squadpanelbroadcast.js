@@ -532,6 +532,17 @@ export default class SquadPanelBroadcast extends BasePlugin {
       };
     });
 
+
+    // DEBUG: Always log spectators every broadcast
+    const withSpectating = players.filter(p => p.isSpectating).length;
+    if (this.adminsInCamera.size > 0 || withSpectating > 0) {
+      this.verbose(1, `📷 [DEBUG] adminsInCamera.size=${this.adminsInCamera.size}, withSpectating=${withSpectating}`);
+      if (withSpectating > 0) {
+        const spectDeets = players.filter(p => p.isSpectating).map(p => `${p.name}(${p.steamID})`).join(', ');
+        this.verbose(1, `📷 [SPECTATORS FOUND] ${spectDeets}`);
+      }
+    }
+
     if (isFirstBroadcast || isPeriodicLog) {
       const total = players.length;
       const withPos = players.filter(p => p.position !== null).length;
