@@ -384,6 +384,7 @@ function ensureObjectivesPane() {
 const markers = {};
 let vehicleIconMap = {};
 let selectedSteamID = null;
+const expandedSquads = {}; // Track squad collapse/expand state per teamID_squadID
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -394,10 +395,10 @@ function makeTooltipContent(p) {
   const tl   = `T${p.teamID}`;
   const icon = roleIconName(p);
   const role = icon.replace(/_/g,' ');
-  const veh  = p.vehicle ? `<div style="color:var(--amber);font-size:9px">🚗 ${esc(p.vehicle.name || p.vehicle)}</div>` : '';
-  return `<div class="tip-name"><span class="${tc}">[${tl}]</span> ${esc(p.name)}</div>
-<div class="tip-role">${role}${p.isLeader ? ' ★' : ''}</div>
-<div class="tip-squad">Squad ${p.squadID ?? '—'}</div>${veh}`;
+  const veh  = p.vehicle ? `<div class="tip-vehicle">🚗 ${esc(p.vehicle.name || p.vehicle)}</div>` : '';
+  const squad = p.squadID ? `<div class="tip-squad-info">Squad <span class="squad-num">${p.squadID}</span></div>` : '';
+  const leader = p.isLeader ? '<div class="tip-leader">★ Squad Leader</div>' : '';
+  return `<div class="tip-container"><div class="tip-name"><span class="${tc}">[${tl}]</span> ${esc(p.name)}</div><div class="tip-role">${role}</div>${squad}${leader}${veh}</div>`;
 }
 
 function playerPassesFilter(p) {
@@ -1163,6 +1164,31 @@ function toast(msg, type='ok') {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+function toggleSquadExpand(key) {
+  expandedSquads[key] = !expandedSquads[key];
+  if (lastSnapshot && lastSnapshot.players) updatePlayerList(lastSnapshot.players);
+}
+
+function centerMapOnPlayer(p) {
+  if (!p || !p.position) return;
+  const latlng = L.latLng(p.position[1], p.position[0]);
+  map.setView(latlng, 4, { animate: true, duration: 0.8 });
+}
+
+function centerMapOnSquad(teamID, squadID) {
+  if (!lastSnapshot || !lastSnapshot.players) return;
+  const squadPlayers = lastSnapshot.players.filter(p =>
+    p.teamID === teamID && p.squadID === squadID && p.position
+  );
+  if (squadPlayers.length === 0) return;
+  const avgPos = [
+    squadPlayers.reduce((s, p) => s + p.position[0], 0) / squadPlayers.length,
+    squadPlayers.reduce((s, p) => s + p.position[1], 0) / squadPlayers.length
+  ];
+  const latlng = L.latLng(avgPos[1], avgPos[0]);
+  map.setView(latlng, 3.5, { animate: true, duration: 0.8 });
+}
+
 // ─── PLAYER LIST ─────────────────────────────────────────────────────────────
 function updatePlayerList(players) {
   // Actualizar caché para búsqueda (todos, sin filtros)
@@ -1206,7 +1232,15 @@ function updatePlayerList(players) {
       currentSquad = p.squadID;
       const squadName = p.squadName || `Squad ${p.squadID}`;
       if (p.squadID != null) {
-        html += `<div style="font-family:'Oswald',sans-serif;font-size:12px;color:var(--olive);margin:6px 0 4px;letter-spacing:.05em;">${esc(squadName)}</div>`;
+        const squadKey = `${currentTeam}_${p.squadID}`;
+        const isExpanded = expandedSquads[squadKey] !== false;
+        const chevron = isExpanded ? '▼' : '▶';
+        const squadCount = sorted.filter(x => x.teamID === currentTeam && x.squadID === p.squadID).length;
+        html += `<div class="squad-header" onclick="event.stopPropagation(); toggleSquadExpand('${squadKey}')" style="cursor:pointer;"><span class="squad-chevron">${chevron}</span><span class="squad-name">${esc(squadName)}</span><span class="squad-count">${squadCount}</span><span class="squad-center-btn" onclick="event.stopPropagation(); centerMapOnSquad(${currentTeam}, ${p.squadID})" title="Centrar squad en mapa">🎯</span></div>`;
+        if (!isExpanded) {
+          html += `<div class="squad-collapsed"></div>`;
+          continue;
+        }
       } else {
         html += `<div style="font-family:'Oswald',sans-serif;font-size:12px;color:var(--text-dim);margin:6px 0 4px;">Sin escuadra</div>`;
       }
@@ -1224,7 +1258,7 @@ function updatePlayerList(players) {
     const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)}</span>` : '';
     const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
     const deadOpacity = (!p.isAlive && !p.position) ? 'opacity:.4;' : '';
-    html += `<div class="player-card" style="cursor:pointer;margin-bottom:4px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+    html += `<div class="player-card" style="cursor:pointer;margin-left:8px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')}); centerMapOnPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <div style="display:flex;align-items:center;gap:6px;">
         <img src="${roleIcon}" alt="" style="width:16px;height:16px;flex-shrink:0;"/>
         <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>

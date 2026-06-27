@@ -182,3 +182,66 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 #sideContent::-webkit-scrollbar{width:4px;}
 #sideContent::-webkit-scrollbar-track{background:var(--panel);}
 #sideContent::-webkit-scrollbar-thumb{background:var(--olive-dim);border-radius:2px;}
+
+/* FASE 3.3: Tooltip Mejorado */
+.tip-container{
+  display:flex;flex-direction:column;gap:4px;padding:2px 0;
+}
+.tip-name{
+  font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;
+  color:var(--text);letter-spacing:.02em;
+}
+.tip-name span{font-size:11px;padding:0 3px;}
+.tip-role{
+  color:var(--olive);font-size:11px;font-weight:500;letter-spacing:.03em;
+}
+.tip-squad-info{
+  display:flex;align-items:center;gap:4px;font-size:10px;
+  color:var(--text-dim);margin:2px 0;
+}
+.squad-num{
+  background:var(--olive-dim);color:var(--olive);
+  padding:1px 4px;border-radius:2px;font-weight:700;
+}
+.tip-leader{
+  font-size:10px;color:var(--amber);font-weight:600;letter-spacing:.02em;
+}
+.tip-vehicle{
+  font-size:10px;color:var(--amber);margin-top:2px;
+  padding:2px 0;border-top:1px solid #ffffff0d;
+}
+
+/* FASE 3.3: Squad Header Interactivo */
+.squad-header{
+  font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.05em;
+  color:var(--olive);margin:8px 0 2px;display:flex;align-items:center;gap:6px;
+  user-select:none;padding:4px 0;transition:opacity .15s;
+}
+.squad-header:hover{opacity:.85;color:var(--amber);}
+.squad-chevron{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;font-size:10px;flex-shrink:0;
+}
+.squad-name{
+  flex:1;font-weight:600;
+}
+.squad-count{
+  font-size:10px;color:var(--text-dim);background:var(--olive-dim);
+  padding:1px 4px;border-radius:2px;
+}
+.squad-center-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;font-size:11px;background:transparent;
+  border-radius:2px;margin-left:4px;cursor:pointer;
+  transition:background .15s,color .15s;flex-shrink:0;
+  color:var(--text-dim);
+}
+.squad-center-btn:hover{
+  background:var(--blue-dim);color:var(--blue);
+}
+.squad-collapsed{display:none;}
+
+/* Animación suave de zoom en mapa */
+.leaflet-zoom-anim{
+  transition:transform 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
