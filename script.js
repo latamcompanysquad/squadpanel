@@ -950,6 +950,7 @@ async function loadChatHistory(mapName) {
 }
 
 async function saveChatSnapshot(serverName, mapName, messages) {
+  mapName = normalizeMapName(mapName) || mapName; // Normalizar para consistencia
   if (!messages || !messages.length || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) return;
   try {
     await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + CHAT_TABLE, {
@@ -1496,12 +1497,23 @@ async function poll() {
       clearAmmoMarkers();
     }
 
-      // ── Lista de jugadores en el panel ──
+    // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
-    // Guardar en Supabase (no actualizar la vista con data.chatMessages)
-    saveChatSnapshot(data.serverName ?? 'unknown', data.map ?? data.layer ?? 'unknown', data.chatMessages ?? []);
+    // Guardar en Supabase solo si hay cambios
+    const currentMessages = data.chatMessages ?? [];
+    const currentMapRaw = data.map ?? data.layer ?? 'unknown';
+    const currentMap = normalizeMapName(currentMapRaw) || currentMapRaw;
+    const currentServer = data.serverName ?? 'unknown';
+    const currentStr = JSON.stringify(currentMessages);
+    const lastStr = lastSavedMessages ? JSON.stringify(lastSavedMessages) : null;
 
-    // Si la pestaña de chat está abierta, recargar el historial desde Supabase
+    if (currentMessages.length > 0 && (currentMap !== lastSavedMap || currentStr !== lastStr)) {
+      saveChatSnapshot(currentServer, currentMap, currentMessages);
+      lastSavedMessages = currentMessages.slice();
+      lastSavedMap = currentMap;
+    }
+
+    // Si la pestaña de chat está abierta, recargar desde Supabase
     const chatTab = document.getElementById('tabChat');
     if (chatTab && chatTab.classList.contains('show') && currentMapKey) {
       loadChatHistory(currentMapKey).then(m => {
@@ -1510,21 +1522,8 @@ async function poll() {
         }
       });
     }
-    // Guardar en Supabase solo si hay mensajes nuevos o cambia el mapa
-    const currentMessages = data.chatMessages ?? [];
-    const currentMap = data.map ?? data.layer ?? 'unknown';
-    const currentServer = data.serverName ?? 'unknown';
-    const currentStr = JSON.stringify(currentMessages);
-    const lastStr = lastSavedMessages ? JSON.stringify(lastSavedMessages) : null;
 
-    if (currentMessages.length > 0) {
-      // Si el mapa cambió o los mensajes son diferentes, guardamos
-      if (currentMap !== lastSavedMap || currentStr !== lastStr) {
-        saveChatSnapshot(currentServer, currentMap, currentMessages);
-        lastSavedMessages = currentMessages.slice();
-        lastSavedMap = currentMap;
-      }
-    }
+    
   } catch (e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
