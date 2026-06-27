@@ -916,6 +916,37 @@ function updateFobs(fobArray, corners) {
 }
 
 // ─── TABS ──────────────────────────────────────────────────────────────────────
+
+// SUPABASE CHAT CONFIG
+const SUPABASE_CONFIG = {
+  url: 'https://YOUR_PROJECT.supabase.co',
+  key: 'eyJhbGc...',
+  table: 'match_state'
+};
+
+async function loadChatHistory(mapName) {
+  if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.key.startsWith('eyJ') === false) return null;
+  try {
+    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + SUPABASE_CONFIG.table + '?id=eq.latest&select=data', {
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
+      }
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (rows && rows[0] && rows[0].data && rows[0].data.map === mapName) return rows[0].data.chatMessages || [];
+  } catch (err) { console.warn('Chat history load failed'); }
+  return null;
+}
+
+async function saveChatSnapshot(serverName, mapName, messages) {
+  if (!messages || !messages.length) return;
+  try {
+    localStorage.setItem('chat_' + serverName + '_' + mapName, JSON.stringify({ messages: messages, ts: Date.now() }));
+  } catch (err) { console.warn('Chat snapshot failed'); }
+}
+
 function switchTab(tab) {
   const tabs = ['players', 'search', 'admin', 'chat'];
   document.querySelectorAll('.side-tab').forEach((el, i) => {
