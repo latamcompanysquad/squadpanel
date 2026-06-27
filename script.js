@@ -996,19 +996,25 @@ function onSearchInput(val) {
 
 function renderSearchDropdown(val) {
   const dd = document.getElementById('searchDropdown');
+  const ddOverlay = document.getElementById('searchDropdownOverlay');
   const q = val.trim().toLowerCase();
   const list = q
     ? allPlayersCache.filter(p => p.name.toLowerCase().includes(q) || String(p.steamID).includes(q))
     : allPlayersCache;
-  if (!list.length) { dd.innerHTML = '<div class="search-item"><span class="si-name" style="color:var(--text-dim)">Sin resultados</span></div>'; return; }
-  dd.innerHTML = list.slice(0, 50).map(p => {
-    const tc = p.teamID === 1 ? 'blue' : 'red';
-    const dead = !p.isAlive ? '<span class="si-dead">💀</span>' : '';
-    return `<div class="search-item" onclick="searchSelectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      <span class="si-tag ${tc}">T${p.teamID} S${p.squadID ?? '?'}</span>
-      <span class="si-name">${esc(p.name)}</span>${dead}
-    </div>`;
-  }).join('');
+  
+  const html = !list.length 
+    ? '<div class="search-item"><span class="si-name" style="color:var(--text-dim)">Sin resultados</span></div>'
+    : list.slice(0, 50).map(p => {
+        const tc = p.teamID === 1 ? 'blue' : 'red';
+        const dead = !p.isAlive ? '<span class="si-dead">💀</span>' : '';
+        return `<div class="search-item" onclick="searchSelectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+          <span class="si-tag ${tc}">T${p.teamID} S${p.squadID ?? '?'}</span>
+          <span class="si-name">${esc(p.name)}</span>${dead}
+        </div>`;
+      }).join('');
+  
+  if (dd) dd.innerHTML = html;
+  if (ddOverlay) ddOverlay.innerHTML = html;
 }
 
 function searchSelectPlayer(p) {
@@ -1635,4 +1641,19 @@ function scrollChatToBottom() {
   const chatPanelDiv = document.getElementById('chatPanelMessages');
   if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
   if (chatPanelDiv) chatPanelDiv.scrollTop = chatPanelDiv.scrollHeight;
+}
+
+function toggleSearchPanel() {
+  const panel = document.getElementById('searchPanelOverlay');
+  const input = document.getElementById('searchInputOverlay');
+  if (panel) {
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'flex' : 'none';
+    if (isHidden) {
+      setTimeout(() => input.focus(), 100);
+    } else {
+      input.value = '';
+      document.getElementById('searchDropdownOverlay').innerHTML = '';
+    }
+  }
 }
