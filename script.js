@@ -1507,7 +1507,7 @@ const currentMapRaw = data.map ?? data.layer ?? 'unknown';
 const currentMap = normalizeMapName(currentMapRaw) || currentMapRaw;
 const chatPanel = document.getElementById('chatPanel');
 const isChatVisible = chatPanel && chatPanel.style.display !== 'none';
-console.log('🔄 POLL: currentMap =', currentMap, '| chat visible?', isChatVisible);
+//console.log('🔄 POLL: currentMap =', currentMap, '| chat visible?', isChatVisible);
 
 const currentServer = data.serverName ?? 'unknown';
 const currentStr = JSON.stringify(currentMessages);
@@ -1521,9 +1521,9 @@ if (currentMessages.length > 0 && (currentMap !== lastSavedMap || currentStr !==
 
 // Si el panel de chat está visible, recargar desde Supabase
 if (isChatVisible && currentMap) {
-  console.log('📥 Cargando historial para', currentMap);
+  //console.log('📥 Cargando historial para', currentMap);
   loadChatHistory(currentMap).then(m => {
-    console.log('📨 Historial devuelto:', m ? `${m.length} mensajes` : 'null');
+    //console.log('📨 Historial devuelto:', m ? `${m.length} mensajes` : 'null');
     if (m && m.length) {
       updateChatMessages(m);
     } else {
