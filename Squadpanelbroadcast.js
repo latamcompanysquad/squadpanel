@@ -143,19 +143,23 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
     this.server.on('CHAT_MESSAGE', (data) => {
       if (data.player && data.message) {
-        // DEBUG: Log estructura completa
-        this.verbose(1, `🔍 [CHAT_DEBUG] data keys: ${Object.keys(data).join(', ')}`);
-        this.verbose(1, `🔍 [CHAT_DEBUG] data.channel=${data.channel}, data.squadID=${data.squadID}, data.visibleTo=${data.visibleTo}`);
+        this.verbose(1, `🔍 [CHAT_RAW] "${data.raw}"`);
+        
+        let channel = 'all';
+        if (data.raw) {
+          if (data.raw.includes('[Team]') || data.raw.includes('[TEAM]')) channel = 'team';
+          else if (data.raw.includes('[Squad]') || data.raw.includes('[SQUAD]')) channel = 'squad';
+          else if (data.raw.includes('[Admin]') || data.raw.includes('[ADMIN]')) channel = 'admin';
+        }
         
         const msg = {
           steamID: data.player.steamID,
           name: data.player.name,
           message: data.message,
-          channel: data.channel || data.squadID ? 'squad' : data.teamID ? 'team' : 'all',
+          channel: channel,
           teamID: data.player.teamID || null,
           timestamp: Date.now(),
         };
-        this.verbose(1, `💬 Final channel: ${msg.channel}`);
         this.chatBuffer.push(msg);
         if (this.chatBuffer.length > 100) this.chatBuffer.shift();
         this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
