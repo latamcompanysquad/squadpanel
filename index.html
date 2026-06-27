@@ -47,16 +47,6 @@
           <div class="map-ctrl-btn" onclick="map.fitBounds([[0,0],[1000,1000]])" title="Reset vista" style="font-size:11px;">⊞</div>
           <div class="map-ctrl-btn" id="btnFollowSel" onclick="toggleFollowSelected()" title="Seguir seleccionado" style="font-size:11px;color:var(--text-dim);">⊙</div>
         </div>
-        <div class="filter-group" style="width:100%;justify-content:center;">
-          <div class="map-ctrl-btn" id="btnChatToggle" onclick="toggleChatPanel()" title="Chat" style="font-size:14px;">CHAT</div>
-        </div>
-        <div id="chatPanel" style="display:none;position:absolute;top:155px;left:50%;transform:translateX(-50%);width:320px;max-height:400px;background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;z-index:1000;flex-direction:column;">
-          <div style="padding:6px;border-bottom:1px solid var(--border);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
-            <span>Chat Live</span>
-            <span onclick="toggleChatPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);">X</span>
-          </div>
-          <div id="chatPanelMessages" style="flex:1;overflow-y:auto;padding:6px;font-family:JetBrains Mono,monospace;font-size:11px;"></div>
-        </div>
         <div class="filter-group">
           <div class="ftoggle t1 active" id="ft1" onclick="toggleFilter('t1')" title="Team 1">
             <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0"></span>T1
@@ -73,6 +63,19 @@
           <div class="ftoggle dead active"" id="fdead" onclick="toggleFilter('dead')" title="Mostrar muertos">💀 MUERTOS</div>
           <div class="filter-sep"></div>
           <div class="ftoggle flags active" id="fflags" onclick="toggleFilter('flags')" title="Banderas/Objetivos">🏳 FLAGS</div>
+        </div>
+      </div>
+
+      <div id="chatWrapper" style="position:absolute;top:60px;left:10px;z-index:800;">
+        <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
+          <div class="map-ctrl-btn" id="btnChatToggle" onclick="toggleChatPanel()" title="Chat" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">💬 CHAT</div>
+        </div>
+        <div id="chatPanel" style="display:none;width:340px;max-height:420px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
+          <div style="padding:8px 12px;border-bottom:1px solid var(--panel-edge);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;color:var(--olive);">
+            <span>💬 Chat Live</span>
+            <span onclick="toggleChatPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);transition:color .15s;">✕</span>
+          </div>
+          <div id="chatPanelMessages" style="flex:1;overflow-y:auto;padding:8px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;max-height:350px;"></div>
         </div>
       </div>
     </div>
