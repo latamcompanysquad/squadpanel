@@ -920,7 +920,7 @@ function updateFobs(fobArray, corners) {
 // SUPABASE CHAT CONFIG
 const SUPABASE_CONFIG = {
   url: 'https://vaddajsbjijtzibjhafj.supabase.co',
-  key: 'sb_publishable_75mR-EQqSrvEr0CiHQUqvA_oc4DdsaQ...',
+  key: 'sb_publishable_75mR-EQqSrvEr0CiHQUqvA_oc4DdsaQ',
   table: 'match_state'
 };
 const CHAT_TABLE = 'squad_chat_logs';

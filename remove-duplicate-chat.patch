@@ -1,0 +1,24 @@
+--- a/index.html	2026-06-27 20:59:27.301650596 +0000
++++ b/index.html	2026-06-27 21:09:35.615735763 +0000
+@@ -82,7 +82,6 @@
+         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
+         <div class="side-tab" onclick="switchTab('search')">Buscar</div>
+         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
+-        <div class="side-tab" onclick="switchTab('chat')">💬 Chat</div>
+       </div>
+       <div id="sideContent">
+         <div id="tabPlayers" class="show">
+@@ -156,13 +155,6 @@
+             <div id="cmdLog"><div class="no-data" style="padding:6px 0;">Sin comandos enviados</div></div>
+           </div>
+         </div>
+-        <div id="tabChat">
+-          <div class="panel-title">Chat en vivo</div>
+-          <div id="chatContainer" style="display:flex;flex-direction:column;height:100%;gap:6px;">
+-            <div id="chatMessages" style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:3px;padding:6px;background:var(--bg-dark);font-family:'JetBrains Mono',monospace;font-size:11px;"></div>
+-            <div style="color:var(--text-dim);font-size:10px;text-align:center;">⏱ Últimos 100 mensajes</div>
+-          </div>
+-        </div>
+       </div>
+     </div>
+   </div>
