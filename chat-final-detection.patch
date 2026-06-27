@@ -1,0 +1,31 @@
+diff --git a/Squadpanelbroadcast.js b/Squadpanelbroadcast.js
+index b50eafe..3300972 100644
+--- a/Squadpanelbroadcast.js
++++ b/Squadpanelbroadcast.js
+@@ -143,19 +143,21 @@ export default class SquadPanelBroadcast extends BasePlugin {
+ 
+     this.server.on('CHAT_MESSAGE', (data) => {
+       if (data.player && data.message) {
+-        // DEBUG: Log estructura completa
+-        this.verbose(1, `🔍 [CHAT_DEBUG] data keys: ${Object.keys(data).join(', ')}`);
+-        this.verbose(1, `🔍 [CHAT_DEBUG] data.channel=${data.channel}, data.squadID=${data.squadID}, data.visibleTo=${data.visibleTo}`);
++        let channel = 'all';
++        if (data.raw) {
++          if (data.raw.includes('[ChatTeam]')) channel = 'team';
++          else if (data.raw.includes('[ChatSquad]')) channel = 'squad';
++          else if (data.raw.includes('[ChatAdmin]')) channel = 'admin';
++        }
+         
+         const msg = {
+           steamID: data.player.steamID,
+           name: data.player.name,
+           message: data.message,
+-          channel: data.channel || data.squadID ? 'squad' : data.teamID ? 'team' : 'all',
++          channel: channel,
+           teamID: data.player.teamID || null,
+           timestamp: Date.now(),
+         };
+-        this.verbose(1, `💬 Final channel: ${msg.channel}`);
+         this.chatBuffer.push(msg);
+         if (this.chatBuffer.length > 100) this.chatBuffer.shift();
+         this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);

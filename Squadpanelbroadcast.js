@@ -147,9 +147,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
         
         let channel = 'all';
         if (data.raw) {
-          if (data.raw.includes('[Team]') || data.raw.includes('[TEAM]')) channel = 'team';
-          else if (data.raw.includes('[Squad]') || data.raw.includes('[SQUAD]')) channel = 'squad';
-          else if (data.raw.includes('[Admin]') || data.raw.includes('[ADMIN]')) channel = 'admin';
+          if (data.raw.includes('[ChatTeam]')) channel = 'team';
+          else if (data.raw.includes('[ChatSquad]')) channel = 'squad';
+          else if (data.raw.includes('[ChatAdmin]')) channel = 'admin';
         }
         
         const msg = {
