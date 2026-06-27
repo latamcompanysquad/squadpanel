@@ -1271,11 +1271,12 @@ function updatePlayerList(players) {
     const roleIcon = roleIconPath(p, 'white');
     const veh = p.vehicle ? ` <span style="color:var(--amber);font-size:9px;">🚗 ${esc(p.vehicle.name)}</span>` : '';
     const sl = p.isLeader ? ' <span style="color:var(--amber)">★</span>' : '';
+    const spectatorBadge = p.isSpectating ? ' <span style="color:var(--amber);font-weight:bold;">📷 STAFF</span>' : '';
     const deadOpacity = (!p.isAlive && !p.position) ? 'opacity:.4;' : '';
     html += `<div class="player-card" style="cursor:pointer;margin-left:8px;${sel}${deadOpacity}" onclick="selectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <div style="display:flex;align-items:center;gap:6px;">
         <img src="${roleIcon}" alt="" style="width:16px;height:16px;flex-shrink:0;"/>
-        <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${veh}</div>
+        <div><span class="ptag ${c}">[S${p.squadID ?? '?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}${spectatorBadge}${veh}</div>
       </div>
       <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${role} · ${statusText}</div>
     </div>`;
