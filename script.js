@@ -350,7 +350,7 @@ function makeObjectiveIcon(owningTeam, isMain) {
 }
 
 // ─── FILTROS Y FOLLOW ────────────────────────────────────────────────────────
-const filters = { t1: true, t2: true, veh: true, dead: false, empty: true, flags: true };
+const filters = { t1: true, t2: true, veh: true, dead: true, empty: true, flags: true };
 let lastSnapshot = null;
 let followSelected = false;
 

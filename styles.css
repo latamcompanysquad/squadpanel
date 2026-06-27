@@ -233,8 +233,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
   flex:1;font-weight:600;
 }
 .squad-count{
-  font-size:10px;color:var(--text-dim);background:var(--olive-dim);
-  padding:1px 4px;border-radius:2px;
+  font-size:10px;color:var(--text);background:var(--olive-dim);
+  padding:2px 6px;border-radius:2px;font-weight:700;
 }
 .squad-center-btn{
   display:inline-flex;align-items:center;justify-content:center;
