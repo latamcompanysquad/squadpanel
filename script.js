@@ -917,14 +917,16 @@ function updateFobs(fobArray, corners) {
 
 // ─── TABS ──────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
-  const tabs = ['players', 'search', 'admin'];
+  const tabs = ['players', 'search', 'admin', 'chat'];
   document.querySelectorAll('.side-tab').forEach((el, i) => {
     el.classList.toggle('active', tabs[i] === tab);
   });
   document.getElementById('tabPlayers').classList.toggle('show', tab === 'players');
   document.getElementById('tabSearch').classList.toggle('show', tab === 'search');
   document.getElementById('tabAdmin').classList.toggle('show', tab === 'admin');
+  document.getElementById('tabChat').classList.toggle('show', tab === 'chat');
   if (tab === 'search') renderSearchDropdown(document.getElementById('searchInput').value);
+  if (tab === 'chat') scrollChatToBottom();
 }
 
 let allPlayersCache = [];
@@ -1438,6 +1440,7 @@ async function poll() {
 
     // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
+    updateChatMessages(data.chatMessages ?? []);
 
   } catch (e) {
     console.error('Error en poll:', e);
@@ -1479,3 +1482,32 @@ async function poll() {
     }
   });
 })();
+
+function updateChatMessages(chatMessages) {
+  const chatDiv = document.getElementById('chatMessages');
+  if (!chatDiv) return;
+  
+  if (!chatMessages || chatMessages.length === 0) {
+    chatDiv.innerHTML = '<div style="color:var(--text-dim);padding:6px;">Sin mensajes</div>';
+    return;
+  }
+  
+  chatDiv.innerHTML = chatMessages.map(msg => {
+    const color = msg.color || '#FFF';
+    const timestamp = new Date(msg.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const displayChannel = msg.channel === 'all' ? '[ALL]' : msg.channel === 'squad' ? '[SQ]' : msg.channel === 'team' ? '[T]' : '[ADMIN]';
+    return `<div style="color:${color};margin-bottom:3px;word-break:break-word;">
+      <span style="color:var(--text-dim);font-size:9px;">${timestamp}</span>
+      <span style="color:${color};font-weight:600;margin:0 3px;">${displayChannel}</span>
+      <span style="color:var(--amber);">${esc(msg.name)}:</span>
+      <span style="color:${color};">${esc(msg.message)}</span>
+    </div>`;
+  }).join('');
+  
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom() {
+  const chatDiv = document.getElementById('chatMessages');
+  if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+}

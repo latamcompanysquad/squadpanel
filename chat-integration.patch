@@ -1,0 +1,50 @@
+--- a/Squadpanelbroadcast.js
++++ b/Squadpanelbroadcast.js
+@@ -117,6 +117,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
+     this.namedIcons = {};
+     this.typeIcons = {};
+     this.nameToType = {};
++    this.chatBuffer = [];
+     this.namedIconsNorm = {};
+     this.nameToTypeNorm = {};
+     this._unmatchedVehicleNames = new Set();
+@@ -175,6 +176,30 @@ export default class SquadPanelBroadcast extends BasePlugin {
+ 
+     this.verbose(1, `📷 Listeners de cámara registrados`);
+ 
++    this.server.on('CHAT_MESSAGE', (data) => {
++      if (data.player && data.message) {
++        const msg = {
++          steamID: data.player.steamID,
++          name: data.player.name,
++          message: data.message,
++          channel: data.channel || 'all',
++          timestamp: Date.now(),
++        };
++        this.chatBuffer.push(msg);
++        if (this.chatBuffer.length > 100) this.chatBuffer.shift();
++        const colorMap = { all: '#FFF', squad: '#FFFF00', team: '#FF0000', admin: '#00FFFF' };
++        const color = colorMap[msg.channel] || '#FFF';
++        this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
++      }
++    });
++
++    this.server.on('NEW_GAME', () => {
++      this.chatBuffer = [];
++      this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
++    });
++
++    this.verbose(1, `💬 Listeners de chat registrados`);
++
+     this.timer = setInterval(async () => {
+       await this.broadcast();
+       await this.pollAdminCommands();
+@@ -556,6 +581,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
+     return {
+       serverName: server.serverName ?? '',
+       map: mapName,
+       layer: layerName,
++      chatMessages: this.chatBuffer.map(m => ({ ...m, color: ({ all: '#FFF', squad: '#FFFF00', team: '#FF0000', admin: '#00FFFF' })[m.channel] || '#FFF' })),
+       factions,
+       players,
+       vehicles,

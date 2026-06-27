@@ -98,7 +98,6 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.namedIconsNorm = {};
     this.nameToTypeNorm = {};
     this.chatBuffer = [];
-    this.chatBuffer = [];
     this._unmatchedVehicleNames = new Set();
   }
 
@@ -149,6 +148,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
           name: data.player.name,
           message: data.message,
           channel: data.channel || 'all',
+          teamID: data.player.teamID || null,
           timestamp: Date.now(),
         };
         this.chatBuffer.push(msg);
@@ -702,7 +702,14 @@ export default class SquadPanelBroadcast extends BasePlugin {
       }
 
     return {
-      chatMessages: this.chatBuffer.map(m => ({ ...m, color: ({ all: '#FFF', squad: '#FFFF00', team: '#FF0000', admin: '#00FFFF' })[m.channel] || '#FFF' })),
+      chatMessages: this.chatBuffer.map(m => {
+        let color = '#FFF';
+        if (m.channel === 'all') color = '#FFF';
+        else if (m.channel === 'squad') color = m.teamID === 1 ? '#00FF00' : '#FFFF00';
+        else if (m.channel === 'team') color = m.teamID === 1 ? '#0088FF' : '#FF0000';
+        else if (m.channel === 'admin') color = '#00FFFF';
+        return { ...m, color };
+      }),
       serverName: server.serverName ?? '',
       map: mapName,
       layer: layerName,

@@ -1,0 +1,55 @@
+--- a/Squadpanelbroadcast.js
++++ b/Squadpanelbroadcast.js
+@@ -97,6 +97,7 @@
+     this.nameToType = {};
+     this.namedIconsNorm = {};
+     this.nameToTypeNorm = {};
++    this.chatBuffer = [];
+     this._unmatchedVehicleNames = new Set();
+   }
+ 
+@@ -139,6 +140,29 @@
+       }
+     });
+     this.verbose(1, `📷 Listeners de cámara registrados`);
++
++    this.server.on('CHAT_MESSAGE', (data) => {
++      if (data.player && data.message) {
++        const msg = {
++          steamID: data.player.steamID,
++          name: data.player.name,
++          message: data.message,
++          channel: data.channel || 'all',
++          teamID: data.player.teamID || null,
++          timestamp: Date.now(),
++        };
++        this.chatBuffer.push(msg);
++        if (this.chatBuffer.length > 100) this.chatBuffer.shift();
++        this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
++      }
++    });
++
++    this.server.on('NEW_GAME', () => {
++      this.chatBuffer = [];
++      this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
++    });
++
++    this.verbose(1, `💬 Listeners de chat registrados`);
+ 
+     this.timer = setInterval(async () => {
+       await this.broadcast();
+@@ -706,6 +732,14 @@
+     }
+ 
+     return {
++      chatMessages: this.chatBuffer.map(m => {
++        let color = '#FFF';
++        if (m.channel === 'all') color = '#FFF';
++        else if (m.channel === 'squad') color = m.teamID === 1 ? '#00FF00' : '#FFFF00';
++        else if (m.channel === 'team') color = m.teamID === 1 ? '#0088FF' : '#FF0000';
++        else if (m.channel === 'admin') color = '#00FFFF';
++        return { ...m, color };
++      }),
+       serverName: server.serverName ?? '',
+       map: mapName,
+       layer: layerName,
