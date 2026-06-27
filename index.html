@@ -46,6 +46,16 @@
           <div class="map-ctrl-btn" onclick="map.zoomOut()" title="Zoom out">−</div>
           <div class="map-ctrl-btn" onclick="map.fitBounds([[0,0],[1000,1000]])" title="Reset vista" style="font-size:11px;">⊞</div>
           <div class="map-ctrl-btn" id="btnFollowSel" onclick="toggleFollowSelected()" title="Seguir seleccionado" style="font-size:11px;color:var(--text-dim);">⊙</div>
+        <div class="filter-group">
+          <div class="map-ctrl-btn" id="btnChatToggle" onclick="toggleChatPanel()" title="Chat" style="font-size:14px;">CHAT</div>
+        </div>
+        <div id="chatPanel" style="display:none;position:absolute;top:120px;left:10px;width:300px;max-height:400px;background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;z-index:1000;flex-direction:column;">
+          <div style="padding:6px;border-bottom:1px solid var(--border);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+            <span>Chat Live</span>
+            <span onclick="toggleChatPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);">X</span>
+          </div>
+          <div id="chatPanelMessages" style="flex:1;overflow-y:auto;padding:6px;font-family:JetBrains Mono,monospace;font-size:11px;"></div>
+        </div>
         </div>
         <div class="filter-group">
           <div class="ftoggle t1 active" id="ft1" onclick="toggleFilter('t1')" title="Team 1">
