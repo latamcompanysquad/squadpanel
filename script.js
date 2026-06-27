@@ -1213,7 +1213,6 @@ function updatePlayerList(players) {
     if (!filters.t1 && p.teamID === 1) return false;
     if (!filters.t2 && p.teamID === 2) return false;
     if (!filters.veh && p.vehicle) return false;
-    if (!filters.spectators && p.isSpectating) return false;
     return true;
   });
   const sorted = [...visible].sort((a,b) => {
