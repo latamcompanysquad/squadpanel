@@ -146,21 +146,24 @@ export default class SquadPanelBroadcast extends BasePlugin {
         this.verbose(1, `🔍 [CHAT_RAW] "${data.raw}"`);
         
         let channel = 'all';
+        let teamID = null;
+        let team = 'unknown';
+        let color = null;
         if (data.raw) {
           if (data.raw.includes('[ChatTeam]')) channel = 'team';
           else if (data.raw.includes('[ChatSquad]')) channel = 'squad';
           else if (data.raw.includes('[ChatAdmin]')) channel = 'admin';
-        let teamID = data.player.teamID;
-        if (!teamID) {
-          const found = this.server.players.find(p => p.eosID === data.player.eosID || p.steamID === data.player.steamID);
-          teamID = found?.teamID || null;
-        }
-        let color = null;
-        if (channel === 'team') {
-          color = teamID === 1 ? 'blue' : 'red';
-        } else if (channel === 'squad') {
-          color = teamID === 1 ? 'green' : 'yellow';
-        }
+          teamID = data.player.teamID;
+          if (!teamID) {
+            const found = this.server.players.find(p => p.eosID === data.player.eosID || p.steamID === data.player.steamID);
+            teamID = found?.teamID || null;
+          }
+          team = teamID === 1 ? 'team1' : teamID === 2 ? 'team2' : 'unknown';
+          if (channel === 'team') {
+            color = teamID === 1 ? 'blue' : 'red';
+          } else if (channel === 'squad') {
+            color = teamID === 1 ? 'green' : 'yellow';
+          }
         }
         
         const msg = {
@@ -169,6 +172,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
           message: data.message,
           channel: channel,
           teamID,
+          team,
           color,
           timestamp: Date.now(),
         };
