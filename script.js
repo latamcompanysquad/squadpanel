@@ -1497,7 +1497,7 @@ async function poll() {
     } else {
       clearAmmoMarkers();
     }
-
+const chatTab = document.getElementById('tabChat');
 // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
     // Guardar en Supabase solo si hay cambios
