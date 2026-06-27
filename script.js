@@ -1498,7 +1498,7 @@ async function poll() {
       clearAmmoMarkers();
     }
 
-    // ── Lista de jugadores en el panel ──
+// ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
     // Guardar en Supabase solo si hay cambios
     const currentMessages = data.chatMessages ?? [];
@@ -1514,16 +1514,18 @@ async function poll() {
       lastSavedMap = currentMap;
     }
 
-// Si la pestaña de chat está abierta, recargar desde Supabase
-const chatTab = document.getElementById('tabChat');
-if (chatTab && chatTab.classList.contains('show') && chatMapKey) {
-  loadChatHistory(chatMapKey).then(m => {
-    if (m) {
-      updateChatMessages(m);
+    // Si la pestaña de chat está abierta, recargar desde Supabase (usando currentMap)
+    const chatTab = document.getElementById('tabChat');
+    if (chatTab && chatTab.classList.contains('show') && currentMap) {
+      loadChatHistory(currentMap).then(m => {
+        if (m && m.length) {
+          updateChatMessages(m);
+        } else {
+          // Si no hay historial, mostrar vacío
+          updateChatMessages([]);
+        }
+      });
     }
-  });
-}
-
   } catch (e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
