@@ -1283,6 +1283,7 @@ function updatePlayerList(players) {
   if (!html) html = '<div class="no-data">No hay jugadores para mostrar</div>';
   list.innerHTML = html;
   document.getElementById('playerCount').textContent = visible.length;
+  document.getElementById('totalCount').textContent = players.length;
 }
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
