@@ -928,7 +928,7 @@ let lastSavedMessages = null;
 let lastSavedMap = null;
 
 async function loadChatHistory(mapName) {
-  if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.key.startsWith('eyJ') === false) return null;
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) return null;
   try {
     // Consultar por map_name y obtener el registro más reciente
     const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + CHAT_TABLE + '?map_name=eq.' + encodeURIComponent(mapName) + '&order=created_at.desc&limit=1', {
