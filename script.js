@@ -1504,6 +1504,8 @@ async function poll() {
     const currentMessages = data.chatMessages ?? [];
     const currentMapRaw = data.map ?? data.layer ?? 'unknown';
     const currentMap = normalizeMapName(currentMapRaw) || currentMapRaw;
+console.log('🔄 POLL: currentMap =', currentMap, '| chatTab visible?', chatTab && chatTab.classList.contains('show'));
+    
     const currentServer = data.serverName ?? 'unknown';
     const currentStr = JSON.stringify(currentMessages);
     const lastStr = lastSavedMessages ? JSON.stringify(lastSavedMessages) : null;
@@ -1515,17 +1517,17 @@ async function poll() {
     }
 
     // Si la pestaña de chat está abierta, recargar desde Supabase (usando currentMap)
-    const chatTab = document.getElementById('tabChat');
-    if (chatTab && chatTab.classList.contains('show') && currentMap) {
-      loadChatHistory(currentMap).then(m => {
-        if (m && m.length) {
-          updateChatMessages(m);
-        } else {
-          // Si no hay historial, mostrar vacío
-          updateChatMessages([]);
-        }
-      });
+if (chatTab && chatTab.classList.contains('show') && currentMap) {
+  console.log('📥 Cargando historial para', currentMap);
+  loadChatHistory(currentMap).then(m => {
+    console.log('📨 Historial devuelto:', m ? `${m.length} mensajes` : 'null');
+    if (m && m.length) {
+      updateChatMessages(m);
+    } else {
+      updateChatMessages([]);
     }
+  });
+}
   } catch (e) {
     console.error('Error en poll:', e);
     document.getElementById('statusText').textContent = 'Error de conexión';
