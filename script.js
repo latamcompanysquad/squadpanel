@@ -40,7 +40,7 @@ async function loadVehicleMapping() {
     }
     VEHICLE_NAME_TO_TYPE_NORM = buildNormalizedIndex(VEHICLE_NAME_TO_TYPE);
 
-    console.log('✅ Mapeo de vehículos cargado desde GitHub');
+    //console.log('✅ Mapeo de vehículos cargado desde GitHub');
   } catch (e) {
     console.warn('❌ No se pudo cargar mapeo desde GitHub, usando fallback local:', e);
     // Fallback: intentar cargar localmente
@@ -61,7 +61,7 @@ async function loadVehicleMapping() {
           if (info.type) VEHICLE_NAME_TO_TYPE[vehicle] = info.type;
         }
         VEHICLE_NAME_TO_TYPE_NORM = buildNormalizedIndex(VEHICLE_NAME_TO_TYPE);
-        console.log('✅ Mapeo cargado localmente como fallback');
+        //console.log('✅ Mapeo cargado localmente como fallback');
       }
     } catch (e2) {
       console.warn('⚠️ No se pudo cargar mapeo local, usando fallbacks internos.');
@@ -100,9 +100,9 @@ function getVehicleIcon(vehicleName, vehicleType = null) {
 
 // ─── ICONOS PARA DESPLEGABLES (FOB, HAB, AMMO, RALLY) ────────────────────
 function getDeployableIcon(type, teamID, isActive = true) {
-  console.log('getDeployableIcon llamado con teamID:', teamID);
+  //console.log('getDeployableIcon llamado con teamID:', teamID);
   const tid = parseInt(teamID, 10);
-  console.log('tid:', tid);
+  //console.log('tid:', tid);
   let suffix = 'WHITE';
   if (tid === 1) suffix = 'BLUE';
   else if (tid === 2) suffix = 'RED';
@@ -822,10 +822,10 @@ function updateRallies(rallyArray, corners) {
 function renderAmmoMarker(ammo, corners) {
   if (!ammoLayer) return;
   const pos = ammo.pos || { x: 0, y: 0 };
-  console.log('=== renderAmmoMarker ===');
-  console.log('ammo.teamID original:', ammo.teamID);
+  //console.log('=== renderAmmoMarker ===');
+  //console.log('ammo.teamID original:', ammo.teamID);
   let teamID = parseInt(ammo.teamID, 10);
-  console.log('teamID after parseInt:', teamID);
+  //console.log('teamID after parseInt:', teamID);
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
     console.warn('teamID inválido, usando 1');
     teamID = 1;
@@ -860,12 +860,12 @@ function updateAmmo(ammoArray, corners) {
 function renderFobMarker(fob, corners) {
   if (!fobMarkersLayer) return;
   const pos = fob.pos || { x: 0, y: 0 };
-  console.log('=== renderFobMarker ===');
-  console.log('fob.teamID original:', fob.teamID);
-  console.log('fob.habName:', fob.habName);
-  console.log('fob.isHab:', fob.isHab);
+  //console.log('=== renderFobMarker ===');
+  //console.log('fob.teamID original:', fob.teamID);
+  //console.log('fob.habName:', fob.habName);
+  //console.log('fob.isHab:', fob.isHab);
   let teamID = parseInt(fob.teamID, 10);
-  console.log('teamID after parseInt:', teamID);
+  //console.log('teamID after parseInt:', teamID);
   if (isNaN(teamID) || (teamID !== 1 && teamID !== 2)) {
     console.warn('teamID inválido, usando 1');
     teamID = 1;
