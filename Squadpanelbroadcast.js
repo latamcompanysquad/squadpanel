@@ -731,7 +731,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         let color = '#FFF';
         if (m.channel === 'all') color = '#FFF';
         else if (m.channel === 'squad') color = m.teamID === 1 ? '#00FF00' : '#FFFF00';
-        else if (m.channel === 'team') color = m.teamID === 1 ? '#0088FF' : '#FF0000';
+        else if (m.channel === 'team') color = m.teamID === 1 ? '#4fa6e8' : '#e0584f';
         else if (m.channel === 'admin') color = '#00FFFF';
         return { ...m, color };
       }),
