@@ -923,11 +923,13 @@ const SUPABASE_CONFIG = {
   key: 'sb_publishable_75mR-EQqSrvEr0CiHQUqvA_oc4DdsaQ...',
   table: 'match_state'
 };
+const CHAT_TABLE = 'squad_chat_logs';
 
 async function loadChatHistory(mapName) {
   if (!SUPABASE_CONFIG.url || SUPABASE_CONFIG.key.startsWith('eyJ') === false) return null;
   try {
-    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + SUPABASE_CONFIG.table + '?id=eq.latest&select=data', {
+    // Consultar por map_name y obtener el registro más reciente
+    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + CHAT_TABLE + '?map_name=eq.' + encodeURIComponent(mapName) + '&order=created_at.desc&limit=1', {
       headers: {
         'apikey': SUPABASE_CONFIG.key,
         'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
@@ -935,18 +937,36 @@ async function loadChatHistory(mapName) {
     });
     if (!res.ok) return null;
     const rows = await res.json();
-    if (rows && rows[0] && rows[0].data && rows[0].data.map === mapName) return rows[0].data.chatMessages || [];
-  } catch (err) { console.warn('Chat history load failed'); }
+    if (rows && rows.length > 0) {
+      const latest = rows[0];
+      if (latest && latest.messages_json) {
+        return typeof latest.messages_json === 'string' ? JSON.parse(latest.messages_json) : latest.messages_json;
+      }
+    }
+  } catch (err) { console.warn('Chat history load failed:', err); }
   return null;
 }
 
 async function saveChatSnapshot(serverName, mapName, messages) {
-  if (!messages || !messages.length) return;
+  if (!messages || !messages.length || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) return;
   try {
-    localStorage.setItem('chat_' + serverName + '_' + mapName, JSON.stringify({ messages: messages, ts: Date.now() }));
-  } catch (err) { console.warn('Chat snapshot failed'); }
+    await fetch(SUPABASE_CONFIG.url + '/rest/v1/' + CHAT_TABLE, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        server_name: serverName,
+        map_name: mapName,
+        messages_json: JSON.stringify(messages),
+        created_at: new Date().toISOString()
+      })
+    });
+  } catch (err) { console.warn('Chat snapshot failed:', err); }
 }
-
 function switchTab(tab) {
   const tabs = ['players', 'search', 'admin', 'chat'];
   document.querySelectorAll('.side-tab').forEach((el, i) => {
@@ -957,9 +977,14 @@ function switchTab(tab) {
   document.getElementById('tabAdmin').classList.toggle('show', tab === 'admin');
   document.getElementById('tabChat').classList.toggle('show', tab === 'chat');
   if (tab === 'search') renderSearchDropdown(document.getElementById('searchInput').value);
-  if (tab === 'chat') scrollChatToBottom();
+  if (tab === 'chat') {
+    scrollChatToBottom();
+    // Cargar historial desde Supabase
+    if (currentMapKey) {
+      loadChatHistory(currentMapKey).then(m => { if (m) updateChatMessages(m); });
+    }
+  }
 }
-
 let allPlayersCache = [];
 
 function onSearchInput(val) {
@@ -1472,6 +1497,8 @@ async function poll() {
     // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
     updateChatMessages(data.chatMessages ?? []);
+    // Guardar en Supabase
+    saveChatSnapshot(data.serverName ?? 'unknown', data.map ?? data.layer ?? 'unknown', data.chatMessages ?? []);
 
   } catch (e) {
     console.error('Error en poll:', e);
