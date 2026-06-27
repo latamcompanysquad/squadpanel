@@ -1496,9 +1496,20 @@ async function poll() {
       clearAmmoMarkers();
     }
 
-  // ── Lista de jugadores en el panel ──
+      // ── Lista de jugadores en el panel ──
     updatePlayerList(data.players ?? []);
-    //updateChatMessages(data.chatMessages ?? []);
+    // Guardar en Supabase (no actualizar la vista con data.chatMessages)
+    saveChatSnapshot(data.serverName ?? 'unknown', data.map ?? data.layer ?? 'unknown', data.chatMessages ?? []);
+
+    // Si la pestaña de chat está abierta, recargar el historial desde Supabase
+    const chatTab = document.getElementById('tabChat');
+    if (chatTab && chatTab.classList.contains('show') && currentMapKey) {
+      loadChatHistory(currentMapKey).then(m => {
+        if (m) {
+          updateChatMessages(m);
+        }
+      });
+    }
     // Guardar en Supabase solo si hay mensajes nuevos o cambia el mapa
     const currentMessages = data.chatMessages ?? [];
     const currentMap = data.map ?? data.layer ?? 'unknown';
