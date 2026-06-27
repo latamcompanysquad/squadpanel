@@ -12,33 +12,28 @@
 <div id="app">
   <div id="hud">
     <div class="hud-block">
-      <div class="brand"><span>LATAM</span>COMPANY</div>
-      <div class="live-dot" id="liveDot"></div>
+      <div class="live-dot offline" id="liveDot"></div>
+      <div class="brand">LATAM<span>COMPANY</span></div>
+      <div class="map-name" id="hudMap">—</div>
+      <div id="hudTimer" style="display:none; font-family:'Oswald',sans-serif; font-size:13px; color:var(--amber); letter-spacing:.05em;">⏱ <span id="timerVal">--:--</span></div>
     </div>
-    <div class="hud-block">
-      <div class="map-name" id="mapName">-</div>
-    </div>
-    <div class="hud-block">
-      <div class="tickets">
-        <div class="ticket-bar">
-          <div class="ticket-fill-blue" id="ticketFillBlue"></div>
-        </div>
-        <div class="ticket-num blue" id="ticketBlue">-</div>
-        <span style="color:var(--text-dim);">vs</span>
-        <div class="ticket-bar">
-          <div class="ticket-fill-red" id="ticketFillRed"></div>
-        </div>
-        <div class="ticket-num red" id="ticketRed">-</div>
-      </div>
-    </div>
-    <div class="status-text" id="statusText">Desconectado</div>
-  </div>
 
-  <div id="sideTabs">
-    <div class="side-tab active" data-tab="map">Mapa</div>
-    <div class="side-tab" data-tab="players">Jugadores</div>
-    <div class="side-tab" data-tab="search">Búsqueda</div>
-    <div class="side-tab" data-tab="admin">Admin</div>
+    <div class="hud-block tickets" id="hudTickets" style="display:none; align-items:center; gap:6px;">
+      <span id="t1faction" style="font-family:'Oswald',sans-serif; font-size:15px; font-weight:600; color:var(--blue); min-width:28px; text-align:right;">—</span>
+      <img id="t1flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain;"/>
+      <span class="ticket-num blue" id="t1num">—</span>
+      <div class="ticket-bar" style="flex:1; min-width:60px;">
+        <div class="ticket-fill-blue" id="t1bar" style="width:50%"></div>
+        <div class="ticket-fill-red" id="t2bar" style="width:50%"></div>
+      </div>
+      <span class="ticket-num red" id="t2num">—</span>
+      <img id="t2flag" src="" alt="" style="height:30px; width:auto; border-radius:0; display:none; object-fit:contain;"/>
+      <span id="t2faction" style="font-family:'Oswald',sans-serif; font-size:15px; font-weight:600; color:var(--red); min-width:28px; text-align:left;">—</span>
+    </div>
+
+    <div class="hud-block">
+      <span class="status-text" id="statusText">Conectando...</span>
+    </div>
   </div>
 
   <div id="body">
@@ -47,61 +42,114 @@
       <div id="sweep"></div>
       <div id="filterPanel">
         <div class="filter-group">
-          <div class="ftoggle t1 active" data-filter="t1">T1</div>
-          <div class="ftoggle t2 active" data-filter="t2">T2</div>
-          <div class="ftoggle veh active" data-filter="veh">Veh</div>
-          <div class="ftoggle dead" data-filter="dead">Muertos</div>
+          <div class="map-ctrl-btn" onclick="map.zoomIn()"  title="Zoom in">+</div>
+          <div class="map-ctrl-btn" onclick="map.zoomOut()" title="Zoom out">−</div>
+          <div class="map-ctrl-btn" onclick="map.fitBounds([[0,0],[1000,1000]])" title="Reset vista" style="font-size:11px;">⊞</div>
+          <div class="map-ctrl-btn" id="btnFollowSel" onclick="toggleFollowSelected()" title="Seguir seleccionado" style="font-size:11px;color:var(--text-dim);">⊙</div>
+        </div>
+        <div class="filter-group">
+          <div class="ftoggle t1 active" id="ft1" onclick="toggleFilter('t1')" title="Team 1">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0"></span>T1
+          </div>
           <div class="filter-sep"></div>
-          <div class="ftoggle empty" data-filter="empty">Vacíos</div>
+          <div class="ftoggle t2 active" id="ft2" onclick="toggleFilter('t2')" title="Team 2">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></span>T2
+          </div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle veh active" id="fveh" onclick="toggleFilter('veh')" title="Vehículos">🚗 VEH</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle empty active" id="fempty" onclick="toggleFilter('empty')" title="Vehículos vacíos">🔄 VACÍOS</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle dead active"" id="fdead" onclick="toggleFilter('dead')" title="Mostrar muertos">💀 MUERTOS</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle flags active" id="fflags" onclick="toggleFilter('flags')" title="Banderas/Objetivos">🏳 FLAGS</div>
         </div>
       </div>
     </div>
 
     <div id="side">
+      <div id="sideTabs">
+        <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
+        <div class="side-tab" onclick="switchTab('search')">Buscar</div>
+        <div class="side-tab" onclick="switchTab('admin')">Admin</div>
+      </div>
       <div id="sideContent">
-        <div id="tabMap">
-          <div class="panel-title">Información</div>
-          <div class="no-data">Esperando servidor...</div>
-        </div>
-        <div id="tabPlayers">
-          <div class="panel-title">Jugadores Activos</div>
-          <div id="playersList"></div>
+        <div id="tabPlayers" class="show">
+          <div>
+            <div class="panel-title">Seleccionado</div>
+            <div id="playerPanel"><div class="no-data">Hover sobre un marcador</div></div>
+          </div>
+          <div>
+            <div class="panel-title">En mapa (<span id="playerCount">0</span>)</div>
+            <div id="playerList"></div>
+          </div>
         </div>
         <div id="tabSearch">
-          <div class="panel-title">Búsqueda de Jugador</div>
           <div id="searchPanel">
-            <input type="text" id="searchInput" placeholder="Nombre o SteamID...">
+            <div class="panel-title">Buscar jugador</div>
+            <input id="searchInput" type="text" placeholder="Nombre o Steam ID..." oninput="onSearchInput(this.value)" autocomplete="off"/>
             <div id="searchDropdown"></div>
           </div>
         </div>
         <div id="tabAdmin">
           <div class="admin-section">
-            <div class="panel-title">Control Admin</div>
-            <div id="adminNoTarget" style="color:var(--text-dim);font-size:11px;text-align:center;padding:20px 0;">Selecciona un jugador</div>
-            <div id="adminTargetInfo" style="display:none;">
-              <div id="adminTarget">
-                <div class="target-name" id="targetName">-</div>
-                <div class="target-steam" id="targetSteam">-</div>
-              </div>
-              <div id="playerActionBtns">
-                <div class="btn-grid">
-                  <button class="btn btn-warn">Kick</button>
-                  <button class="btn btn-ban">Ban</button>
+            <div class="panel-title">Objetivo seleccionado</div>
+            <div id="adminTarget">
+              <div class="no-data" id="adminNoTarget">Haz click en un marcador del mapa</div>
+              <div id="adminTargetInfo" style="display:none">
+                <div class="target-name" id="adminTargetName">—</div>
+                <div class="target-steam" id="adminTargetSteam">—</div>
+                <div style="margin-top:4px;color:var(--text-dim)">
+                  <span id="adminTargetTeam">—</span> · Squad <span id="adminTargetSquad">—</span> · <span id="adminTargetRole">—</span>
                 </div>
+              </div>
+            </div>
+            <div class="btn-grid" id="playerActionBtns" style="display:none">
+              <button class="btn btn-warn" onclick="adminCmd('warn')">⚠ Advertir</button>
+              <button class="btn btn-blue" onclick="adminCmd('switchTeam')">⇄ Cambiar equipo</button>
+              <button class="btn btn-kick" onclick="adminCmd('kick')">✕ Kick</button>
+              <button class="btn btn-ban" onclick="adminCmd('ban')">⛔ Ban</button>
+            </div>
+            <div id="adminReasonWrap" style="display:none;margin-top:8px;">
+              <input class="admin-input" id="adminReason" placeholder="Razón (opcional)..." />
+              <div style="display:flex;gap:6px;margin-top:6px;">
+                <button class="btn btn-warn" style="flex:1" onclick="sendPendingCmd()">Confirmar</button>
+                <button class="btn btn-olive" style="flex:1" onclick="cancelPendingCmd()">Cancelar</button>
               </div>
             </div>
           </div>
           <div class="admin-section">
-            <div class="panel-title">Log de Comandos</div>
-            <div id="cmdLog"></div>
+            <div class="panel-title">Broadcast</div>
+            <textarea class="admin-input" id="broadcastMsg" rows="2" placeholder="Mensaje a todos los jugadores..."></textarea>
+            <div class="btn-grid" style="margin-top:6px;">
+              <button class="btn btn-olive btn-full" onclick="sendBroadcast()">📢 Broadcast</button>
+            </div>
           </div>
-          <div id="adminToast"></div>
+          <div class="admin-section">
+            <div class="panel-title">Cambio de mapa</div>
+            <input class="admin-input" id="nextMapInput" placeholder="Ej: AlBasrah_AAS_v1..." />
+            <div class="btn-grid" style="margin-top:6px;">
+              <button class="btn btn-blue" onclick="sendSetNextMap()">Siguiente mapa</button>
+              <button class="btn btn-warn" onclick="sendEndMatch()">⏹ Terminar match</button>
+            </div>
+          </div>
+          <div class="admin-section">
+            <div class="panel-title">Acciones globales</div>
+            <div class="btn-grid">
+              <button class="btn btn-olive" onclick="sendGlobal('pauseMatch')">⏸ Pausar</button>
+              <button class="btn btn-green" onclick="sendGlobal('unpauseMatch')">▶ Reanudar</button>
+            </div>
+          </div>
+          <div class="admin-section">
+            <div class="panel-title">Log de comandos</div>
+            <div id="cmdLog"><div class="no-data" style="padding:6px 0;">Sin comandos enviados</div></div>
+          </div>
         </div>
-        <div id="playerPanel"></div>
       </div>
     </div>
   </div>
 </div>
+<div id="adminToast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="script.js"></script>
