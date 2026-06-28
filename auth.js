@@ -65,7 +65,7 @@ async function checkAuthAndRoles() {
 async function validateUserRoles(discordUserId) {
   console.log("📡 Llamando a Edge Function validate-roles para ID:", discordUserId);
   try {
-    const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions/v1/validate-roles', {
+    const response = await fetch(SUPABASE_URL + '/functions/v1/validate-roles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
