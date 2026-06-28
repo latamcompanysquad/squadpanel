@@ -82,14 +82,14 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - [x] Squad count badge en cada encabezado de escuadra
 - [x] Botón 🎯 para centrar en squad (promedio de posiciones)
 
-#### 3.4 - Visual Effects
-- [ ] Trail de movimiento (últimos 30s)
-- [ ] Fade out al morir, fade in al spawnear
-- [ ] Map grid overlay (toggle)
+#### 3.4 - Visual Effects ✅ COMPLETADA (decisiones)
+- [x] Fade out al morir, fade in al spawnear (activo)
+- [❌] Trail de movimiento — DESCARTADO (recursos)
+- [❌] Map grid overlay — DESCARTADO (recursos)
 
 ---
 
-### FASE 4: Replay & Herramientas de Comando 🎥
+### FASE 4: Replay & Herramientas de Comando 🎥 🎯 EN PROGRESO
 
 #### 4.1 - Replay System
 - [ ] Tabla `match_snapshots` en Supabase (historial cada 2-5s)
@@ -122,8 +122,9 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 | 1 (Bugs)     | ✅ Done      |
 | 2 (Backend)  | ✅ Done      |
 | 3 (UX/Icons) | ✅ Done      |
+| 3.4 (FX)     | ✅ Done      |
 | 3.5 (RCON)   | ✅ Done      |
-| 4 (Replay)   | —            |
+| 4 (Replay)   | 🎯 In Prog   |
 
 ---
 
@@ -183,8 +184,14 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 - Squad count badge y botón 🎯 para centrar en squad
 - Fixes: bucle `for` indexado para collapse correcto, `invalidateSize()` antes de `flyTo()` para centrado automático
 
+
+### Sesión 8 — Fase 3.4 & Fase 4 Planning
+- Fase 3.4 finalizada: Fade confirmado activo, trail y grid descartados por costo de recursos
+- Fase 4 iniciada: Sistema de replay con `match_snapshots` en Supabase, scrubber interactivo, exportación JSON
+- Arquitectura: Plugin genera match_id único, Worker almacena snapshots históricos, Frontend reproductor en replays.html
+
 ### Próxima sesión
-- [ ] Fase 3.4 Visual Effects (trails, fade in/out)
+- [ ] Fase 4.1-4.3 Implementación
 
 ## 🔑 Decisiones Clave
 
