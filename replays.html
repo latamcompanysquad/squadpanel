@@ -262,7 +262,7 @@ let rSnapshots = [], rIdx = 0, rPlaying = false, rTimer = null;
 let rSelectedSteamID = null;
 let rFollowSelected = false;
 let rAllPlayersCache = [];
-let rFilters = { t1:true, t2:true, veh:true, dead:true, flags:true };
+let rFilters = { t1:true, t2:true, veh:true, dead:true, flags:true, empty:true };
 const rMarkers = {};
 const rObjectiveMarkers = {};
 let rObjectiveLine = null;
@@ -770,9 +770,23 @@ function rRender(i) {
   document.getElementById('rStatusText').textContent = `Snap ${i+1}/${rSnapshots.length}`;
   // scrubber
   document.getElementById('rTimeline').value = i;
-  document.getElementById('rSnapInfo').textContent = `[${i+1}/${rSnapshots.length}]`;
-  const mins = Math.floor(i*2/60), secs = Math.floor(i*2%60);
-  document.getElementById('rTimeInfo').textContent = `[${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}]`;
+
+  // ── Tiempo real basado en timestamp ──
+  const firstTs = rSnapshots[0].timestamp || new Date(rSnapshots[0].created_at).getTime();
+  const currentTs = snap.timestamp || new Date(snap.created_at).getTime();
+  const elapsed = (currentTs - firstTs) / 1000;
+  const lastSnap = rSnapshots[rSnapshots.length-1];
+  const totalTs = lastSnap.timestamp || new Date(lastSnap.created_at).getTime();
+  const totalDuration = (totalTs - firstTs) / 1000;
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  };
+
+  document.getElementById('rSnapInfo').textContent = `[${i+1}/${rSnapshots.length}] ⏱ ${fmt(elapsed)} / ${fmt(totalDuration)}`;
+  document.getElementById('rTimeInfo').textContent = `[${fmt(elapsed)}]`;
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 
   if (i===0) rMap.fitBounds(bounds);
@@ -784,10 +798,18 @@ function rPlay() {
   rPlaying = !rPlaying;
   if (rPlaying) {
     const speed = parseFloat(document.getElementById('rSpeed').value);
+    const getNextDelay = () => {
+      if (rIdx + 1 < rSnapshots.length) {
+        const cur = rSnapshots[rIdx].timestamp || new Date(rSnapshots[rIdx].created_at).getTime();
+        const next = rSnapshots[rIdx+1].timestamp || new Date(rSnapshots[rIdx+1].created_at).getTime();
+        return Math.max(50, (next - cur) / speed);
+      }
+      return 2000 / speed;
+    };
     rTimer = setInterval(()=>{
       if (rIdx < rSnapshots.length-1) rRender(++rIdx);
-      else { rPlaying=false; clearInterval(rTimer); rRender(rIdx); }
-    }, 2000/speed);
+      else { rPlaying = false; clearInterval(rTimer); rRender(rIdx); }
+    }, getNextDelay());
   } else clearInterval(rTimer);
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 }
@@ -870,10 +892,24 @@ async function rSelectMatch(id) {
   const mi=document.getElementById('mi_'+id); if(mi) mi.classList.add('active');
   document.getElementById('rStatusText').textContent='Cargando...';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc`,
-      { headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
-    const raw = await res.json();
-    rSnapshots = (raw||[]).map(s=>s.data||s);
+    // ── PAGINACIÓN COMPLETA ──
+    let allSnapshots = [];
+    let offset = 0;
+    const limit = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc&limit=${limit}&offset=${offset}`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.length === 0) break;
+      allSnapshots = allSnapshots.concat(data);
+      offset += limit;
+      hasMore = data.length === limit;
+    }
+    rSnapshots = allSnapshots.map(s => s.data || s);
     rIdx=0; rPlaying=false; clearInterval(rTimer);
     document.getElementById('rTimeline').max = rSnapshots.length-1;
     // clear markers
