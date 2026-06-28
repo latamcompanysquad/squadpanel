@@ -1272,9 +1272,7 @@ function updatePlayerList(players) {
     if (a.teamID !== b.teamID) return a.teamID - b.teamID;
     return a.name.localeCompare(b.name);
   });
-  if (document.getElementById('tabSearch').classList.contains('show')) {
-    renderSearchDropdown(document.getElementById('searchInput').value);
-  }
+
   const list = document.getElementById('playerList');
   let visible = players.filter(p => {
     if (!filters.t1 && p.teamID === 1) return false;
