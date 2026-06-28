@@ -809,7 +809,7 @@ function rRender(i) {
   };
 
   document.getElementById('rSnapInfo').textContent = `[${i+1}/${rSnapshots.length}] ⏱ ${fmt(elapsed)} / ${fmt(totalDuration)}`;
-  document.getElementById('rTimeInfo').textContent = `[${fmt(elapsed)}]`;
+  //document.getElementById('rTimeInfo').textContent = `[${fmt(elapsed)}]`;
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 
   if (i===0) rMap.fitBounds(bounds);
