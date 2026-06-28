@@ -61,12 +61,16 @@ async function checkAuthAndRoles() {
   // Registrar acceso con info completa
   if (user.user_metadata?.provider_id) {
     try {
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      const ipAddress = ipData.ip || null;
       const userAgent = navigator.userAgent;
       const discordName = user.user_metadata?.name || user.user_metadata?.custom_claims?.global_name || 'Unknown';
       const discordAvatar = user.user_metadata?.picture || null;
       
       await window.supabaseClient.from('staff_sessions').insert({
         user_id: user.id,
+        ip_address: ipAddress,
         discord_id: user.user_metadata.provider_id,
         discord_username: discordName,
         discord_avatar: discordAvatar,
