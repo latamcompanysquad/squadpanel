@@ -104,12 +104,22 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.modData = null;
     this.broadcastCount = 0;
 
+    generateMatchID() {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+      const rand = Math.random().toString(36).slice(2, 8);
+      return `match_${dateStr}_${timeStr}_${rand}`;
+    }
+
     this.namedIcons = {};
     this.typeIcons = {};
     this.nameToType = {};
     this.namedIconsNorm = {};
     this.nameToTypeNorm = {};
     this.chatBuffer = [];
+    this.matchID = this.generateMatchID();
+    this.snapshotCounter = 0;
     this._unmatchedVehicleNames = new Set();
   }
 
@@ -196,6 +206,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
     this.server.on('NEW_GAME', () => {
       this.chatBuffer = [];
+    this.matchID = this.generateMatchID();
+    this.snapshotCounter = 0;
       this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
     });
 
@@ -991,21 +1003,75 @@ export default class SquadPanelBroadcast extends BasePlugin {
   }
 
   async postToWorker(snapshot) {
-    const url = `${this.options.workerUrl}/api/match`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Secret': this.options.writeSecret,
-      },
-      body: JSON.stringify(snapshot),
-    });
+    const urlLive = `${this.options.workerUrl}/api/match`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Secret': this.options.writeSecret,
+    };
 
-    if (res.ok) {
-      this.verbose(2, `✅ Data sent (${new Date().toISOString()})`);
-    } else {
-      const text = await res.text();
-      throw new Error(`Worker responded ${res.status}: ${text}`);
+    try {
+      // Envío a Worker (live)
+      const resLive = await fetch(urlLive, { 
+        method: 'POST', 
+        headers, 
+        body: JSON.stringify(snapshot) 
+      });
+
+      if (!resLive.ok) {
+        throw new Error(`Worker ${resLive.status}`);
+      }
+
+      // Envío paralelo a Supabase (histórico) - sin esperar respuesta
+      this.saveToSupabaseAsync(snapshot);
+      
+      this.snapshotCounter++;
+      this.verbose(2, `✅ Data sent to Worker + Supabase (${new Date().toISOString()})`);
+    } catch (err) {
+      throw new Error(`postToWorker failed: ${err.message}`);
+    }
+  }
+
+  async saveToSupabaseAsync(snapshot) {
+    if (!this.options.supabaseUrl || !this.options.supabaseKey) return;
+
+    try {
+      const body = {
+        match_id: this.matchID,
+        snapshot_index: this.snapshotCounter,
+        timestamp: Date.now(),
+        data: snapshot,
+      };
+
+      await fetch(`${this.options.supabaseUrl}/rest/v1/match_snapshots`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.options.supabaseKey}`,
+          'apikey': this.options.supabaseKey,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(body),
+      });
+
+      // Actualizar match_metadata
+      await fetch(`${this.options.supabaseUrl}/rest/v1/match_metadata`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.options.supabaseKey}`,
+          'apikey': this.options.supabaseKey,
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({
+          match_id: this.matchID,
+          map_name: snapshot.map || 'Unknown',
+          layer_name: snapshot.layer || 'Unknown',
+          start_time: Date.now(),
+          snapshot_count: this.snapshotCounter + 1
+        }),
+      });
+    } catch (err) {
+      this.verbose(2, `⚠️ Supabase save failed: ${err.message}`);
     }
   }
 }
