@@ -9,17 +9,18 @@ if (typeof window.supabase !== 'undefined') {
 }
 
 async function loginWithDiscord() {
-  console.log("🔵 Intentando login con Discord...");
   const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
     provider: 'discord',
     options: {
       redirectTo: window.location.origin + '/auth/discord/callback'
     }
   });
-  if (error) {
-    console.error("❌ Error OAuth:", error);
-  } else {
-    console.log("✅ OAuth iniciado, data:", data);
+  if (error) console.error('OAuth error:', error);
+  if (data?.url) {
+    // Abre en nueva pestaña para depurar
+    window.open(data.url, '_blank');
+    // También puedes mostrar la URL en un alert para copiarla
+    // alert('Copia esta URL y pégala en el navegador:\n' + data.url);
   }
 }
 
