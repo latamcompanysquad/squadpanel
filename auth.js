@@ -58,17 +58,25 @@ async function checkAuthAndRoles() {
     console.warn("⚠️ Usuario sin provider_id en metadata");
   }
   
-  // Registrar acceso en staff_sessions
+  // Registrar acceso con info completa
   if (user.user_metadata?.provider_id) {
     try {
+      const userAgent = navigator.userAgent;
+      const discordName = user.user_metadata?.name || user.user_metadata?.custom_claims?.global_name || 'Unknown';
+      const discordAvatar = user.user_metadata?.picture || null;
+      
       await window.supabaseClient.from('staff_sessions').insert({
         user_id: user.id,
         discord_id: user.user_metadata.provider_id,
-        authorized: true
+        discord_username: discordName,
+        discord_avatar: discordAvatar,
+        user_agent: userAgent,
+        authorized: true,
+        last_activity: new Date().toISOString()
       });
-      console.log("✅ Acceso registrado en staff_sessions");
+      console.log("✅ Sesión registrada:", discordName);
     } catch (err) {
-      console.error("⚠️ Error registrando acceso:", err);
+      console.error("⚠️ Error registrando sesión:", err);
     }
   }
   
