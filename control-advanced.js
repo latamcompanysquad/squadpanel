@@ -3,11 +3,18 @@ let currentTab = 'resumen';
 
 async function loadData() {
   try {
-    const { data: sessions } = await window.supabaseClient.from('staff_sessions').select('*').order('created_at', { ascending: false }).limit(500);
-    const { data: rconLogs } = await window.supabaseClient.from('rcon_logs').select('*').order('created_at', { ascending: false }).limit(500).catch(() => ({ data: [] }));
+    const { data: sessions, error: sessError } = await window.supabaseClient.from('staff_sessions').select('*').order('created_at', { ascending: false }).limit(500);
+    
+    let rconLogs = [];
+    try {
+      const { data, error } = await window.supabaseClient.from('rcon_logs').select('*').order('created_at', { ascending: false }).limit(500);
+      if (!error) rconLogs = data || [];
+    } catch (e) {
+      console.warn('⚠️ rcon_logs no existe aún:', e.message);
+    }
     
     controlData.sessions = sessions || [];
-    controlData.rconLogs = rconLogs || [];
+    controlData.rconLogs = rconLogs;
     
     const userMap = {};
     sessions?.forEach(s => {
@@ -97,7 +104,7 @@ function renderRconLog() {
   const table = document.querySelector('#rconTable tbody');
   
   if (!controlData.rconLogs || controlData.rconLogs.length === 0) {
-    table.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">No hay registros RCON</td></tr>';
+    table.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">No hay registros RCON (ejecuta SQL setup en Supabase)</td></tr>';
     return;
   }
   
@@ -143,7 +150,6 @@ function filterTable(tab) {
   });
 }
 
-// Función global para registrar comandos RCON
 window.logRconCommand = async function(command, success, response, ipAddr, discordId, discordName) {
   try {
     const result = await window.supabaseClient.from('rcon_logs').insert({
@@ -162,7 +168,6 @@ window.logRconCommand = async function(command, success, response, ipAddr, disco
   }
 };
 
-// Auto-load
 checkAuthAndRoles().then(() => {
   loadData();
   setInterval(loadData, 20000);
