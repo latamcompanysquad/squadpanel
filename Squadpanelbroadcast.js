@@ -806,6 +806,36 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
   // ─── ADMIN COMMANDS ──────────────────────────────────────────────────────────
 
+  async logRconCommand(command, success, response, discordId, discordName, ipAddress) {
+    try {
+      if (!this.options.supabaseUrl || !this.options.supabaseKey) return;
+      
+      const fetch_response = await fetch(`${this.options.supabaseUrl}/rest/v1/rcon_logs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.options.supabaseKey}`,
+          'apikey': this.options.supabaseKey,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          user_discord_id: discordId || 'unknown',
+          user_discord_name: discordName || 'Unknown',
+          ip_address: ipAddress || 'unknown',
+          command: command,
+          success: success,
+          response: response || null
+        })
+      });
+      
+      if (fetch_response.ok) {
+        this.verbose(2, `[RCON_LOG] ✓ ${command} registrado`);
+      }
+    } catch (err) {
+      this.verbose(2, `[RCON_LOG] Error: ${err.message}`);
+    }
+  }
+
   async pollAdminCommands() {
     const workerUrl = this.options.workerUrl;
     if (!workerUrl) return;
@@ -838,58 +868,108 @@ export default class SquadPanelBroadcast extends BasePlugin {
     const { action, payload } = cmd;
     const rcon = this.server.rcon;
     const targetId = payload.playerID ?? null;
+    let executedCommand = '';
+    let success = false;
 
-    switch (action) {
-      case 'warn': {
-        const msg = payload.reason ?? 'Advertencia del administrador';
-        if (targetId != null) {
-          await rcon.execute(`AdminWarnById ${targetId} ${msg}`);
-        } else {
-          await rcon.execute(`AdminWarn "${payload.steamID}" ${msg}`);
+    try {
+      switch (action) {
+        case 'warn': {
+          const msg = payload.reason ?? 'Advertencia del administrador';
+          if (targetId != null) {
+            executedCommand = `AdminWarnById ${targetId} ${msg}`;
+            await rcon.execute(executedCommand);
+          } else {
+            executedCommand = `AdminWarn "${payload.steamID}" ${msg}`;
+            await rcon.execute(executedCommand);
+          }
+          success = true;
+          break;
         }
-        break;
-      }
-      case 'kick': {
-        const reason = payload.reason ?? 'Kicked by admin';
-        if (targetId != null) {
-          await rcon.execute(`AdminKickById ${targetId} ${reason}`);
-        } else {
-          await rcon.execute(`AdminKick "${payload.steamID}" ${reason}`);
+        case 'kick': {
+          const reason = payload.reason ?? 'Kicked by admin';
+          if (targetId != null) {
+            executedCommand = `AdminKickById ${targetId} ${reason}`;
+            await rcon.execute(executedCommand);
+          } else {
+            executedCommand = `AdminKick "${payload.steamID}" ${reason}`;
+            await rcon.execute(executedCommand);
+          }
+          success = true;
+          break;
         }
-        break;
-      }
-      case 'ban': {
-        const duration = payload.duration ?? 1440;
-        const reason = payload.reason ?? 'Banned by admin';
-        const banTarget = payload.eosID ?? payload.steamID;
-        await rcon.execute(`AdminBan "${banTarget}" ${duration} ${reason}`);
-        break;
-      }
-      case 'switchTeam': {
-        if (targetId != null) {
-          await rcon.execute(`AdminForceTeamChangeById ${targetId}`);
-        } else {
-          await rcon.execute(`AdminForceTeamChange "${payload.steamID}"`);
+        case 'ban': {
+          const duration = payload.duration ?? 1440;
+          const reason = payload.reason ?? 'Banned by admin';
+          const banTarget = payload.eosID ?? payload.steamID;
+          executedCommand = `AdminBan "${banTarget}" ${duration} ${reason}`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
         }
-        break;
+        case 'switchTeam': {
+          if (targetId != null) {
+            executedCommand = `AdminForceTeamChangeById ${targetId}`;
+            await rcon.execute(executedCommand);
+          } else {
+            executedCommand = `AdminForceTeamChange "${payload.steamID}"`;
+            await rcon.execute(executedCommand);
+          }
+          success = true;
+          break;
+        }
+        case 'broadcast':
+          executedCommand = `AdminBroadcast ${payload.message}`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
+        case 'setNextMap':
+          executedCommand = `AdminSetNextLayer ${payload.map}`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
+        case 'endMatch':
+          executedCommand = `AdminEndMatch`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
+        case 'pauseMatch':
+          executedCommand = `AdminPauseMatch`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
+        case 'unpauseMatch':
+          executedCommand = `AdminUnpauseMatch`;
+          await rcon.execute(executedCommand);
+          success = true;
+          break;
+        default:
+          this.verbose(1, `[AdminCmd] Unknown action: ${action}`);
       }
-      case 'broadcast':
-        await rcon.execute(`AdminBroadcast ${payload.message}`);
-        break;
-      case 'setNextMap':
-        await rcon.execute(`AdminSetNextLayer ${payload.map}`);
-        break;
-      case 'endMatch':
-        await rcon.execute(`AdminEndMatch`);
-        break;
-      case 'pauseMatch':
-        await rcon.execute(`AdminPauseMatch`);
-        break;
-      case 'unpauseMatch':
-        await rcon.execute(`AdminUnpauseMatch`);
-        break;
-      default:
-        this.verbose(1, `[AdminCmd] Unknown action: ${action}`);
+      
+      // Log RCON command
+      if (executedCommand) {
+        await this.logRconCommand(
+          executedCommand,
+          success,
+          'Ejecutado exitosamente',
+          payload.discord_id || 'unknown',
+          payload.discord_name || 'Unknown',
+          payload.ip_address || 'unknown'
+        );
+      }
+    } catch (err) {
+      // Log error
+      if (executedCommand) {
+        await this.logRconCommand(
+          executedCommand,
+          false,
+          err.message,
+          payload.discord_id || 'unknown',
+          payload.discord_name || 'Unknown',
+          payload.ip_address || 'unknown'
+        );
+      }
+      throw err;
     }
   }
 
