@@ -58,6 +58,21 @@ async function checkAuthAndRoles() {
     console.warn("⚠️ Usuario sin provider_id en metadata");
   }
   
+  // Registrar acceso en staff_sessions
+  if (user.user_metadata?.provider_id) {
+    try {
+      await window.supabaseClient.from('staff_sessions').insert({
+        user_id: user.id,
+        discord_id: user.user_metadata.provider_id,
+        email: user.email,
+        authorized: true
+      });
+      console.log("✅ Acceso registrado en staff_sessions");
+    } catch (err) {
+      console.error("⚠️ Error registrando acceso:", err);
+    }
+  }
+  
   console.log("✅ Autenticación y roles OK");
   return true;
 }
@@ -87,6 +102,12 @@ async function validateUserRoles(discordUserId) {
 }
 
 async function logout() {
-  await window.supabaseClient.auth.signOut();
-  window.location.href = '/login.html';
+  try {
+    await window.supabaseClient.auth.signOut();
+    console.log("✅ Sesión cerrada");
+    window.location.href = '/login.html';
+  } catch (err) {
+    console.error("Error cerrando sesión:", err);
+    window.location.href = '/login.html';
+  }
 }
