@@ -12,16 +12,32 @@ async function loginWithDiscord() {
   const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      redirectTo: window.location.origin + '/auth/discord/callback'
+      redirectTo: window.location.origin + '/auth/discord/callback',
+      // Evita que Supabase redirija automáticamente
+      skipBrowserRedirect: true
     }
   });
-  if (error) console.error('OAuth error:', error);
-  if (data?.url) {
-    // Abre en nueva pestaña para depurar
-    window.open(data.url, '_blank');
-    // También puedes mostrar la URL en un alert para copiarla
-    // alert('Copia esta URL y pégala en el navegador:\n' + data.url);
+  if (error) {
+    console.error('❌ OAuth error:', error);
+    return;
   }
+  console.log('✅ URL de autorización:', data.url);
+  
+  // Muestra la URL en un alert para copiarla manualmente
+  alert('Copia esta URL y pégala en otra pestaña:\n\n' + data.url);
+  
+  // También la dejamos en un elemento HTML para copiar fácil
+  const urlDisplay = document.createElement('div');
+  urlDisplay.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#111; color:#0f0; padding:15px 25px; border:1px solid #0f0; border-radius:8px; max-width:90%; word-break:break-all; z-index:9999; font-size:12px; cursor:pointer;';
+  urlDisplay.textContent = '📋 Haz clic para copiar la URL de autorización';
+  urlDisplay.onclick = () => {
+    navigator.clipboard?.writeText(data.url).then(() => {
+      alert('¡URL copiada al portapapeles! Pégala en otra pestaña.');
+    }).catch(() => {
+      prompt('Copia manualmente esta URL:', data.url);
+    });
+  };
+  document.body.appendChild(urlDisplay);
 }
 
 async function checkAuthAndRoles() {
