@@ -10,20 +10,16 @@
         body { display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 300px; background: #1a1a1a; border-right: 1px solid #333; overflow-y: auto; }
         #main { flex: 1; display: flex; flex-direction: column; }
-        #map-container { flex: 1; }
+        #map-container { flex: 1; background: #000; }
         #scrubber-panel { background: #222; padding: 15px; border-top: 1px solid #333; }
         .match-item { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; transition: all 0.2s; }
         .match-item:hover { background: #2a2a2a; }
-        .match-item.active { background: #0066cc; }
-        .match-title { color: #fff; font-weight: bold; font-size: 14px; }
-        .match-meta { color: #aaa; font-size: 12px; margin-top: 5px; }
         #scrubber { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         input[type="range"] { flex: 1; }
-        button { background: #0066cc; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #0052a3; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button { background: #0066cc; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .match-title { color: #fff; font-weight: bold; }
+        .match-meta { color: #aaa; font-size: 12px; margin-top: 5px; }
         .info-text { color: #aaa; font-size: 12px; }
-        #export-download { display: none; }
     </style>
 </head>
 <body>
@@ -37,13 +33,12 @@
     
     <div id="main">
         <div id="map-container"></div>
-        
         <div id="scrubber-panel">
             <div id="scrubber">
                 <button id="play-btn">▶</button>
                 <button id="rewind-btn">⏪</button>
                 <button id="forward-btn">⏩</button>
-                <input type="range" id="timeline" min="0" max="100" value="0" style="width: 100%;">
+                <input type="range" id="timeline" min="0" max="100" value="0">
                 <select id="speed" style="background: #333; color: #fff; padding: 8px; border: none; border-radius: 4px;">
                     <option value="0.5">0.5x</option>
                     <option value="1" selected>1x</option>
@@ -52,251 +47,170 @@
                 </select>
                 <button id="export-btn">💾 Descargar</button>
             </div>
-            <div class="info-text">
-                <span id="snap-info">[Snapshot: 0/0]</span> | 
-                <span id="time-info">[00:00 / 00:00]</span>
-            </div>
+            <div class="info-text"><span id="snap-info">[0/0]</span> | <span id="time-info">[00:00]</span></div>
             <a id="export-download" download></a>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        // CONFIGURAR AQUÍ:
-        const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co'; // Cambiar
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg'; // Cambiar (anon key)
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
+        const SUPABASE_KEY = 'tu-anon-key';
+        const MAP_UNITS = 1000;
+        const bounds = [[0, 0], [MAP_UNITS, MAP_UNITS]];
         
-        let currentMatch = null;
-        let currentSnapshots = [];
-        let currentSnapshotIndex = 0;
-        let isPlaying = false;
-        let playSpeed = 1;
-        let playTimer = null;
-        let map = null;
-        let markers = { players: {}, vehicles: {}, objectives: {} };
+        const MAP_CORNERS = {
+          'albasrah': { c0:[-200000,-200000], c1:[200000,200000] },
+          'anvil': { c0:[-204000,-204000], c1:[102000,102000] },
+          'blackcoast': { c0:[-229900,-212700], c1:[229900,247200] },
+          'chora': { c0:[-246400,-266400], c1:[160000,140000] },
+          'fallujah': { c0:[-131500,-154500], c1:[169000,146000] },
+          'foolsroad': { c0:[-132600,-132600], c1:[44800,44800] },
+          'goosebay': { c0:[-201600,-201600], c1:[201500,201500] },
+          'skorpo': { c0:[-270000,-270000], c1:[270000,270000] },
+          'narva': { c0:[-288000,-288000], c1:[288000,288000] },
+          'kohat': { c0:[-206000,-206000], c1:[206000,206000] },
+          'mutaha': { c0:[-206000,-206000], c1:[206000,206000] },
+        };
 
-        function initMap() {
-            map = L.map('map-container', {
-                crs: L.CRS.Simple,
-                minZoom: -5,
-                maxZoom: 3,
-                zoom: -1
+        let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
+
+        function normMap(n) { return (n || '').toLowerCase().replace(/[_\s-]/g, '').replace(/v\d+.*/, ''); }
+
+        function loadMap(k) {
+            const norm = normMap(k);
+            if (norm === currentMapKey) return;
+            if (basemapLayer) map.removeLayer(basemapLayer);
+            basemapLayer = L.imageOverlay(`./maps/${norm}.webp`, bounds, {opacity: 0}).addTo(map);
+            basemapLayer.getElement()?.addEventListener('load', () => {
+                basemapLayer.setOpacity(1);
+                currentMapKey = norm;
             });
-            map.on('click', () => pausePlayback());
+        }
+
+        function gameToLatLng(pos, corners) {
+            const fx = (pos.x - corners.minX) / (corners.maxX - corners.minX);
+            const fy = (pos.y - corners.minY) / (corners.maxY - corners.minY);
+            return [(1 - fy) * MAP_UNITS, fx * MAP_UNITS];
         }
 
         async function loadMatches() {
             try {
-                const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
-                );
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`, 
+                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
                 const matches = await res.json();
-                renderMatches(matches || []);
-            } catch (err) {
-                console.error('Error cargando partidas:', err);
-            }
+                document.getElementById('matches-list').innerHTML = (matches || []).map(m => 
+                    `<div class="match-item" onclick="selectMatch('${m.match_id}')">
+                        <div class="match-title">${m.map_name} - ${m.layer_name}</div>
+                        <div class="match-meta">${new Date(m.start_time).toLocaleString()} | ${m.snapshot_count} snaps</div>
+                    </div>`).join('');
+            } catch (e) { console.error(e); }
         }
 
-        function renderMatches(matches) {
-            const list = document.getElementById('matches-list');
-            list.innerHTML = matches.map(m => `
-                <div class="match-item" onclick="selectMatch('${m.match_id}')">
-                    <div class="match-title">${m.map_name || 'Unknown'} - ${m.layer_name || ''}</div>
-                    <div class="match-meta">
-                        ${new Date(m.start_time).toLocaleString()} | 
-                        ${Math.round((m.duration_ms || 0) / 60000)}min | 
-                        ${m.snapshot_count || 0} snapshots
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function selectMatch(matchId) {
-            currentMatch = matchId;
-            currentSnapshotIndex = 0;
-            pausePlayback();
-            
+        async function selectMatch(id) {
             try {
-                const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${matchId}&order=snapshot_index.asc`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
-                );
-                const snapshots = await res.json();
-                currentSnapshots = snapshots.map(s => s.data) || [];
-                document.getElementById('timeline').max = Math.max(0, currentSnapshots.length - 1);
-                renderSnapshot(0);
-                updateUI();
-            } catch (err) {
-                console.error('Error cargando replay:', err);
-            }
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc`,
+                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
+                snapshots = (await res.json()).map(s => s.data) || [];
+                document.getElementById('timeline').max = snapshots.length - 1;
+                render(0);
+            } catch (e) { console.error(e); }
         }
 
-        function renderSnapshot(index) {
-            if (!currentSnapshots[index]) return;
-            const snapshot = currentSnapshots[index];
+        function render(i) {
+            if (!snapshots[i]) return;
+            const snap = snapshots[i];
+            
+            const mk = normMap(snap.layer || snap.map);
+            loadMap(mk);
 
-            Object.values(markers.players).forEach(m => map.removeLayer(m));
-            Object.values(markers.vehicles).forEach(m => map.removeLayer(m));
-            Object.values(markers.objectives).forEach(m => map.removeLayer(m));
-            markers = { players: {}, vehicles: {}, objectives: {} };
+            Object.values({...document.querySelectorAll('.leaflet-marker-pane div')}).forEach(m => {
+                try { map.removeLayer(m); } catch(e) {}
+            });
 
-            let corners = null;
-            if (snapshot.cornerZero && snapshot.cornerOne) {
-                corners = {
-                    minX: Math.min(snapshot.cornerZero.x, snapshot.cornerOne.x),
-                    maxX: Math.max(snapshot.cornerZero.x, snapshot.cornerOne.x),
-                    minY: Math.min(snapshot.cornerZero.y, snapshot.cornerOne.y),
-                    maxY: Math.max(snapshot.cornerZero.y, snapshot.cornerOne.y),
+            let corn = null;
+            if (snap.cornerZero && snap.cornerOne) {
+                corn = {
+                    minX: Math.min(snap.cornerZero.x, snap.cornerOne.x),
+                    maxX: Math.max(snap.cornerZero.x, snap.cornerOne.x),
+                    minY: Math.min(snap.cornerZero.y, snap.cornerOne.y),
+                    maxY: Math.max(snap.cornerZero.y, snap.cornerOne.y)
+                };
+            } else {
+                const c = MAP_CORNERS[mk];
+                if (c) corn = {
+                    minX: Math.min(c.c0[0], c.c1[0]), maxX: Math.max(c.c0[0], c.c1[0]),
+                    minY: Math.min(c.c0[1], c.c1[1]), maxY: Math.max(c.c0[1], c.c1[1])
                 };
             }
 
-            (snapshot.players || []).forEach(p => {
+            if (!corn) return;
+
+            (snap.players || []).forEach(p => {
                 if (!p.position) return;
-                const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
-                const marker = L.circleMarker([p.position.y, p.position.x], {
-                    radius: 5,
-                    fillColor: color,
-                    fillOpacity: 0.8,
-                    weight: 1,
-                    color: '#fff'
-                }).addTo(map);
-                marker.bindPopup(`${p.name} (${p.squadName || 'No Squad'})`);
-                markers.players[p.steamID] = marker;
+                const col = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
+                L.circleMarker(gameToLatLng(p.position, corn), {
+                    radius: 5, fillColor: col, fillOpacity: 0.8, weight: 1, color: '#fff'
+                }).addTo(map).bindPopup(p.name);
             });
 
-            (snapshot.vehicles || []).forEach(v => {
+            (snap.vehicles || []).forEach(v => {
                 if (!v.position) return;
-                const color = v.teamID === 1 ? '#4fa6e8' : '#e0584f';
-                const marker = L.circleMarker([v.position.y, v.position.x], {
-                    radius: 7,
-                    fillColor: color,
-                    fillOpacity: 0.6,
-                    weight: 2,
-                    color: '#ffff00'
-                }).addTo(map);
-                marker.bindPopup(`${v.type} (T${v.teamID})`);
-                markers.vehicles[v.id] = marker;
+                const col = v.teamID === 1 ? '#4fa6e8' : '#e0584f';
+                L.circleMarker(gameToLatLng(v.position, corn), {
+                    radius: 7, fillColor: col, fillOpacity: 0.6, weight: 2, color: '#ffff00'
+                }).addTo(map).bindPopup(v.type);
             });
 
-            (snapshot.objectives || []).forEach(o => {
+            (snap.objectives || []).forEach(o => {
                 if (!o.position) return;
-                const color = o.owningTeam === 1 ? '#0066ff' : o.owningTeam === 2 ? '#ff3333' : '#888888';
-                const marker = L.circleMarker([o.position.y, o.position.x], {
-                    radius: 6,
-                    fillColor: color,
-                    fillOpacity: 0.4,
-                    weight: 2,
-                    color: color
-                }).addTo(map);
-                marker.bindPopup(`${o.name}`);
-                markers.objectives[o.name] = marker;
+                const col = o.owningTeam === 1 ? '#0066ff' : o.owningTeam === 2 ? '#ff3333' : '#888';
+                L.circleMarker(gameToLatLng(o.position, corn), {
+                    radius: 6, fillColor: col, fillOpacity: 0.4, weight: 2, color: col
+                }).addTo(map).bindPopup(o.name);
             });
 
-            if (corners) {
-                map.fitBounds([[corners.minY, corners.minX], [corners.maxY, corners.maxX]]);
-            }
-
-            currentSnapshotIndex = index;
-            updateUI();
+            map.fitBounds(bounds);
+            idx = i;
+            document.getElementById('timeline').value = i;
+            document.getElementById('snap-info').textContent = `[${i}/${snapshots.length-1}]`;
+            document.getElementById('time-info').textContent = `[${String(Math.floor(i*2/60)).padStart(2,'0')}:${String(Math.floor(i*2%60)).padStart(2,'0')}]`;
+            document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
         }
 
-        function updateUI() {
-            document.getElementById('timeline').value = currentSnapshotIndex;
-            document.getElementById('snap-info').textContent = `[Snapshot: ${currentSnapshotIndex}/${currentSnapshots.length - 1}]`;
-            
-            const timeSeconds = currentSnapshotIndex * 2;
-            const totalSeconds = (currentSnapshots.length - 1) * 2;
-            document.getElementById('time-info').textContent = `[${formatTime(timeSeconds)} / ${formatTime(totalSeconds)}]`;
-            
-            document.getElementById('play-btn').textContent = isPlaying ? '⏸' : '▶';
+        function play() {
+            if (!snapshots.length) return;
+            playing = !playing;
+            if (playing) {
+                timer = setInterval(() => {
+                    if (idx < snapshots.length - 1) render(++idx);
+                    else { playing = false; clearInterval(timer); }
+                }, 2000 / parseFloat(document.getElementById('speed').value));
+            } else clearInterval(timer);
+            render(idx);
         }
 
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        }
-
-        function pausePlayback() {
-            isPlaying = false;
-            if (playTimer) clearInterval(playTimer);
-            updateUI();
-        }
-
-        function togglePlayback() {
-            if (!currentSnapshots.length) return;
-            isPlaying = !isPlaying;
-            
-            if (isPlaying) {
-                playTimer = setInterval(() => {
-                    currentSnapshotIndex = Math.min(currentSnapshotIndex + 1, currentSnapshots.length - 1);
-                    renderSnapshot(currentSnapshotIndex);
-                    if (currentSnapshotIndex >= currentSnapshots.length - 1) pausePlayback();
-                }, 2000 / playSpeed);
-            } else {
-                if (playTimer) clearInterval(playTimer);
-            }
-            updateUI();
-        }
-
-        function exportReplay() {
-            if (!currentMatch || !currentSnapshots.length) return;
-            const data = {
-                meta: {
-                    id: currentMatch,
-                    snapshots: currentSnapshots.length,
-                    interval_ms: 2000
-                },
-                snapshots: currentSnapshots
-            };
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            document.getElementById('export-download').href = url;
-            document.getElementById('export-download').download = `${currentMatch}.json`;
+        function exp() {
+            const json = JSON.stringify({ snapshots });
+            const blob = new Blob([json], {type: 'application/json'});
+            document.getElementById('export-download').href = URL.createObjectURL(blob);
+            document.getElementById('export-download').download = 'replay.json';
             document.getElementById('export-download').click();
         }
 
-        document.getElementById('refresh-btn').addEventListener('click', loadMatches);
-        document.getElementById('play-btn').addEventListener('click', togglePlayback);
-        document.getElementById('timeline').addEventListener('input', (e) => {
-            pausePlayback();
-            renderSnapshot(parseInt(e.target.value));
-        });
-        document.getElementById('speed').addEventListener('change', (e) => {
-            playSpeed = parseFloat(e.target.value);
-            if (isPlaying) {
-                pausePlayback();
-                togglePlayback();
-            }
-        });
-        document.getElementById('forward-btn').addEventListener('click', () => {
-            pausePlayback();
-            currentSnapshotIndex = Math.min(currentSnapshotIndex + 10, currentSnapshots.length - 1);
-            renderSnapshot(currentSnapshotIndex);
-        });
-        document.getElementById('rewind-btn').addEventListener('click', () => {
-            pausePlayback();
-            currentSnapshotIndex = Math.max(currentSnapshotIndex - 10, 0);
-            renderSnapshot(currentSnapshotIndex);
-        });
-        document.getElementById('export-btn').addEventListener('click', exportReplay);
+        document.getElementById('refresh-btn').onclick = loadMatches;
+        document.getElementById('play-btn').onclick = play;
+        document.getElementById('timeline').oninput = (e) => { playing = false; render(parseInt(e.target.value)); };
+        document.getElementById('speed').onchange = () => { if(playing) { playing=false; play(); } };
+        document.getElementById('forward-btn').onclick = () => render(Math.min(idx+10, snapshots.length-1));
+        document.getElementById('rewind-btn').onclick = () => render(Math.max(idx-10, 0));
+        document.getElementById('export-btn').onclick = exp;
 
-        window.addEventListener('load', () => {
-            initMap();
+        window.onload = () => {
+            map = L.map('map-container', { crs: L.CRS.Simple, minZoom: -5, maxZoom: 3, zoom: -1 });
+            map.fitBounds(bounds);
             loadMatches();
-        });
+        };
     </script>
 </body>
 </html>
