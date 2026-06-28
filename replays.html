@@ -1,474 +1,813 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SquadPanel Replays</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-    <style>
-        :root{
-          --bg:#0b0f0c; --panel:#11160f; --panel-edge:#26301f;
-          --olive:#7c8f55; --olive-dim:#4a5638; --amber:#d9a441;
-          --text:#d8d9c9; --text-dim:#8a9080;
-          --blue:#4fa6e8; --blue-dim:#1c3a52;
-          --red:#e0584f;  --red-dim:#4a2220;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { display: flex; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; }
-        #sidebar { width: 300px; background: var(--panel); border-right: 1px solid var(--panel-edge); overflow-y: auto; display: flex; flex-direction: column; }
-        #sidebar > div:first-child { flex-shrink: 0; }
-        #matches-list { flex: 1; overflow-y: auto; }
-        #player-panel { padding: 10px; border-top: 1px solid var(--panel-edge); background: var(--panel); flex-shrink: 0; min-height: 100px; }
-        #main { flex: 1; display: flex; flex-direction: column; }
-        #map-container { flex: 1; background: #05070a; }
-        #scrubber-panel { background: var(--panel); padding: 15px; border-top: 1px solid var(--panel-edge); }
-        .match-item { padding: 12px; border-bottom: 1px solid var(--panel-edge); cursor: pointer; transition: all 0.2s; }
-        .match-item:hover { background: #1a1f18; }
-        #scrubber { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        input[type="range"] { flex: 1; }
-        button { background: var(--olive); color: var(--text); border: 1px solid var(--panel-edge); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
-        button:hover { opacity: 0.85; background: var(--olive-dim); }
-        .match-title { color: var(--text); font-weight: bold; }
-        .match-meta { color: var(--text-dim); font-size: 12px; margin-top: 5px; }
-        .info-text { color: var(--text-dim); font-size: 12px; }
-        .leaflet-tooltip { background: rgba(11, 15, 12, 0.95); color: var(--text); border: 1px solid var(--panel-edge); border-radius: 2px; padding: 6px 8px; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
-        .leaflet-tooltip.leaflet-tooltip-bottom:before { border-bottom-color: var(--panel-edge); }
-        .leaflet-control-zoom { border: 1px solid var(--panel-edge); border-radius: 2px; }
-        .leaflet-control-zoom-in, .leaflet-control-zoom-out { background: var(--panel); color: var(--text); border-bottom: 1px solid var(--panel-edge); }
-        .leaflet-control-zoom-in:hover, .leaflet-control-zoom-out:hover { background: var(--olive); }
-    </style>
+<meta charset="UTF-8">
+<title>LATAMCOMPANY // Replays</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ── REPLAY-ONLY OVERRIDES ── */
+#scrubberBar {
+  position:fixed; bottom:0; left:0; right:0; z-index:1000;
+  background:linear-gradient(180deg,#0e120c,#0b0f0c);
+  border-top:1px solid var(--panel-edge);
+  padding:10px 18px 12px;
+  display:flex; flex-direction:column; gap:6px;
+}
+#scrubberRow {
+  display:flex; align-items:center; gap:10px;
+}
+#scrubberRow input[type="range"] {
+  flex:1; accent-color: var(--olive);
+  height:6px; cursor:pointer;
+}
+.scrub-btn {
+  width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border-radius:3px; border:1px solid var(--panel-edge);
+  color:var(--text); font-size:14px; cursor:pointer; background:transparent;
+  transition:background .12s,color .12s; font-family:'JetBrains Mono',monospace;
+}
+.scrub-btn:hover { background:#ffffff0d; color:var(--olive); }
+.scrub-btn:active { opacity:.6; }
+.speed-select {
+  background:#0d120b; color:var(--text); border:1px solid var(--panel-edge);
+  padding:5px 8px; border-radius:3px; font-family:'JetBrains Mono',monospace;
+  font-size:11px; cursor:pointer;
+}
+.scrub-info {
+  font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim);
+  min-width:140px; text-align:right;
+}
+#app { padding-bottom: 68px; } /* space for scrubber */
+
+/* match list */
+.match-item {
+  padding:10px 14px; border-bottom:1px solid var(--panel-edge);
+  cursor:pointer; transition:background .15s;
+}
+.match-item:hover { background:#1a2518; }
+.match-item.active { background:#1a2518; border-left:3px solid var(--olive); }
+.match-title {
+  font-family:'Oswald',sans-serif; font-size:13px; font-weight:600;
+  color:var(--text); letter-spacing:.03em;
+}
+.match-meta { color:var(--text-dim); font-size:10px; margin-top:3px; }
+
+/* replay-specific side tabs */
+.r-side-tab {
+  flex:1; padding:8px 0; font-family:'Oswald',sans-serif; font-size:11px;
+  letter-spacing:.1em; text-transform:uppercase; text-align:center;
+  cursor:pointer; color:var(--text-dim);
+  border-bottom:2px solid transparent; transition:color .15s,border-color .15s;
+}
+.r-side-tab.active { color:var(--olive); border-bottom-color:var(--olive); }
+.r-side-tab:hover:not(.active) { color:var(--text); }
+#rSideContent::-webkit-scrollbar { width:4px; }
+#rSideContent::-webkit-scrollbar-track { background:var(--panel); }
+#rSideContent::-webkit-scrollbar-thumb { background:var(--olive-dim); border-radius:2px; }
+</style>
 </head>
 <body>
-    <div id="sidebar">
-        <div style="padding: 15px; border-bottom: 1px solid #333;">
-            <h2 style="margin: 0; color: #fff; font-size: 18px;">📹 Replays</h2>
-            <button id="refresh-btn" style="width: 100%; margin-top: 10px;">🔄 Actualizar</button>
-        </div>
-        <div id="matches-list"></div>
-        <div id="player-panel">
-            <div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 10px;">Selecciona un jugador en el mapa</div>
-        </div>
+<div id="app">
+  <!-- ── HUD (idéntico al live) ── -->
+  <div id="hud">
+    <div class="hud-block">
+      <div class="live-dot offline" id="rLiveDot"></div>
+      <div class="brand">LATAM<span>COMPANY</span></div>
+      <div class="map-name" id="rHudMap">—</div>
+      <div id="rHudTimer" style="display:none;font-family:'Oswald',sans-serif;font-size:13px;color:var(--amber);letter-spacing:.05em;">⏱ <span id="rTimerVal">--:--</span></div>
     </div>
-    
-    <div id="main">
-        <div id="map-container"></div>
-        <div id="scrubber-panel">
-            <div id="scrubber">
-                <button id="play-btn">▶</button>
-                <button id="rewind-btn">⏪</button>
-                <button id="forward-btn">⏩</button>
-                <input type="range" id="timeline" min="0" max="100" value="0">
-                <select id="speed" style="background: #333; color: #fff; padding: 8px; border: none; border-radius: 4px;">
-                    <option value="0.5">0.5x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="2">2x</option>
-                    <option value="4">4x</option>
-                </select>
-                <button id="export-btn">💾 Descargar</button>
+
+    <div class="hud-block tickets" id="rHudTickets" style="display:none;align-items:center;gap:6px;">
+      <span id="rt1faction" style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--blue);min-width:28px;text-align:right;">—</span>
+      <img id="rt1flag" src="" alt="" style="height:30px;width:auto;border-radius:0;display:none;object-fit:contain;"/>
+      <span class="ticket-num blue" id="rt1num">—</span>
+      <div class="ticket-bar" style="flex:1;min-width:60px;">
+        <div class="ticket-fill-blue" id="rt1bar" style="width:50%"></div>
+        <div class="ticket-fill-red"  id="rt2bar" style="width:50%"></div>
+      </div>
+      <span class="ticket-num red" id="rt2num">—</span>
+      <img id="rt2flag" src="" alt="" style="height:30px;width:auto;border-radius:0;display:none;object-fit:contain;"/>
+      <span id="rt2faction" style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--red);min-width:28px;text-align:left;">—</span>
+    </div>
+
+    <div class="hud-block" style="display:flex;align-items:center;gap:12px;">
+      <span class="status-text" id="rStatusText">Sin partida</span>
+      <a href="index.html" style="display:inline-block;padding:6px 12px;background:linear-gradient(135deg,#3a7c3a,#2a5c2a);color:white;text-decoration:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;">🗺 LIVE</a>
+      <button id="rExportBtn" style="padding:6px 12px;background:linear-gradient(135deg,#ff6f00,#e65100);color:white;border:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">💾 Descargar</button>
+    </div>
+  </div>
+
+  <div id="body">
+    <!-- MAP AREA -->
+    <div id="mapwrap">
+      <div id="map"></div>
+      <div id="sweep"></div>
+
+      <!-- Filter panel idéntico al live -->
+      <div id="filterPanel">
+        <div class="filter-group">
+          <div class="map-ctrl-btn" onclick="rMap.zoomIn()"  title="Zoom in">+</div>
+          <div class="map-ctrl-btn" onclick="rMap.zoomOut()" title="Zoom out">−</div>
+          <div class="map-ctrl-btn" onclick="rMap.fitBounds([[0,0],[1000,1000]])" title="Reset vista" style="font-size:11px;">⊞</div>
+          <div class="map-ctrl-btn" id="rBtnFollow" onclick="rToggleFollow()" title="Seguir seleccionado" style="font-size:11px;color:var(--text-dim);">⊙</div>
+        </div>
+        <div class="filter-group">
+          <div class="ftoggle t1 active" id="rft1" onclick="rToggleFilter('t1')" title="Team 1">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0"></span>T1
+          </div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle t2 active" id="rft2" onclick="rToggleFilter('t2')" title="Team 2">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></span>T2
+          </div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle veh active" id="rfveh" onclick="rToggleFilter('veh')" title="Vehículos">🚗 VEH</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle dead active" id="rfdead" onclick="rToggleFilter('dead')" title="Mostrar muertos">💀 MUERTOS</div>
+          <div class="filter-sep"></div>
+          <div class="ftoggle flags active" id="rfflags" onclick="rToggleFilter('flags')" title="Banderas/Objetivos">🏳 FLAGS</div>
+        </div>
+      </div>
+
+      <!-- Search overlay (sin chat) -->
+      <div id="leftPanels" style="position:absolute;top:60px;left:10px;z-index:800;display:flex;flex-direction:row;gap:6px;">
+        <div id="searchWrapper">
+          <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
+            <div class="map-ctrl-btn" onclick="rToggleSearch()" title="Buscar" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">🔍 BUSCAR</div>
+          </div>
+          <div id="rSearchPanel" style="display:none;width:300px;max-height:380px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
+            <div style="padding:8px;display:flex;flex-direction:column;gap:6px;">
+              <input id="rSearchInput" type="text" placeholder="Nombre o Steam ID..." oninput="rOnSearch(this.value)" autocomplete="off" style="background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-radius:3px;"/>
+              <div id="rSearchDrop" style="flex:1;overflow-y:auto;max-height:300px;border:1px solid var(--panel-edge);border-radius:3px;background:#0d120b;"></div>
             </div>
-            <div class="info-text"><span id="snap-info">[0/0]</span> | <span id="time-info">[00:00]</span></div>
-            <a id="export-download" download></a>
+          </div>
         </div>
+      </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script>
-        const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
-        console.log('🔗 Supabase URL:', SUPABASE_URL);
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
-        const MAP_UNITS = 1000;
-        const bounds = [[0, 0], [MAP_UNITS, MAP_UNITS]];
-        
-        const MAP_CORNERS = {
-          'albasrah':     { c0:[-200000,-200000], c1:[200000,200000] },
-          'anvil':        { c0:[-204000,-204000], c1:[102000,102000] },
-          'blackcoast':   { c0:[-229900,-212700], c1:[229900,247200] },
-          'chora':        { c0:[-246400,-266400], c1:[160000,140000] },
-          'fallujah':     { c0:[-131500,-154500], c1:[169000,146000] },
-          'foolsroad':    { c0:[-132600,-132600], c1:[ 44800, 44800] },
-          'goosebay':     { c0:[-201600,-201600], c1:[201500,201500] },
-          'gorodok':      { c0:[-203200,-203200], c1:[203200,203200] },
-          'harju':        { c0:[-201600,-201600], c1:[201600,201600] },
-          'jensen':       { c0:[-200400,-200400], c1:[200400,200400] },
-          'kamdesh':      { c0:[-201600,-201600], c1:[201600,201600] },
-          'kohat':        { c0:[-230000,-230000], c1:[231700,231700] },
-          'kokan':        { c0:[-107600,-107600], c1:[142000,142000] },
-          'lashkar':      { c0:[-216700,-216700], c1:[216700,216700] },
-          'logar':        { c0:[ -88100,-113200], c1:[ 88000, 62900] },
-          'manicouagan':  { c0:[-201600,-201600], c1:[201500,201500] },
-          'mestia':       { c0:[-120000,-110000], c1:[120000,130000] },
-          'mutaha':       { c0:[ -93500,-114000], c1:[182000,161500] },
-          'narva':        { c0:[-139000,-140200], c1:[141000,139800] },
-          'pacific':      { c0:[-201600,-201600], c1:[201600,201600] },
-          'skorpo':       { c0:[-201600,-201600], c1:[201500,201500] },
-          'sumari':       { c0:[-201600,-201600], c1:[201600,201600] },
-          'tallil':       { c0:[-201600,-201600], c1:[201500,201500] },
-          'yehorivka':    { c0:[-201600,-201600], c1:[201600,201600] }
-        };
-        
-        function getMapKeyFromName(s) {
-          let best = null;
-          for (const key of Object.keys(MAP_CORNERS)) {
-            if (s.toLowerCase().includes(key) && (!best || key.length > best.length)) best = key;
-          }
-          return best;
-        }
-        
-        function gameToLatLng(pos, corners) {
-          const fracX = (pos.x - corners.minX) / (corners.maxX - corners.minX);
-          const fracY = (pos.y - corners.minY) / (corners.maxY - corners.minY);
-          const px = fracX * MAP_UNITS;
-          const py = (1 - fracY) * MAP_UNITS;
-          return [py, px];
-        }
+    <!-- SIDE PANEL -->
+    <div id="side">
+      <div id="sideTabs" style="display:flex;border-bottom:1px solid var(--panel-edge);flex-shrink:0;">
+        <div class="r-side-tab active" onclick="rSwitchTab('matches')">Partidas</div>
+        <div class="r-side-tab" onclick="rSwitchTab('players')">Jugadores</div>
+      </div>
+      <div id="rSideContent" style="flex:1;overflow-y:auto;padding:0;display:flex;flex-direction:column;">
 
-        let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
-        let selectedSteamID = null;
-        let followSelected = false;
-        let lastLoadedMatch = null;
-        window.replayMarkers = {};
+        <!-- TAB MATCHES -->
+        <div id="rTabMatches" style="display:flex;flex-direction:column;flex:1;">
+          <div style="padding:10px 12px;border-bottom:1px solid var(--panel-edge);display:flex;gap:8px;align-items:center;">
+            <button onclick="rLoadMatches()" style="flex:1;background:var(--olive-dim);color:var(--text);border:1px solid var(--panel-edge);padding:7px;border-radius:3px;font-family:'Oswald',sans-serif;font-size:12px;cursor:pointer;letter-spacing:.05em;">🔄 ACTUALIZAR</button>
+          </div>
+          <div id="rMatchList" style="flex:1;overflow-y:auto;">
+            <div class="no-data">Cargando partidas...</div>
+          </div>
+        </div>
 
-        // ─── CARGA DE MAPA (CORREGIDO) ──────────────────────────────────────
-        function loadMap(mapName) {
-            const mapKey = getMapKeyFromName(mapName);
-            if (!mapKey) { console.error('❌ Map not found:', mapName); return; }
-            if (mapKey === currentMapKey) return;
-            if (basemapLayer) map.removeLayer(basemapLayer);
-            basemapLayer = L.imageOverlay(`./maps/${mapKey}.webp`, bounds, {opacity: 1}).addTo(map);
-            currentMapKey = mapKey;
-        }
+        <!-- TAB PLAYERS -->
+        <div id="rTabPlayers" style="display:none;padding:14px;flex-direction:column;gap:14px;">
+          <div>
+            <div class="panel-title">Seleccionado</div>
+            <div id="rPlayerPanel"><div class="no-data">Haz click en un marcador</div></div>
+          </div>
+          <div>
+            <div class="panel-title">
+              TOTAL <span id="rTotalCount" style="font-size:13px;">0</span>
+              <span style="font-size:10px;color:var(--text-dim);">(en mapa <span id="rPlayerCount">0</span>)</span>
+            </div>
+            <div id="rPlayerList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        // ─── ICONOS DE ROLES Y UTILIDADES ─────────────────────────────────────
-        function roleIconName(p) {
-          const r = (p.role || '').toLowerCase();
-          if (p.isLeader) {
-            if (r.includes('sl_crewman') || r.includes('slcrewman'))  return 'crewman_squadleader';
-            if (r.includes('sl_pilot')   || r.includes('slpilot'))    return 'pilot_squadleader';
-            return 'squadleader';
-          }
-          if (r.includes('automaticrifleman_optic')) return 'automaticrifleman_optic';
-          if (r.includes('automaticrifleman') || r.includes('autorifleman') || r.includes('automatic_rifleman')) return 'automaticrifleman';
-          if (r.includes('crewman'))            return 'crewman';
-          if (r.includes('designatedmarksman') || r.includes('marksman')) return 'designatedmarksman';
-          if (r.includes('heavyantitank') || r.includes('heavy_at') || r.includes('hat')) return 'heavyantitank';
-          if (r.includes('lightantitank')  || r.includes('light_at') || r.includes('lat')) return 'lightantitank';
-          if (r.includes('machinegunner') || r.includes('machinegunner')) return 'machinegunner';
-          if (r.includes('medic'))              return 'medic';
-          if (r.includes('pilot'))              return 'pilot';
-          if (r.includes('raider'))             return 'raider';
-          if (r.includes('recruit') || r.includes('plain') || r.includes('unarmed')) return 'recruit';
-          if (r.includes('rifleman_scoped') || r.includes('rifleman2') || r.includes('rifleman_02') || r.includes('rifleman_03')) return 'rifleman_scoped';
-          if (r.includes('rifleman'))           return 'rifleman';
-          if (r.includes('sapper'))             return 'sapper';
-          if (r.includes('scout'))              return 'scout';
-          if (r.includes('sniper'))             return 'sniper';
-          if (r.includes('grenadier'))          return 'grenadier';
-          if (r.includes('engineer'))           return 'engineer';
-          return 'rifleman';
-        }
+<!-- SCRUBBER BAR (fija abajo) -->
+<div id="scrubberBar">
+  <div id="scrubberRow">
+    <div class="scrub-btn" id="rPlayBtn" onclick="rPlay()" title="Play/Pause">▶</div>
+    <div class="scrub-btn" onclick="rSeek(-10)" title="−10 snaps">⏪</div>
+    <div class="scrub-btn" onclick="rSeek(10)"  title="+10 snaps">⏩</div>
+    <input type="range" id="rTimeline" min="0" max="100" value="0" oninput="rOnScrub(this.value)">
+    <select class="speed-select" id="rSpeed" onchange="rOnSpeedChange()">
+      <option value="0.5">0.5x</option>
+      <option value="1" selected>1x</option>
+      <option value="2">2x</option>
+      <option value="4">4x</option>
+      <option value="8">8x</option>
+    </select>
+    <span class="scrub-info"><span id="rSnapInfo">[0/0]</span> | <span id="rTimeInfo">[00:00]</span></span>
+  </div>
+</div>
+<a id="rExportLink" download style="display:none;"></a>
+<div id="adminToast"></div>
 
-        function roleIconPath(p, variant) {
-          const name = roleIconName(p);
-          if (variant === 'white') {
-            return `./resources/Role_Icons_Squad_White/T_role_${name}.webp`;
-          }
-          const teamFolder = p.teamID === 1 ? 'Role_Icons_Squad_Blue' : 'Role_Icons_Squad_Red';
-          const teamSuffix = p.teamID === 1 ? 'blue' : 'red';
-          return `./resources/${teamFolder}/T_role_${name}_${teamSuffix}.png`;
-        }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// REPLAY ENGINE — paridad total con live map
+// ═══════════════════════════════════════════════════════════════════
 
-        function esc(s) {
-          return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        }
+const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
+const MAP_UNITS = 1000;
+const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
 
-        function makeTooltipContent(p) {
-          const tl = `T${p.teamID}`;
-          const icon = roleIconName(p);
-          const role = icon.replace(/_/g,' ');
-          const veh = p.vehicle ? `<div style="font-size:10px;color:var(--amber);">🚗 ${esc(p.vehicle.name || p.vehicle)}</div>` : '';
-          const squad = p.squadID ? `<div style="font-size:10px;color:var(--text-dim);">Squad ${p.squadID}</div>` : '';
-          const leader = p.isLeader ? '<div style="font-size:10px;color:var(--amber);">★ Squad Leader</div>' : '';
-          return `<div style="font-weight:600;"><span style="color:var(--blue);">[${tl}]</span> ${esc(p.name)}</div><div style="font-size:10px;color:var(--text-dim);">${role}</div>${squad}${leader}${veh}`;
-        }
+// ── Map corners (same as script.js) ──
+const MAP_CORNERS = {
+  'albasrah':    { c0:[-200000,-200000], c1:[200000,200000] },
+  'anvil':       { c0:[-204000,-204000], c1:[102000,102000] },
+  'blackcoast':  { c0:[-229900,-212700], c1:[229900,247200] },
+  'chora':       { c0:[-246400,-266400], c1:[160000,140000] },
+  'fallujah':    { c0:[-131500,-154500], c1:[169000,146000] },
+  'foolsroad':   { c0:[-132600,-132600], c1:[ 44800, 44800] },
+  'goosebay':    { c0:[-201600,-201600], c1:[201500,201500] },
+  'gorodok':     { c0:[-203200,-203200], c1:[203200,203200] },
+  'harju':       { c0:[-201600,-201600], c1:[201600,201600] },
+  'jensen':      { c0:[-200400,-200400], c1:[200400,200400] },
+  'kamdesh':     { c0:[-201600,-201600], c1:[201600,201600] },
+  'kohat':       { c0:[-230000,-230000], c1:[231700,231700] },
+  'kokan':       { c0:[-107600,-107600], c1:[142000,142000] },
+  'lashkar':     { c0:[-216700,-216700], c1:[216700,216700] },
+  'logar':       { c0:[ -88100,-113200], c1:[ 88000, 62900] },
+  'manicouagan': { c0:[-201600,-201600], c1:[201500,201500] },
+  'mestia':      { c0:[-120000,-110000], c1:[120000,130000] },
+  'mutaha':      { c0:[ -93500,-114000], c1:[182000,161500] },
+  'narva':       { c0:[-139000,-140200], c1:[141000,139800] },
+  'pacific':     { c0:[-201600,-201600], c1:[201600,201600] },
+  'sanxian':     { c0:[-230000,-205000], c1:[230000,255000] },
+  'skorpo':      { c0:[-361100,-329300], c1:[323800,357600] },
+  'sumari':      { c0:[ -64000, -44700], c1:[ 66000, 85300] },
+  'tallil':      { c0:[-234000,-234000], c1:[234000,234000] },
+  'yehorivka':   { c0:[-330200,-330200], c1:[304800,304800] },
+};
 
-        function makeIcon(p, selected) {
-          const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
-          const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+const FACTION_CODE = {
+  'United States Marine Corps':'USMC','United States Army':'USA',
+  'Australian Defence Force':'ADF','Canadian Army Forces':'CAF',
+  'British Armed Forces':'BAF','Russian Ground Forces':'RGF',
+  'Russian Airborne Forces':'VDV','Insurgent Forces':'INS',
+  'Middle Eastern Alliance':'MEA','Middle Eastern Insurgents':'MEI',
+  'Turkish Land Forces':'TLF','Irregular Militia Forces':'IMF',
+  'Global Freedom Incarnate':'GFI',"People's Liberation Army":'PLA',
+  'PLA Air Ground Forces':'PLAAGF','PLA Naval Marine Corps':'PLANMC',
+  'Western PMC':'WPMC','Armed Forces of Ukraine':'AFU','Combined Russian Forces':'CRF',
+};
 
-          if (!p.isAlive && p.position) {
-            const iconName = roleIconName(p);
-            const iconSrc = roleIconPath(p, 'team');
-            const xColor = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
-            const iconHtml = `<div style="position:relative;width:28px;height:28px;${ringStyle}"><img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;opacity:.45;filter:grayscale(.6) drop-shadow(0 0 1px #000a);"/><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:${xColor};text-shadow:0 0 3px #000,0 0 3px #000;">✕</div></div>`;
-            return L.divIcon({ html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
-          }
+// ── State ──
+let rMap, rBasemap, rCurrentMapKey;
+let rSnapshots = [], rIdx = 0, rPlaying = false, rTimer = null;
+let rSelectedSteamID = null;
+let rFollowSelected = false;
+let rAllPlayersCache = [];
+let rFilters = { t1:true, t2:true, veh:true, dead:true, flags:true };
+const rMarkers = {};
+const rObjectiveMarkers = {};
+let rObjectiveLine = null;
+const rExpandedSquads = {};
+const rVehicleIconMap = {};
 
-          if (p.vehicle) {
-            let vehicleEmoji = '🚚';
-            const v = (p.vehicle.name || p.vehicle).toLowerCase();
-            if (v.includes('tank') || v.includes('mbt')) vehicleEmoji = '🎯';
-            else if (v.includes('helo') || v.includes('heli') || v.includes('ch-146') || v.includes('z-8')) vehicleEmoji = '🚁';
-            else if (v.includes('logi') || v.includes('logistics')) vehicleEmoji = '🚚';
-            else if (v.includes('mrap') || v.includes('tigr') || v.includes('tapv')) vehicleEmoji = '🚙';
-            else if (v.includes('ifv') || v.includes('apc')) vehicleEmoji = '🚌';
-            const iconHtml = `<div style="width:28px;height:28px;background:${color};border-radius:50%;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 4px rgba(0,0,0,0.8);${ringStyle}">${vehicleEmoji}</div>`;
-            return L.divIcon({ html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
-          }
+// ── Helpers ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-          const iconName = roleIconName(p);
-          const iconSrc = roleIconPath(p, 'team');
-          const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
-          const vehicleBadge = p.vehicle ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:2px;background:#d9a441;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:6px;">🚗</div>` : '';
-          const html = `<div style="position:relative;width:28px;height:28px;${ringStyle}">${roleImg}${vehicleBadge}</div>`;
-          return L.divIcon({ html, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
-        }
+function getMapKey(s) {
+  if (!s) return null;
+  const n = s.toLowerCase().replace(/[^a-z]/g,'');
+  let best = null;
+  for (const k of Object.keys(MAP_CORNERS)) {
+    if (n.includes(k) && (!best || k.length > best.length)) best = k;
+  }
+  return best;
+}
 
-        function makeVehicleIcon(group, selected) {
-          const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
-          const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
-          const count = group.occupants ? group.occupants.length : 0;
-          let iconUrl = group.icon || 'public__img__markers__weapons__test.webp';
-          if (!iconUrl.startsWith('resources/')) {
-            iconUrl = 'resources/' + iconUrl;
-          }
-          const isEmpty = count === 0;
-          const opacityStyle = isEmpty ? 'opacity:0.6;' : '';
-          const html = `<div style="width:32px;height:32px;background:${color};border-radius:50%;border:2px solid #000;display:flex;align-items:center;justify-content:center;box-shadow:0 0 4px rgba(0,0,0,0.8);${ringStyle};${opacityStyle};position:relative;overflow:hidden;"><img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;" />${count > 0 ? `<span style="position:absolute;bottom:-2px;right:-2px;background:#1a1a1a;color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;font-weight:bold;display:flex;align-items:center;justify-content:center;border:1px solid #000;">${count}</span>` : ''}</div>`;
-          return L.divIcon({ html, iconSize: [32, 32], iconAnchor: [16, 16], className: '' });
-        }
+function gameToLatLng(pos, corn) {
+  const fx = (pos.x - corn.minX) / (corn.maxX - corn.minX);
+  const fy = (pos.y - corn.minY) / (corn.maxY - corn.minY);
+  return [(1 - fy) * MAP_UNITS, fx * MAP_UNITS];
+}
 
-        function objectiveColor(owningTeam) {
-          const t = parseInt(owningTeam, 10);
-          return t === 1 ? '#4fa6e8' : t === 2 ? '#e0584f' : '#9aa092';
-        }
+function getCorn(snap) {
+  if (snap.cornerZero && snap.cornerOne) {
+    return {
+      minX: Math.min(snap.cornerZero.x, snap.cornerOne.x),
+      maxX: Math.max(snap.cornerZero.x, snap.cornerOne.x),
+      minY: Math.min(snap.cornerZero.y, snap.cornerOne.y),
+      maxY: Math.max(snap.cornerZero.y, snap.cornerOne.y),
+    };
+  }
+  const k = getMapKey(snap.layer || snap.map);
+  const c = MAP_CORNERS[k];
+  if (!c) return null;
+  return { minX:Math.min(c.c0[0],c.c1[0]), maxX:Math.max(c.c0[0],c.c1[0]), minY:Math.min(c.c0[1],c.c1[1]), maxY:Math.max(c.c0[1],c.c1[1]) };
+}
 
-        function isMainObjective(o) {
-          return o.name && o.name.toLowerCase().includes('main');
-        }
+function metersToMapUnits(m, corn) {
+  return Math.abs(m / Math.abs(corn.maxX - corn.minX)) * MAP_UNITS;
+}
 
-        function makeObjectiveIcon(owningTeam, isMain) {
-          const color = objectiveColor(owningTeam);
-          let svg;
-          if (isMain) {
-            svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36"><line x1="14" y1="4" x2="14" y2="33" stroke="#1a1a1a" stroke-width="2"/><circle cx="14" cy="13" r="9" fill="${color}" stroke="#000" stroke-width="1.5" opacity="0.95"/><text x="14" y="17" text-anchor="middle" font-size="8" fill="#fff" font-family="sans-serif" font-weight="bold">M</text><circle cx="14" cy="33" r="2.5" fill="#000"/></svg>`;
-            return L.divIcon({ html: svg, iconSize:[28,36], iconAnchor:[14,33], className:'' });
-          }
-          svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32"><line x1="4" y1="2" x2="4" y2="29" stroke="#1a1a1a" stroke-width="2"/><path d="M4 3 L22 7.5 L4 13 Z" fill="${color}" stroke="#000" stroke-width="1" opacity="0.95"/><circle cx="4" cy="29" r="2.5" fill="#000"/></svg>`;
-          return L.divIcon({ html: svg, iconSize:[26,32], iconAnchor:[4,29], className:'' });
-        }
+// ── Role icons (copied from script.js) ──
+function roleIconName(p) {
+  const r = (p.role||'').toLowerCase();
+  if (p.isLeader) {
+    if (r.includes('sl_crewman')||r.includes('slcrewman')) return 'crewman_squadleader';
+    if (r.includes('sl_pilot')||r.includes('slpilot'))    return 'pilot_squadleader';
+    return 'squadleader';
+  }
+  if (r.includes('automaticrifleman_optic')) return 'automaticrifleman_optic';
+  if (r.includes('automaticrifleman')||r.includes('autorifleman')||r.includes('automatic_rifleman')) return 'automaticrifleman';
+  if (r.includes('crewman'))          return 'crewman';
+  if (r.includes('designatedmarksman')||r.includes('marksman')) return 'designatedmarksman';
+  if (r.includes('heavyantitank')||r.includes('heavy_at')||r.includes('hat')) return 'heavyantitank';
+  if (r.includes('lightantitank')||r.includes('light_at')||r.includes('lat')) return 'lightantitank';
+  if (r.includes('machinegunner'))    return 'machinegunner';
+  if (r.includes('medic'))            return 'medic';
+  if (r.includes('pilot'))            return 'pilot';
+  if (r.includes('raider'))           return 'raider';
+  if (r.includes('recruit')||r.includes('plain')||r.includes('unarmed')) return 'recruit';
+  if (r.includes('rifleman_scoped')||r.includes('rifleman2')||r.includes('rifleman_02')||r.includes('rifleman_03')) return 'rifleman_scoped';
+  if (r.includes('rifleman'))         return 'rifleman';
+  if (r.includes('sapper'))           return 'sapper';
+  if (r.includes('scout'))            return 'scout';
+  if (r.includes('sniper'))           return 'sniper';
+  if (r.includes('grenadier'))        return 'grenadier';
+  if (r.includes('engineer'))         return 'engineer';
+  return 'rifleman';
+}
 
-        // ─── SELECCIÓN Y CENTRADO ──────────────────────────────────────────
-        function selectPlayer(p) {
-          selectedSteamID = p.steamID;
-          followSelected = true;
-          document.getElementById('player-panel').innerHTML = `
-            <div style="background:var(--panel);border:1px solid var(--panel-edge);border-radius:3px;padding:10px;font-size:11px;">
-              <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;">
-                <span style="color:${p.teamID === 1 ? 'var(--blue)' : 'var(--red)'};">[T${p.teamID}]</span> ${esc(p.name)}
-              </div>
-              <div style="color:var(--text-dim);line-height:1.8;">
-                <div>Role: ${roleIconName(p).replace(/_/g,' ')}</div>
-                ${p.squadID ? `<div>Squad: ${p.squadID}</div>` : ''}
-                ${p.isLeader ? '<div>★ Squad Leader</div>' : ''}
-                ${p.vehicle ? `<div>Vehicle: ${esc(p.vehicle.name || p.vehicle)}</div>` : ''}
-                <div style="margin-top:6px;"><button onclick="window.centerMapOnPlayer({position:[${p.position[0]},${p.position[1]}]})" style="background:var(--olive);color:var(--text);border:1px solid var(--panel-edge);padding:6px 10px;border-radius:3px;cursor:pointer;font-size:10px;">📍 Center Map</button></div>
-              </div>
-            </div>`;
-        }
+function roleIconPath(p, variant) {
+  const name = roleIconName(p);
+  if (variant === 'white') return `./resources/Role_Icons_Squad_White/T_role_${name}.webp`;
+  const folder = p.teamID === 1 ? 'Role_Icons_Squad_Blue' : 'Role_Icons_Squad_Red';
+  const suf    = p.teamID === 1 ? 'blue' : 'red';
+  return `./resources/${folder}/T_role_${name}_${suf}.png`;
+}
 
-        function centerMapOnPlayer(p) {
-          if (!p || !p.position || !Array.isArray(p.position) || p.position.length < 2) return;
-          map.invalidateSize();
-          setTimeout(() => {
-            const latlng = L.latLng(p.position[1], p.position[0]);
-            map.flyTo(latlng, 4, { duration: 0.8 });
-          }, 50);
-        }
+// ── Tooltip (identical to live) ──
+function makeTooltipContent(p) {
+  const tc   = p.teamID === 1 ? 'tip-t1' : 'tip-t2';
+  const tl   = `T${p.teamID}`;
+  const role = roleIconName(p).replace(/_/g,' ');
+  const veh  = p.vehicle ? `<div class="tip-vehicle">🚗 ${esc(p.vehicle.name||p.vehicle)}</div>` : '';
+  const squad= p.squadID ? `<div class="tip-squad-info">Squad <span class="squad-num">${p.squadID}</span></div>` : '';
+  const lead = p.isLeader ? '<div class="tip-leader">★ Squad Leader</div>' : '';
+  return `<div class="tip-container"><div class="tip-name"><span class="${tc}">[${tl}]</span> ${esc(p.name)}</div><div class="tip-role">${role}</div>${squad}${lead}${veh}</div>`;
+}
 
-        // ─── CARGA DE PARTIDAS Y SNAPSHOTS ────────────────────────────────
-        async function loadMatches() {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`, 
-                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
-                if (!res.ok) {
-                    const err = await res.text();
-                    console.error(`Supabase error ${res.status}:`, err);
-                    return;
-                }
-                const matches = await res.json();
-                document.getElementById('matches-list').innerHTML = (matches || []).map(m => 
-                    `<div class="match-item" onclick="selectMatch('${m.match_id}')">
-                        <div class="match-title">${m.map_name} - ${m.layer_name}</div>
-                        <div class="match-meta">${new Date(m.start_time).toLocaleString()} | ${m.snapshot_count} snaps</div>
-                    </div>`).join('');
-            } catch (e) { console.error('loadMatches error:', e); }
-        }
+// ── Player icon (same as script.js makeIcon) ──
+function makeIcon(p, selected) {
+  const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const ring  = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+  if (!p.isAlive && p.position) {
+    const src = roleIconPath(p,'team');
+    const xc  = color;
+    return L.divIcon({ html:`<div style="position:relative;width:28px;height:28px;${ring}"><img src="${src}" style="position:absolute;inset:1px;width:26px;height:26px;opacity:.45;filter:grayscale(.6) drop-shadow(0 0 1px #000a);"/><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:${xc};text-shadow:0 0 3px #000;">✕</div></div>`, iconSize:[28,28], iconAnchor:[14,14], className:'' });
+  }
+  const src = roleIconPath(p,'team');
+  const html = `<div style="position:relative;width:28px;height:28px;${ring}"><img src="${src}" style="position:absolute;inset:1px;width:26px;height:26px;filter:drop-shadow(0 0 1px #000a);"/></div>`;
+  return L.divIcon({ html, iconSize:[28,28], iconAnchor:[14,14], className:'' });
+}
 
-        async function selectMatch(id) {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc`,
-                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
-                if (!res.ok) {
-                    const err = await res.text();
-                    console.error(`Supabase snapshots error ${res.status}:`, err);
-                    return;
-                }
-                const rawData = await res.json();
-                snapshots = (rawData || []).map(s => s.data || s) || [];
-                lastLoadedMatch = id;
-                idx = 0;
-                document.getElementById('timeline').max = snapshots.length - 1;
-                render(0);
-            } catch (e) { console.error('selectMatch error:', e); }
-        }
+// ── Vehicle icon ──
+function makeVehicleIcon(g, selected) {
+  const color = g.teamID === 1 ? '#4fa6e8' : '#e0584f';
+  const ring  = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+  const count = g.occupants ? g.occupants.length : 0;
+  let iconUrl = g.icon || 'public__img__markers__weapons__test.webp';
+  if (!iconUrl.startsWith('resources/')) iconUrl = 'resources/' + iconUrl;
+  const op = count === 0 ? 'opacity:0.6;' : '';
+  const badge = count > 0 ? `<span style="position:absolute;bottom:-2px;right:-2px;background:#1a1a1a;color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;font-weight:bold;display:flex;align-items:center;justify-content:center;border:1px solid #000;">${count}</span>` : '';
+  return L.divIcon({ html:`<div style="width:32px;height:32px;background:${color};border-radius:50%;border:2px solid #000;display:flex;align-items:center;justify-content:center;box-shadow:0 0 4px rgba(0,0,0,0.8);${ring};${op};position:relative;overflow:hidden;"><img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;"/>${badge}</div>`, iconSize:[32,32], iconAnchor:[16,16], className:'' });
+}
 
-        // ─── RENDERIZADO ──────────────────────────────────────────────────
-        function render(i) {
-            if (!snapshots[i]) return;
-            const snap = snapshots[i];
-            loadMap(snap.layer || snap.map);
-            
-            // Limpiar markers
-            for (let key in window.replayMarkers || {}) {
-                map.removeLayer(window.replayMarkers[key]);
-            }
-            window.replayMarkers = {};
+// ── Objective icons ──
+function objColor(t) { const n=parseInt(t,10); return n===1?'#4fa6e8':n===2?'#e0584f':'#9aa092'; }
+function isMain(o)   { return o.name && o.name.toLowerCase().includes('main'); }
+function makeObjIcon(t, main) {
+  const c = objColor(t);
+  let svg;
+  if (main) {
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36"><line x1="14" y1="4" x2="14" y2="33" stroke="#1a1a1a" stroke-width="2"/><circle cx="14" cy="13" r="9" fill="${c}" stroke="#000" stroke-width="1.5" opacity=".95"/><text x="14" y="17" text-anchor="middle" font-size="8" fill="#fff" font-family="sans-serif" font-weight="bold">M</text><circle cx="14" cy="33" r="2.5" fill="#000"/></svg>`;
+    return L.divIcon({ html:svg, iconSize:[28,36], iconAnchor:[14,33], className:'' });
+  }
+  svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32"><line x1="4" y1="2" x2="4" y2="29" stroke="#1a1a1a" stroke-width="2"/><path d="M4 3 L22 7.5 L4 13 Z" fill="${c}" stroke="#000" stroke-width="1" opacity=".95"/><circle cx="4" cy="29" r="2.5" fill="#000"/></svg>`;
+  return L.divIcon({ html:svg, iconSize:[26,32], iconAnchor:[4,29], className:'' });
+}
 
-            let corn = null;
-            if (snap.cornerZero && snap.cornerOne) {
-                corn = {
-                    minX: Math.min(snap.cornerZero.x, snap.cornerOne.x),
-                    maxX: Math.max(snap.cornerZero.x, snap.cornerOne.x),
-                    minY: Math.min(snap.cornerZero.y, snap.cornerOne.y),
-                    maxY: Math.max(snap.cornerZero.y, snap.cornerOne.y)
-                };
-            } else {
-                const mapKey = getMapKeyFromName(snap.layer || snap.map);
-                const c = MAP_CORNERS[mapKey];
-                if (c) corn = {
-                    minX: Math.min(c.c0[0], c.c1[0]), maxX: Math.max(c.c0[0], c.c1[0]),
-                    minY: Math.min(c.c0[1], c.c1[1]), maxY: Math.max(c.c0[1], c.c1[1])
-                };
-            }
-            if (!corn) return;
+// ── HUD update ──
+function rUpdateHUD(snap) {
+  // Map name
+  const raw = snap.layer || snap.map || '';
+  const label = raw.includes('/') ? raw.split('/').filter(Boolean).pop().replace(/_/g,' ') : raw;
+  document.getElementById('rHudMap').textContent = label || '—';
+  document.getElementById('rLiveDot').className = 'live-dot offline'; // replay is never "live"
 
-            // Renderizar vehículos (agrupados)
-            const vehicleGroups = {};
-            if (snap.vehicles) {
-                snap.vehicles.forEach(v => {
-                    if (!v.position) return;
-                    const key = `veh_${v.id || v.name}_${v.teamID}`;
-                    if (!vehicleGroups[key]) {
-                        vehicleGroups[key] = {
-                            vehicleId: v.id || key,
-                            vehicleName: v.name || 'Vehículo',
-                            teamID: v.teamID,
-                            occupants: [],
-                            position: v.position,
-                            icon: v.icon || null
-                        };
-                    }
-                });
-            }
-            
-            for (const key in vehicleGroups) {
-                const v = vehicleGroups[key];
-                const ll = gameToLatLng(v.position, corn);
-                const icon = makeVehicleIcon(v, false);
-                const m = L.marker(ll, { icon }).addTo(map);
-                const tooltipText = `🚗 ${esc(v.vehicleName)} [T${v.teamID}]`;
-                m.bindTooltip(tooltipText, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
-                m.on('click', () => v.occupants?.length && selectPlayer(v.occupants[0]));
-                window.replayMarkers[key] = m;
-            }
+  // Tickets
+  const t1 = snap.tickets?.team1, t2 = snap.tickets?.team2;
+  const tickEl = document.getElementById('rHudTickets');
+  if (t1 != null && t2 != null) {
+    tickEl.style.display = 'flex';
+    const parseFac = (raw) => {
+      if (!raw) return null;
+      const s = typeof raw === 'object' ? (raw.faction ?? raw.name ?? null) : raw;
+      if (!s) return null;
+      if (s.includes('/')) {
+        const segs = s.split('/').filter(Boolean);
+        for (const seg of segs) if (Object.values(FACTION_CODE).includes(seg)) return seg;
+        const idx2 = segs.indexOf('FactionSetups');
+        if (idx2 !== -1 && segs[idx2+1]) return segs[idx2+1];
+      }
+      return FACTION_CODE[s] ?? s;
+    };
+    const f1 = parseFac(snap.factions?.team1);
+    const f2 = parseFac(snap.factions?.team2);
+    document.getElementById('rt1faction').textContent = f1 || '—';
+    document.getElementById('rt2faction').textContent = f2 || '—';
+    const BASE = 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/main/resources';
+    const fl1 = document.getElementById('rt1flag'), fl2 = document.getElementById('rt2flag');
+    if (f1) { fl1.src=`${BASE}/public__img__flags__${f1}.webp`; fl1.style.display='inline-block'; } else fl1.style.display='none';
+    if (f2) { fl2.src=`${BASE}/public__img__flags__${f2}.webp`; fl2.style.display='inline-block'; } else fl2.style.display='none';
+    const total = (t1+t2) || 1;
+    document.getElementById('rt1num').textContent = t1;
+    document.getElementById('rt2num').textContent = t2;
+    document.getElementById('rt1bar').style.width = (t1/total*100)+'%';
+    document.getElementById('rt2bar').style.width = (t2/total*100)+'%';
+  } else {
+    tickEl.style.display = 'none';
+  }
 
-            // Renderizar players individuales
-            if (snap.players) {
-                snap.players.forEach(p => {
-                    if (!p.position || vehicleGroups[`veh_${p.vehicle?.id || p.vehicle}_${p.teamID}`]) return;
-                    const key = `player_${p.steamID}`;
-                    const ll = gameToLatLng(p.position, corn);
-                    const isSelected = p.steamID === selectedSteamID;
-                    const icon = makeIcon(p, isSelected);
-                    const m = L.marker(ll, { icon }).addTo(map);
-                    m.bindTooltip(makeTooltipContent(p), { permanent: isSelected, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
-                    m.on('click', () => selectPlayer(p));
-                    m._playerData = p;
-                    window.replayMarkers[key] = m;
-                });
-            }
+  // Timer
+  if (snap.matchTimer != null && snap.matchTimer > 0) {
+    const m = Math.floor(snap.matchTimer/60), s = snap.matchTimer%60;
+    document.getElementById('rTimerVal').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('rHudTimer').style.display = 'inline-block';
+  } else {
+    document.getElementById('rHudTimer').style.display = 'none';
+  }
+}
 
-            // Renderizar objetivos
-            if (snap.objectives) {
-                snap.objectives.forEach(o => {
-                    if (!o.position) return;
-                    const key = `obj_${o.name}`;
-                    const ll = gameToLatLng(o.position, corn);
-                    const isMain = isMainObjective(o);
-                    const icon = makeObjectiveIcon(o.owningTeam, isMain);
-                    const m = L.marker(ll, { icon }).addTo(map);
-                    const ownerText = o.owningTeam === 1 ? 'T1' : o.owningTeam === 2 ? 'T2' : 'Neutral';
-                    m.bindTooltip(`${o.name} [${ownerText}]`, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
-                    window.replayMarkers[key] = m;
-                });
-            }
+// ── Basemap ──
+function rLoadMap(name) {
+  const key = getMapKey(name);
+  if (!key || key === rCurrentMapKey) return;
+  if (rBasemap) rMap.removeLayer(rBasemap);
+  rBasemap = L.imageOverlay(`./maps/${key}.webp`, bounds, { opacity:1 }).addTo(rMap);
+  rCurrentMapKey = key;
+}
 
-            // Follow selected player
-            if (followSelected && selectedSteamID && snap.players) {
-                const selected = snap.players.find(p => p.steamID === selectedSteamID);
-                if (selected && selected.position) {
-                    centerMapOnPlayer(selected);
-                }
-            }
+// ── Objectives ──
+function rUpdateObjectives(objectives, corn) {
+  const seen = new Set();
+  const flags = objectives.filter(o => o.position && !isMain(o)).map(o => gameToLatLng(o.position, corn));
+  if (rFilters.flags && flags.length >= 2) {
+    if (rObjectiveLine) { rObjectiveLine.setLatLngs(flags); if (!rMap.hasLayer(rObjectiveLine)) rMap.addLayer(rObjectiveLine); }
+    else rObjectiveLine = L.polyline(flags, { color:'#fff', weight:1.5, opacity:.7, dashArray:'6,6' }).addTo(rMap);
+  } else if (rObjectiveLine) { rMap.removeLayer(rObjectiveLine); rObjectiveLine = null; }
 
-            // Fit bounds solo la primera vez (idx === 0)
-            if (i === 0) {
-                map.fitBounds(bounds);
-            }
-            
-            idx = i;
-            document.getElementById('timeline').value = i;
-            document.getElementById('snap-info').textContent = `[${i}/${snapshots.length-1}]`;
-            document.getElementById('time-info').textContent = `[${String(Math.floor(i*2/60)).padStart(2,'0')}:${String(Math.floor(i*2%60)).padStart(2,'0')}]`;
-            document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
-        }
+  for (const o of objectives) {
+    if (!o.position || !o.name) continue;
+    const main = isMain(o);
+    if (!main && !rFilters.flags) continue;
+    const key = `${o.name}_t${parseInt(o.owningTeam,10)}`;
+    seen.add(key);
+    const ll = gameToLatLng(o.position, corn);
+    const icon = makeObjIcon(o.owningTeam, main);
+    if (rObjectiveMarkers[key]) {
+      rObjectiveMarkers[key].setLatLng(ll).setIcon(icon);
+      if (!rMap.hasLayer(rObjectiveMarkers[key])) rMap.addLayer(rObjectiveMarkers[key]);
+    } else {
+      const m = L.marker(ll, { icon }).addTo(rMap);
+      m.bindTooltip(esc(o.name), { permanent:true, direction:'top', offset:[0,-30], className:'obj-label' });
+      rObjectiveMarkers[key] = m;
+    }
+  }
+  for (const key of Object.keys(rObjectiveMarkers)) {
+    if (!seen.has(key)) { rMap.removeLayer(rObjectiveMarkers[key]); delete rObjectiveMarkers[key]; }
+  }
+}
 
-        // ─── CONTROLES DE REPRODUCCIÓN ──────────────────────────────────
-        function play() {
-            if (!snapshots.length) return;
-            playing = !playing;
-            if (playing) {
-                timer = setInterval(() => {
-                    if (idx < snapshots.length - 1) render(++idx);
-                    else { playing = false; clearInterval(timer); }
-                }, 2000 / parseFloat(document.getElementById('speed').value));
-            } else clearInterval(timer);
-            render(idx);
-        }
+// ── Markers ──
+function rGroupByVehicle(players) {
+  const groups = {}, solo = [];
+  for (const p of players) {
+    if (!p.vehicle) { solo.push(p); continue; }
+    const key = p.vehicle.id ? `veh_${p.vehicle.id}` : `veh_${p.vehicle.name}_${p.teamID}`;
+    if (!groups[key]) groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', teamID:p.teamID, occupants:[], position:null, icon:null };
+    groups[key].occupants.push(p);
+    if (!groups[key].position && p.position) groups[key].position = p.position;
+  }
+  return { vehicleGroups: Object.values(groups), individualPlayers: solo };
+}
 
-        function exp() {
-            const json = JSON.stringify({ snapshots });
-            const blob = new Blob([json], {type: 'application/json'});
-            document.getElementById('export-download').href = URL.createObjectURL(blob);
-            document.getElementById('export-download').download = 'replay.json';
-            document.getElementById('export-download').click();
-        }
+function rUpdateMarkers(snap, corn) {
+  const players   = snap.players   || [];
+  const seen = new Set();
+  const { vehicleGroups, individualPlayers } = rGroupByVehicle(players);
 
-        // ─── EVENTOS ──────────────────────────────────────────────────────
-        document.getElementById('refresh-btn').onclick = loadMatches;
-        document.getElementById('play-btn').onclick = play;
-        document.getElementById('timeline').oninput = (e) => { playing = false; render(parseInt(e.target.value)); };
-        document.getElementById('speed').onchange = () => { if(playing) { playing=false; play(); } };
-        document.getElementById('forward-btn').onclick = () => render(Math.min(idx+10, snapshots.length-1));
-        document.getElementById('rewind-btn').onclick = () => render(Math.max(idx-10, 0));
-        document.getElementById('export-btn').onclick = exp;
+  // vehicles
+  for (const g of vehicleGroups) {
+    if (!g.position) continue;
+    if (!rFilters.veh) continue;
+    if (!rFilters.t1 && g.teamID===1) continue;
+    if (!rFilters.t2 && g.teamID===2) continue;
+    const key = `veh_${g.vehicleId}`;
+    seen.add(key);
+    const ll = gameToLatLng(g.position, corn);
+    const isSel = g.occupants.some(p=>p.steamID===rSelectedSteamID);
+    const icon = makeVehicleIcon(g, isSel);
+    if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
+    else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
+    const m = rMarkers[key];
+    m._gData = g;
+    m.unbindTooltip();
+    m.bindTooltip(`<div style="font-weight:600;color:var(--amber);">🚗 ${esc(g.vehicleName)}</div><div style="color:var(--text-dim);">[T${g.teamID}] · ${g.occupants.length} ocupantes</div>`, {permanent:false,direction:'top',offset:[0,-14],className:'squad-tip'});
+    m.off('click'); m.on('click', ()=>rSelectVehicle(g));
+  }
 
-        window.onload = () => {
-            map = L.map('map-container', { crs: L.CRS.Simple, minZoom: -5, maxZoom: 3, zoom: -1 });
-            map.fitBounds(bounds);
-            loadMatches();
-        };
-    </script>
+  // solo players
+  for (const p of individualPlayers) {
+    if (!p.position) continue;
+    if (!rFilters.t1 && p.teamID===1) continue;
+    if (!rFilters.t2 && p.teamID===2) continue;
+    if (!rFilters.dead && !p.isAlive) continue;
+    const key = `player_${p.steamID}`;
+    seen.add(key);
+    const ll = gameToLatLng(p.position, corn);
+    const isSel = p.steamID === rSelectedSteamID;
+    const icon = makeIcon(p, isSel);
+    if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
+    else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
+    const m = rMarkers[key];
+    m._pData = p;
+    m.unbindTooltip();
+    m.bindTooltip(makeTooltipContent(p), { permanent:isSel, direction:'top', offset:[0,-14], className:'squad-tip' });
+    m.off('click'); m.on('click', ()=>rSelectPlayer(p));
+  }
+
+  // remove stale
+  for (const id of Object.keys(rMarkers)) {
+    if (!seen.has(id)) { rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
+  }
+
+  // follow
+  if (rFollowSelected && rSelectedSteamID) {
+    for (const m of Object.values(rMarkers)) {
+      if ((m._pData && m._pData.steamID===rSelectedSteamID) ||
+          (m._gData && m._gData.occupants && m._gData.occupants.some(p=>p.steamID===rSelectedSteamID))) {
+        rMap.panTo(m.getLatLng(), {animate:true,duration:.4}); break;
+      }
+    }
+  }
+}
+
+// ── Player card (like live) ──
+function rShowPlayerCard(p) {
+  const tc = p.teamID===1?'blue':'red', tl=p.teamID===1?'T1':'T2';
+  let status = 'Vivo'; if(!p.isAlive) status = p.position ? 'Herido':'Muerto';
+  const vLine = p.vehicle ? `<div class="row"><span>Vehículo</span><span class="val">${esc(p.vehicle.name||p.vehicle)}</span></div>` : '';
+  document.getElementById('rPlayerPanel').innerHTML = `<div class="player-card">
+    <div class="pname"><span class="ptag ${tc}">[${tl}]</span> ${esc(p.name)}</div>
+    <div class="row"><span>Estado</span><span class="val">${status}</span></div>
+    <div class="row"><span>Rol</span><span class="val" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;"><img src="${roleIconPath(p,'white')}" style="width:16px;height:16px;"/>${esc(p.role??'—')}</span></div>
+    ${vLine}
+    <div class="row"><span>Squad</span><span class="val">${esc(p.squadName||p.squadID??'—')}</span></div>
+    <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
+  </div>`;
+}
+
+function rSelectPlayer(p) {
+  rSelectedSteamID = p.steamID;
+  rFollowSelected = true;
+  document.getElementById('rBtnFollow').style.color = 'var(--amber)';
+  rShowPlayerCard(p);
+  rSwitchTab('players');
+  // re-render to update selection ring
+  const snap = rSnapshots[rIdx];
+  if (snap) { const corn=getCorn(snap); if(corn) rUpdateMarkers(snap,corn); }
+}
+
+function rSelectVehicle(g) {
+  const p = g.occupants[0];
+  if (p) rSelectPlayer(p);
+}
+
+// ── Player list (collapsible by squad, like live) ──
+function rUpdatePlayerList(players) {
+  rAllPlayersCache = [...players].sort((a,b)=>{
+    if(a.teamID!==b.teamID) return a.teamID-b.teamID;
+    return a.name.localeCompare(b.name);
+  });
+  const sorted = [...players].filter(p=>{
+    if(!rFilters.t1&&p.teamID===1) return false;
+    if(!rFilters.t2&&p.teamID===2) return false;
+    return true;
+  }).sort((a,b)=>{
+    if(a.teamID!==b.teamID) return a.teamID-b.teamID;
+    const as=a.squadID??999, bs=b.squadID??999;
+    if(as!==bs) return as-bs;
+    if(a.isLeader!==b.isLeader) return a.isLeader?-1:1;
+    return a.name.localeCompare(b.name);
+  });
+
+  let html='', curTeam=null, curSquad=null;
+  for (let i=0;i<sorted.length;i++) {
+    const p=sorted[i];
+    if(p.teamID!==curTeam){ curTeam=p.teamID; curSquad=null; html+=`<div class="panel-title" style="margin-top:10px;color:var(--${p.teamID===1?'blue':'red'});">Team ${p.teamID}</div>`; }
+    if(p.squadID!==curSquad||p.teamID!==curTeam){
+      curSquad=p.squadID;
+      if(p.squadID!=null){
+        const sk=`${curTeam}_${p.squadID}`;
+        const exp=rExpandedSquads[sk]===true;
+        const cnt=sorted.filter(x=>x.teamID===curTeam&&x.squadID===p.squadID).length;
+        let sqName=`Squad ${p.squadID}`;
+        if(p.squadName&&!p.squadName.startsWith('Squad ')) sqName=`Squad ${p.squadID} - ${p.squadName}`;
+        html+=`<div class="squad-header" onclick="event.stopPropagation();rToggleSquad('${sk}')"><span class="squad-chevron">${exp?'▼':'▶'}</span><span class="squad-name">${esc(sqName)}</span><span class="squad-count">${cnt}</span></div>`;
+        if(!exp){while(i+1<sorted.length&&sorted[i+1].teamID===curTeam&&sorted[i+1].squadID===curSquad)i++;continue;}
+      } else {
+        html+=`<div style="font-family:'Oswald',sans-serif;font-size:12px;color:var(--text-dim);margin:6px 0 4px;">Sin escuadra</div>`;
+      }
+    }
+    const c=p.teamID===1?'blue':'red';
+    const sel=p.steamID===rSelectedSteamID?'border-color:var(--amber);':'';
+    const dead=(!p.isAlive&&!p.position)?'opacity:.4;':'';
+    const statusEmoji=p.isAlive?'🟢':(p.position?'🟡':'🔴');
+    const sl=p.isLeader?'<span style="color:var(--amber)">★</span>':'';
+    const role=roleIconName(p).replace(/_/g,' ');
+    html+=`<div class="player-card" style="cursor:pointer;margin-left:8px;${sel}${dead}" onclick="rSelectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <img src="${roleIconPath(p,'white')}" style="width:16px;height:16px;flex-shrink:0;"/>
+        <div><span class="ptag ${c}">[S${p.squadID??'?'}]</span>${sl} ${esc(p.name)} ${statusEmoji}</div>
+      </div>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${role}</div>
+    </div>`;
+  }
+  if(!html) html='<div class="no-data">No hay jugadores</div>';
+  document.getElementById('rPlayerList').innerHTML = html;
+  document.getElementById('rPlayerCount').textContent = players.filter(p=>p.position).length;
+  document.getElementById('rTotalCount').textContent  = players.length;
+}
+
+function rToggleSquad(key) {
+  rExpandedSquads[key] = !rExpandedSquads[key];
+  const snap = rSnapshots[rIdx];
+  if (snap && snap.players) rUpdatePlayerList(snap.players);
+}
+
+// ── Render snapshot ──
+function rRender(i) {
+  if (!rSnapshots[i]) return;
+  rIdx = i;
+  const snap = rSnapshots[i];
+  rLoadMap(snap.layer || snap.map);
+  const corn = getCorn(snap);
+  if (!corn) return;
+
+  rUpdateHUD(snap);
+  if (snap.objectives && snap.objectives.length) rUpdateObjectives(snap.objectives, corn);
+  rUpdateMarkers(snap, corn);
+  if (snap.players) rUpdatePlayerList(snap.players);
+
+  // status text
+  document.getElementById('rStatusText').textContent = `Snap ${i+1}/${rSnapshots.length}`;
+  // scrubber
+  document.getElementById('rTimeline').value = i;
+  document.getElementById('rSnapInfo').textContent = `[${i+1}/${rSnapshots.length}]`;
+  const mins = Math.floor(i*2/60), secs = Math.floor(i*2%60);
+  document.getElementById('rTimeInfo').textContent = `[${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}]`;
+  document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
+
+  if (i===0) rMap.fitBounds(bounds);
+}
+
+// ── Playback ──
+function rPlay() {
+  if (!rSnapshots.length) return;
+  rPlaying = !rPlaying;
+  if (rPlaying) {
+    const speed = parseFloat(document.getElementById('rSpeed').value);
+    rTimer = setInterval(()=>{
+      if (rIdx < rSnapshots.length-1) rRender(++rIdx);
+      else { rPlaying=false; clearInterval(rTimer); rRender(rIdx); }
+    }, 2000/speed);
+  } else clearInterval(rTimer);
+  document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
+}
+
+function rSeek(delta) {
+  rPlaying=false; clearInterval(rTimer);
+  rRender(Math.max(0, Math.min(rIdx+delta, rSnapshots.length-1)));
+}
+function rOnScrub(val) { rPlaying=false; clearInterval(rTimer); rRender(parseInt(val)); }
+function rOnSpeedChange() { if(rPlaying){ clearInterval(rTimer); rPlaying=false; rPlay(); } }
+
+// ── Filters ──
+function rToggleFilter(key) {
+  rFilters[key] = !rFilters[key];
+  document.getElementById('rf'+key).classList.toggle('active', rFilters[key]);
+  const snap = rSnapshots[rIdx];
+  if (!snap) return;
+  const corn = getCorn(snap);
+  if (!corn) return;
+  if (snap.objectives) rUpdateObjectives(snap.objectives, corn);
+  rUpdateMarkers(snap, corn);
+  if (snap.players) rUpdatePlayerList(snap.players);
+}
+function rToggleFollow() {
+  rFollowSelected = !rFollowSelected;
+  document.getElementById('rBtnFollow').style.color = rFollowSelected ? 'var(--amber)' : 'var(--text-dim)';
+}
+
+// ── Search ──
+function rToggleSearch() {
+  const p=document.getElementById('rSearchPanel'), inp=document.getElementById('rSearchInput');
+  const hidden=p.style.display==='none';
+  p.style.display=hidden?'flex':'none';
+  if(hidden){ rOnSearch(inp.value); setTimeout(()=>inp.focus(),80); }
+  else{ inp.value=''; document.getElementById('rSearchDrop').innerHTML=''; }
+}
+function rOnSearch(val) {
+  const q=val.trim().toLowerCase();
+  const list = q ? rAllPlayersCache.filter(p=>p.name.toLowerCase().includes(q)||String(p.steamID).includes(q)) : rAllPlayersCache;
+  document.getElementById('rSearchDrop').innerHTML = !list.length
+    ? '<div class="search-item"><span class="si-name" style="color:var(--text-dim)">Sin resultados</span></div>'
+    : list.slice(0,50).map(p=>{
+        const tc=p.teamID===1?'blue':'red';
+        const dead=!p.isAlive?'<span class="si-dead">💀</span>':'';
+        return `<div class="search-item" onclick="rSelectPlayer(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+          <span class="si-tag ${tc}">T${p.teamID} S${p.squadID??'?'}</span>
+          <span class="si-name">${esc(p.name)}</span>${dead}
+        </div>`;
+      }).join('');
+}
+
+// ── Tabs ──
+function rSwitchTab(tab) {
+  document.querySelectorAll('.r-side-tab').forEach((el,i)=>{
+    el.classList.toggle('active', ['matches','players'][i]===tab);
+  });
+  document.getElementById('rTabMatches').style.display = tab==='matches'?'flex':'none';
+  document.getElementById('rTabPlayers').style.display = tab==='players'?'flex':'none';
+}
+
+// ── Load matches ──
+async function rLoadMatches() {
+  document.getElementById('rMatchList').innerHTML = '<div class="no-data">Cargando...</div>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`,
+      { headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
+    const matches = await res.json();
+    document.getElementById('rMatchList').innerHTML = (matches||[]).map(m=>
+      `<div class="match-item" id="mi_${m.match_id}" onclick="rSelectMatch('${m.match_id}')">
+        <div class="match-title">${esc(m.map_name||'?')} — ${esc(m.layer_name||'?')}</div>
+        <div class="match-meta">${new Date(m.start_time).toLocaleString()} | ${m.snapshot_count} snaps</div>
+      </div>`).join('') || '<div class="no-data">Sin partidas</div>';
+  } catch(e){ document.getElementById('rMatchList').innerHTML='<div class="no-data">Error cargando</div>'; }
+}
+
+async function rSelectMatch(id) {
+  // mark active
+  document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('active'));
+  const mi=document.getElementById('mi_'+id); if(mi) mi.classList.add('active');
+  document.getElementById('rStatusText').textContent='Cargando...';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc`,
+      { headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
+    const raw = await res.json();
+    rSnapshots = (raw||[]).map(s=>s.data||s);
+    rIdx=0; rPlaying=false; clearInterval(rTimer);
+    document.getElementById('rTimeline').max = rSnapshots.length-1;
+    // clear markers
+    for(const id of Object.keys(rMarkers)){ rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
+    for(const id of Object.keys(rObjectiveMarkers)){ rMap.removeLayer(rObjectiveMarkers[id]); delete rObjectiveMarkers[id]; }
+    if(rObjectiveLine){ rMap.removeLayer(rObjectiveLine); rObjectiveLine=null; }
+    rRender(0);
+  } catch(e){ document.getElementById('rStatusText').textContent='Error'; }
+}
+
+// ── Export ──
+document.getElementById('rExportBtn').onclick = ()=>{
+  if(!rSnapshots.length) return;
+  const blob=new Blob([JSON.stringify({snapshots:rSnapshots})],{type:'application/json'});
+  const a=document.getElementById('rExportLink');
+  a.href=URL.createObjectURL(blob); a.download='replay.json'; a.click();
+};
+
+// ── Init ──
+window.onload = () => {
+  rMap = L.map('map',{ crs:L.CRS.Simple, minZoom:-2, maxZoom:4, zoomSnap:.5, attributionControl:false, zoomControl:false });
+  rMap.fitBounds(bounds);
+  rLoadMatches();
+
+  // deselect on map click
+  rMap.on('click',()=>{
+    if(rSelectedSteamID){
+      rSelectedSteamID=null;
+      document.getElementById('rPlayerPanel').innerHTML='<div class="no-data">Haz click en un marcador</div>';
+      const snap=rSnapshots[rIdx]; if(snap){const corn=getCorn(snap);if(corn)rUpdateMarkers(snap,corn);}
+    }
+  });
+};
+</script>
 </body>
 </html>
