@@ -971,18 +971,15 @@ async function saveChatSnapshot(serverName, mapName, messages) {
   } catch (err) { console.warn('Chat snapshot failed:', err); }
 }
 function switchTab(tab) {
-  const tabs = ['players', 'search', 'admin', 'chat'];
+  const tabs = ['players', 'admin', 'chat'];
   document.querySelectorAll('.side-tab').forEach((el, i) => {
     el.classList.toggle('active', tabs[i] === tab);
   });
   document.getElementById('tabPlayers').classList.toggle('show', tab === 'players');
-  document.getElementById('tabSearch').classList.toggle('show', tab === 'search');
   document.getElementById('tabAdmin').classList.toggle('show', tab === 'admin');
   document.getElementById('tabChat').classList.toggle('show', tab === 'chat');
-  if (tab === 'search') renderSearchDropdown(document.getElementById('searchInput').value);
   if (tab === 'chat') {
     scrollChatToBottom();
-    // Cargar historial desde Supabase
     if (currentMapKey) {
       loadChatHistory(currentMapKey).then(m => { if (m) updateChatMessages(m); });
     }
