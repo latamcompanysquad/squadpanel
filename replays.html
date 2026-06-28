@@ -114,17 +114,34 @@
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc`,
                     { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
-                snapshots = (await res.json()).map(s => s.data) || [];
+                if (!res.ok) {
+                    const err = await res.text();
+                    console.error(`Supabase snapshots error ${res.status}:`, err);
+                    return;
+                }
+                const rawData = await res.json();
+                console.log('📸 Raw snapshots from Supabase:', rawData);
+                snapshots = (rawData || []).map(s => s.data || s) || [];
+                console.log('✅ Processed snapshots:', snapshots);
+                console.log('📊 Total snapshots:', snapshots.length);
+                if (snapshots.length > 0) {
+                    console.log('🔍 First snapshot:', snapshots[0]);
+                }
                 document.getElementById('timeline').max = snapshots.length - 1;
                 render(0);
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error('selectMatch error:', e); }
         }
 
         function render(i) {
-            if (!snapshots[i]) return;
+            if (!snapshots[i]) {
+                console.warn(`❌ No snapshot at index ${i}`);
+                return;
+            }
             const snap = snapshots[i];
+            console.log(`🎬 Rendering snapshot ${i}:`, snap);
             
             const mk = normMap(snap.layer || snap.map);
+            console.log('🗺️ Map key:', mk);
             loadMap(mk);
 
             Object.values({...document.querySelectorAll('.leaflet-marker-pane div')}).forEach(m => {
@@ -139,16 +156,22 @@
                     minY: Math.min(snap.cornerZero.y, snap.cornerOne.y),
                     maxY: Math.max(snap.cornerZero.y, snap.cornerOne.y)
                 };
+                console.log('📐 Corners from snapshot:', corn);
             } else {
                 const c = MAP_CORNERS[mk];
                 if (c) corn = {
                     minX: Math.min(c.c0[0], c.c1[0]), maxX: Math.max(c.c0[0], c.c1[0]),
                     minY: Math.min(c.c0[1], c.c1[1]), maxY: Math.max(c.c0[1], c.c1[1])
                 };
+                console.log('📐 Corners from MAP_CORNERS:', corn);
             }
 
-            if (!corn) return;
+            if (!corn) {
+                console.error('❌ No corners available for map', mk);
+                return;
+            }
 
+            console.log(`👥 Players:`, snap.players?.length || 0);
             (snap.players || []).forEach(p => {
                 if (!p.position) return;
                 const col = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
@@ -157,6 +180,7 @@
                 }).addTo(map).bindPopup(p.name);
             });
 
+            console.log(`🚗 Vehicles:`, snap.vehicles?.length || 0);
             (snap.vehicles || []).forEach(v => {
                 if (!v.position) return;
                 const col = v.teamID === 1 ? '#4fa6e8' : '#e0584f';
@@ -165,6 +189,7 @@
                 }).addTo(map).bindPopup(v.type);
             });
 
+            console.log(`🚩 Objectives:`, snap.objectives?.length || 0);
             (snap.objectives || []).forEach(o => {
                 if (!o.position) return;
                 const col = o.owningTeam === 1 ? '#0066ff' : o.owningTeam === 2 ? '#ff3333' : '#888';
@@ -179,6 +204,7 @@
             document.getElementById('snap-info').textContent = `[${i}/${snapshots.length-1}]`;
             document.getElementById('time-info').textContent = `[${String(Math.floor(i*2/60)).padStart(2,'0')}:${String(Math.floor(i*2%60)).padStart(2,'0')}]`;
             document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
+            console.log('✅ Snapshot rendered');
         }
 
         function play() {
