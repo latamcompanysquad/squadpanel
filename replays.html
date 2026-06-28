@@ -118,6 +118,9 @@
         }
 
         let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
+        let selectedSteamID = null;
+        let followSelected = false;
+        window.replayMarkers = {};
 
         // ─── ICONOS DE ROLES Y UTILIDADES ─────────────────────────────────────
         function roleIconName(p) {
@@ -247,6 +250,33 @@
             currentMapKey = mapKey;
         }
 
+        function selectPlayer(p) {
+          selectedSteamID = p.steamID;
+          followSelected = true;
+          document.getElementById('playerPanel').innerHTML = `
+            <div style="background:var(--panel);border:1px solid var(--panel-edge);border-radius:3px;padding:10px;font-size:11px;">
+              <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;">
+                <span style="color:${p.teamID === 1 ? 'var(--blue)' : 'var(--red)'};">[T${p.teamID}]</span> ${esc(p.name)}
+              </div>
+              <div style="color:var(--text-dim);line-height:1.8;">
+                <div>Role: ${roleIconName(p).replace(/_/g,' ')}</div>
+                ${p.squadID ? `<div>Squad: ${p.squadID}</div>` : ''}
+                ${p.isLeader ? '<div>★ Squad Leader</div>' : ''}
+                ${p.vehicle ? `<div>Vehicle: ${esc(p.vehicle.name || p.vehicle)}</div>` : ''}
+                <div style="margin-top:6px;"><button onclick="window.centerMapOnPlayer({position:[${p.position[0]},${p.position[1]}]})" style="background:var(--olive);color:var(--text);border:1px solid var(--panel-edge);padding:6px 10px;border-radius:3px;cursor:pointer;font-size:10px;">📍 Center Map</button></div>
+              </div>
+            </div>`;
+        }
+
+        function centerMapOnPlayer(p) {
+          if (!p || !p.position || !Array.isArray(p.position) || p.position.length < 2) return;
+          map.invalidateSize();
+          setTimeout(() => {
+            const latlng = L.latLng(p.position[1], p.position[0]);
+            map.flyTo(latlng, 4, { duration: 0.8 });
+          }, 50);
+        }
+
         async function loadMatches() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`, 
@@ -342,6 +372,7 @@
                 const m = L.marker(ll, { icon }).addTo(map);
                 const tooltipText = `🚗 ${esc(v.vehicleName)} [T${v.teamID}]`;
                 m.bindTooltip(tooltipText, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                m.on('click', () => v.occupants?.length && selectPlayer(v.occupants[0]));
                 window.replayMarkers[key] = m;
             }
 
@@ -351,9 +382,12 @@
                     if (!p.position || vehicleGroups[`veh_${p.vehicle?.id || p.vehicle}_${p.teamID}`]) return;
                     const key = `player_${p.steamID}`;
                     const ll = gameToLatLng(p.position, corn);
-                    const icon = makeIcon(p, false);
+                    const isSelected = p.steamID === selectedSteamID;
+                    const icon = makeIcon(p, isSelected);
                     const m = L.marker(ll, { icon }).addTo(map);
-                    m.bindTooltip(makeTooltipContent(p), { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                    m.bindTooltip(makeTooltipContent(p), { permanent: isSelected, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                    m.on('click', () => selectPlayer(p));
+                    m._playerData = p;
                     window.replayMarkers[key] = m;
                 });
             }
@@ -371,6 +405,14 @@
                     m.bindTooltip(`${o.name} [${ownerText}]`, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
                     window.replayMarkers[key] = m;
                 });
+            }
+
+            // Follow selected player
+            if (followSelected && selectedSteamID && snap.players) {
+                const selected = snap.players.find(p => p.steamID === selectedSteamID);
+                if (selected && selected.position) {
+                    centerMapOnPlayer(selected);
+                }
             }
 
             map.fitBounds(bounds);
