@@ -13,9 +13,8 @@ async function loginWithDiscord() {
   const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      redirectTo: window.location.origin + '/auth/discord/callback',
-      // Evita que Supabase redirija automáticamente
-      skipBrowserRedirect: true
+      redirectTo: window.location.origin + '/index.html',
+      skipBrowserRedirect: false
     }
   });
   if (error) {
