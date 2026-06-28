@@ -54,7 +54,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
+        const SUPABASE_URL = 'https://vaddaisbjjtzibihjafj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
         const MAP_UNITS = 1000;
         const bounds = [[0, 0], [MAP_UNITS, MAP_UNITS]];
@@ -81,11 +81,8 @@
             const norm = normMap(k);
             if (norm === currentMapKey) return;
             if (basemapLayer) map.removeLayer(basemapLayer);
-            basemapLayer = L.imageOverlay(`./maps/${norm}.webp`, bounds, {opacity: 0}).addTo(map);
-            basemapLayer.getElement()?.addEventListener('load', () => {
-                basemapLayer.setOpacity(1);
-                currentMapKey = norm;
-            });
+            basemapLayer = L.imageOverlay(`./maps/${norm}.webp`, bounds, {opacity: 1}).addTo(map);
+            currentMapKey = norm;
         }
 
         function gameToLatLng(pos, corners) {
