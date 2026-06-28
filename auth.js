@@ -40,7 +40,7 @@ async function checkAuthAndRoles() {
 
 async function validateUserRoles(discordUserId) {
   try {
-    const response = await fetch('/api/validate-roles', {
+const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions/v1/validate-roles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
