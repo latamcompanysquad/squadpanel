@@ -9,38 +9,57 @@ if (typeof window.supabase !== 'undefined') {
 }
 
 async function loginWithDiscord() {
+  console.log("🔵 Intentando login con Discord...");
   const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
     provider: 'discord',
     options: {
       redirectTo: window.location.origin + '/auth/discord/callback'
     }
   });
-  if (error) console.error('OAuth error:', error);
+  if (error) {
+    console.error("❌ Error OAuth:", error);
+  } else {
+    console.log("✅ OAuth iniciado, data:", data);
+  }
 }
 
 async function checkAuthAndRoles() {
-  const { data: { user } } = await window.supabaseClient.auth.getUser();
+  console.log("🔍 Verificando autenticación...");
+  const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+  if (error) {
+    console.error("❌ Error al obtener usuario:", error);
+    window.location.href = '/login.html';
+    return false;
+  }
+  console.log("👤 Usuario:", user);
   
   if (!user) {
+    console.log("⛔ No hay usuario, redirigiendo a login");
     window.location.href = '/login.html';
     return false;
   }
 
   // Validar roles Discord
   if (user.user_metadata?.provider_id) {
+    console.log("🔐 Validando roles para Discord ID:", user.user_metadata.provider_id);
     const hasRole = await validateUserRoles(user.user_metadata.provider_id);
+    console.log("✅ ¿Tiene rol autorizado?", hasRole);
     if (!hasRole) {
       await window.supabaseClient.auth.signOut();
       alert('No tienes permisos. Solo staff puede acceder.');
       window.location.href = '/login.html';
       return false;
     }
+  } else {
+    console.warn("⚠️ Usuario sin provider_id en metadata");
   }
   
+  console.log("✅ Autenticación y roles OK");
   return true;
 }
 
 async function validateUserRoles(discordUserId) {
+  console.log("📡 Llamando a Edge Function validate-roles para ID:", discordUserId);
   try {
     const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions/v1/validate-roles', {
       method: 'POST',
@@ -52,9 +71,10 @@ async function validateUserRoles(discordUserId) {
       })
     });
     const result = await response.json();
+    console.log("📦 Respuesta de Edge Function:", result);
     return result.authorized;
   } catch (err) {
-    console.error('Role validation error:', err);
+    console.error("❌ Error en validación de roles:", err);
     return false;
   }
 }
