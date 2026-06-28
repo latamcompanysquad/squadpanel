@@ -64,7 +64,6 @@ async function checkAuthAndRoles() {
       await window.supabaseClient.from('staff_sessions').insert({
         user_id: user.id,
         discord_id: user.user_metadata.provider_id,
-        email: user.email,
         authorized: true
       });
       console.log("✅ Acceso registrado en staff_sessions");
