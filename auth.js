@@ -68,6 +68,13 @@ async function checkAuthAndRoles() {
       const discordName = user.user_metadata?.name || user.user_metadata?.custom_claims?.global_name || 'Unknown';
       const discordAvatar = user.user_metadata?.picture || null;
       
+      // Almacenar en variable global para usar en admin commands
+      window.currentUser = {
+        discord_id: user.user_metadata.provider_id,
+        discord_name: discordName,
+        ip_address: ipAddress
+      };
+      
       await window.supabaseClient.from('staff_sessions').insert({
         user_id: user.id,
         ip_address: ipAddress,

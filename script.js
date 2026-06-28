@@ -1200,6 +1200,10 @@ async function sendPendingCmd() {
     playerName: playerData?.name ?? selectedSteamID,
     reason,
     duration: pendingCmd === 'ban' ? 1440 : undefined,
+    // Agregar información del usuario actual que ejecuta el comando
+    discord_id: window.currentUser?.discord_id || 'unknown',
+    discord_name: window.currentUser?.discord_name || 'Unknown',
+    ip_address: window.currentUser?.ip_address || 'unknown'
   };
   cancelPendingCmd();
   await postCommand(payload);
@@ -1214,24 +1218,46 @@ function cancelPendingCmd() {
 async function sendBroadcast() {
   const msg = document.getElementById('broadcastMsg').value.trim();
   if (!msg) return toast('Escribe un mensaje primero', 'err');
-  await postCommand({ action: 'broadcast', message: msg });
+  await postCommand({ 
+    action: 'broadcast', 
+    message: msg,
+    discord_id: window.currentUser?.discord_id || 'unknown',
+    discord_name: window.currentUser?.discord_name || 'Unknown',
+    ip_address: window.currentUser?.ip_address || 'unknown'
+  });
   document.getElementById('broadcastMsg').value = '';
 }
 
 async function sendSetNextMap() {
   const mapStr = document.getElementById('nextMapInput').value.trim();
   if (!mapStr) return toast('Escribe el nombre del mapa', 'err');
-  await postCommand({ action: 'setNextMap', map: mapStr });
+  await postCommand({ 
+    action: 'setNextMap', 
+    map: mapStr,
+    discord_id: window.currentUser?.discord_id || 'unknown',
+    discord_name: window.currentUser?.discord_name || 'Unknown',
+    ip_address: window.currentUser?.ip_address || 'unknown'
+  });
   document.getElementById('nextMapInput').value = '';
 }
 
 async function sendEndMatch() {
   if (!confirm('¿Terminar el match actual?')) return;
-  await postCommand({ action: 'endMatch' });
+  await postCommand({ 
+    action: 'endMatch',
+    discord_id: window.currentUser?.discord_id || 'unknown',
+    discord_name: window.currentUser?.discord_name || 'Unknown',
+    ip_address: window.currentUser?.ip_address || 'unknown'
+  });
 }
 
 async function sendGlobal(action) {
-  await postCommand({ action });
+  await postCommand({ 
+    action,
+    discord_id: window.currentUser?.discord_id || 'unknown',
+    discord_name: window.currentUser?.discord_name || 'Unknown',
+    ip_address: window.currentUser?.ip_address || 'unknown'
+  });
 }
 
 async function postCommand(payload) {
