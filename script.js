@@ -1650,6 +1650,7 @@ function toggleSearchPanel() {
     const isHidden = panel.style.display === 'none';
     panel.style.display = isHidden ? 'flex' : 'none';
     if (isHidden) {
+      renderSearchDropdown(input.value);
       setTimeout(() => input.focus(), 100);
     } else {
       input.value = '';
