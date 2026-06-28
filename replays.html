@@ -571,7 +571,7 @@ function rShowPlayerCard(p) {
     <div class="row"><span>Estado</span><span class="val">${status}</span></div>
     <div class="row"><span>Rol</span><span class="val" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;"><img src="${roleIconPath(p,'white')}" style="width:16px;height:16px;"/>${esc(p.role??'—')}</span></div>
     ${vLine}
-    <div class="row"><span>Squad</span><span class="val">${esc(p.squadName||p.squadID??'—')}</span></div>
+    <div class="row"><span>Squad</span><span class="val">${esc(p.squadName||(p.squadID??'—'))}</span></div>
     <div class="row"><span>Steam</span><span class="val" style="font-size:9px">${esc(p.steamID)}</span></div>
   </div>`;
 }
