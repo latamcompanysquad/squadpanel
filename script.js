@@ -230,17 +230,25 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 
 // ─── FACCIONES Y ROLES ────────────────────────────────────────────────────────
 function createGridOverlay() {
-  if (gridOverlay) map.removeLayer(gridOverlay);
-  const gridGroup = L.featureGroup();
-  const gridSize = metersToMapUnits(50, { minX: 0, maxX: 1000, minY: 0, maxY: 1000 });
-  for (let x = 0; x <= MAP_UNITS; x += gridSize) {
-    L.polyline([[0, x], [MAP_UNITS, x]], { color: 'rgba(100,200,100,0.15)', weight: 0.5, dashArray: '4,4' }).addTo(gridGroup);
+  const canvas = document.createElement('canvas');
+  canvas.width = MAP_UNITS;
+  canvas.height = MAP_UNITS;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = 'rgba(100, 200, 100, 0.15)';
+  ctx.lineWidth = 1;
+  const gridSize = 100;
+  for (let i = 0; i <= MAP_UNITS; i += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, MAP_UNITS);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(MAP_UNITS, i);
+    ctx.stroke();
   }
-  for (let y = 0; y <= MAP_UNITS; y += gridSize) {
-    L.polyline([[y, 0], [y, MAP_UNITS]], { color: 'rgba(100,200,100,0.15)', weight: 0.5, dashArray: '4,4' }).addTo(gridGroup);
-  }
-  gridGroup.addTo(map);
-  gridOverlay = gridGroup;
+  const overlay = L.imageOverlay(canvas.toDataURL(), [[0, 0], [MAP_UNITS, MAP_UNITS]], { opacity: 1 });
+  overlay.addTo(map);
 }
 
 function applyFadeOutAnimation(marker) {
