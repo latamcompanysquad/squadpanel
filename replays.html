@@ -126,6 +126,7 @@
         let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
         let selectedSteamID = null;
         let followSelected = false;
+        let lastLoadedMatch = null;
         window.replayMarkers = {};
 
         // ─── CARGA DE MAPA (CORREGIDO) ──────────────────────────────────────
@@ -314,13 +315,9 @@
                     return;
                 }
                 const rawData = await res.json();
-                console.log('📸 Raw snapshots from Supabase:', rawData);
                 snapshots = (rawData || []).map(s => s.data || s) || [];
-                console.log('✅ Processed snapshots:', snapshots);
-                console.log('📊 Total snapshots:', snapshots.length);
-                if (snapshots.length > 0) {
-                    console.log('🔍 First snapshot:', snapshots[0]);
-                }
+                lastLoadedMatch = id;
+                idx = 0;
                 document.getElementById('timeline').max = snapshots.length - 1;
                 render(0);
             } catch (e) { console.error('selectMatch error:', e); }
@@ -425,7 +422,11 @@
                 }
             }
 
-            map.fitBounds(bounds);
+            // Fit bounds solo la primera vez (idx === 0)
+            if (i === 0) {
+                map.fitBounds(bounds);
+            }
+            
             idx = i;
             document.getElementById('timeline').value = i;
             document.getElementById('snap-info').textContent = `[${i}/${snapshots.length-1}]`;
