@@ -61,7 +61,7 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 
 ---
 
-### FASE 3: Iconografía Avanzada & UX 🎯 EN PROGRESO
+### FASE 3: Iconografía Avanzada & UX 🎯 ✅ COMPLETADA
 
 #### 3.1 - Objectives/Flags en mapa ✅ COMPLETADA
 - [x] Renderizar `objectives[]` del snapshot en el mapa
@@ -108,6 +108,13 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 
 ---
 
+### FASE 3.5: Control Panel & RCON Logging ✅ COMPLETADA
+- [x] Control Panel v2 interfaz mejorada
+- [x] Supabase `rcon_logs` table para auditoría de comandos
+- [x] Logging automático de ejecuciones con timestamp/player
+
+---
+
 ## 🚀 Estado General
 
 | Fase         | Estado       |
@@ -115,6 +122,7 @@ Crear un **minimapa táctico en tiempo real** sincronizado con servidor Squad, q
 | 1 (Bugs)     | ✅ Done      |
 | 2 (Backend)  | ✅ Done      |
 | 3 (UX/Icons) | ✅ Done      |
+| 3.5 (RCON)   | ✅ Done      |
 | 4 (Replay)   | —            |
 
 ---
