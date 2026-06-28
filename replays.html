@@ -267,7 +267,29 @@ const rMarkers = {};
 const rObjectiveMarkers = {};
 let rObjectiveLine = null;
 const rExpandedSquads = {};
-const rVehicleIconMap = {};
+let rVehicleIconMap = { byName: {}, byType: {} };
+
+// ── Load vehicle icon mapping ──
+fetch('vehicle_icon_mapping.json')
+  .then(r => r.json())
+  .then(data => {
+    rVehicleIconMap = {
+      byName: data.vehicles_with_named_icons || {},
+      byType: data.vehicle_type_mapping || {}
+    };
+  })
+  .catch(e => console.warn('Icon map load failed:', e));
+
+function getVehicleIcon(vehicleName, vehicleType) {
+  if (!vehicleName) return 'public__img__markers__weapons__Mortar.webp';
+  if (rVehicleIconMap.byName?.[vehicleName]) {
+    return rVehicleIconMap.byName[vehicleName];
+  }
+  if (vehicleType && rVehicleIconMap.byType?.[vehicleType]) {
+    return rVehicleIconMap.byType[vehicleType].icon;
+  }
+  return 'public__img__markers__weapons__Mortar.webp';
+}
 
 // ── Helpers ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -493,7 +515,10 @@ function rGroupByVehicle(players) {
   for (const p of players) {
     if (!p.vehicle) { solo.push(p); continue; }
     const key = p.vehicle.id ? `veh_${p.vehicle.id}` : `veh_${p.vehicle.name}_${p.teamID}`;
-    if (!groups[key]) groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', teamID:p.teamID, occupants:[], position:null, icon:null };
+    if (!groups[key]) {
+      const iconPath = getVehicleIcon(p.vehicle.name, p.vehicle.type);
+      groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', teamID:p.teamID, occupants:[], position:null, icon:iconPath };
+    }
     groups[key].occupants.push(p);
     if (!groups[key].position && p.position) groups[key].position = p.position;
   }
