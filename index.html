@@ -66,37 +66,39 @@
         </div>
       </div>
 
-      <div id="chatWrapper" style="position:absolute;top:60px;left:10px;z-index:800;">
-        <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
-          <div class="map-ctrl-btn" id="btnChatToggle" onclick="toggleChatPanel()" title="Chat" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">💬 CHAT</div>
-        </div>
-        <div id="chatPanel" style="display:none;width:340px;max-height:420px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
-          <div style="padding:8px 12px;border-bottom:1px solid var(--panel-edge);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;color:var(--olive);">
-            <span>💬 Chat Live</span>
-            <span onclick="toggleChatPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);transition:color .15s;">✕</span>
+      <div id="leftPanels" style="position:absolute;top:60px;left:10px;z-index:800;display:flex;flex-direction:column;gap:6px;">
+        <div id="chatWrapper">
+          <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
+            <div class="map-ctrl-btn" id="btnChatToggle" onclick="toggleChatPanel()" title="Chat" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">💬 CHAT</div>
           </div>
-          <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px;">
-            <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:white;border-radius:1px;"></span><span style="color:var(--text-dim);">[ALL]</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--olive);border-radius:1px;"></span><span style="color:var(--text-dim);">[SQ]</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--blue);border-radius:1px;"></span><span style="color:var(--text-dim);">[T]</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--red);border-radius:1px;"></span><span style="color:var(--text-dim);">[ADMIN]</span></div>
+          <div id="chatPanel" style="display:none;width:340px;max-height:420px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--panel-edge);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;color:var(--olive);">
+              <span>💬 Chat Live</span>
+              <span onclick="toggleChatPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);transition:color .15s;">✕</span>
+            </div>
+            <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px;">
+              <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:white;border-radius:1px;"></span><span style="color:var(--text-dim);">[ALL]</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--olive);border-radius:1px;"></span><span style="color:var(--text-dim);">[SQ]</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--blue);border-radius:1px;"></span><span style="color:var(--text-dim);">[T]</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:var(--red);border-radius:1px;"></span><span style="color:var(--text-dim);">[ADMIN]</span></div>
+            </div>
+            <div id="chatPanelMessages" style="flex:1;overflow-y:auto;padding:8px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;max-height:320px;"></div>
           </div>
-          <div id="chatPanelMessages" style="flex:1;overflow-y:auto;padding:8px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;max-height:320px;"></div>
         </div>
-      </div>
 
-      <div id="searchWrapper" style="position:absolute;top:120px;left:10px;z-index:800;">
-        <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
-          <div class="map-ctrl-btn" id="btnSearchToggle" onclick="toggleSearchPanel()" title="Buscar" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">🔍 BUSCAR</div>
-        </div>
-        <div id="searchPanelOverlay" style="display:none;width:340px;max-height:420px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
-          <div style="padding:8px 12px;border-bottom:1px solid var(--panel-edge);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;color:var(--olive);">
-            <span>🔍 Buscar Jugador</span>
-            <span onclick="toggleSearchPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);transition:color .15s;">✕</span>
+        <div id="searchWrapper">
+          <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
+            <div class="map-ctrl-btn" id="btnSearchToggle" onclick="toggleSearchPanel()" title="Buscar" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">🔍 BUSCAR</div>
           </div>
-          <div style="padding:8px;display:flex;flex-direction:column;gap:6px;">
-            <input id="searchInputOverlay" type="text" placeholder="Nombre o Steam ID..." oninput="onSearchInput(this.value)" autocomplete="off" style="background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-radius:3px;box-sizing:border-box;"/>
-            <div id="searchDropdownOverlay" style="flex:1;overflow-y:auto;max-height:320px;border:1px solid var(--panel-edge);border-radius:3px;background:#0d120b;"></div>
+          <div id="searchPanelOverlay" style="display:none;width:340px;max-height:420px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);">
+            <div style="padding:8px 12px;border-bottom:1px solid var(--panel-edge);font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;color:var(--olive);">
+              <span>🔍 Buscar Jugador</span>
+              <span onclick="toggleSearchPanel()" style="cursor:pointer;font-size:14px;color:var(--text-dim);transition:color .15s;">✕</span>
+            </div>
+            <div style="padding:8px;display:flex;flex-direction:column;gap:6px;">
+              <input id="searchInputOverlay" type="text" placeholder="Nombre o Steam ID..." oninput="onSearchInput(this.value)" autocomplete="off" style="background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-radius:3px;box-sizing:border-box;"/>
+              <div id="searchDropdownOverlay" style="flex:1;overflow-y:auto;max-height:320px;border:1px solid var(--panel-edge);border-radius:3px;background:#0d120b;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -105,7 +107,6 @@
     <div id="side">
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
-        <div class="side-tab" onclick="switchTab('search')">Buscar</div>
         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
       </div>
       <div id="sideContent">
@@ -117,13 +118,6 @@
           <div>
             <div class="panel-title">TOTAL <span id="totalCount" style="font-size:13px;">0</span> <span style="font-size:10px;color:var(--text-dim);">(en mapa <span id="playerCount">0</span>)</span></div>
             <div id="playerList"></div>
-          </div>
-        </div>
-        <div id="tabSearch">
-          <div id="searchPanel">
-            <div class="panel-title">Buscar jugador</div>
-            <input id="searchInput" type="text" placeholder="Nombre o Steam ID..." oninput="onSearchInput(this.value)" autocomplete="off"/>
-            <div id="searchDropdown"></div>
           </div>
         </div>
         <div id="tabAdmin">

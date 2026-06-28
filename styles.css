@@ -269,3 +269,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 #chatPanelMessages::-webkit-scrollbar-thumb:hover{
   background:var(--olive);
 }
+
+/* Search Dropdown Scrollbar */
+#searchDropdownOverlay::-webkit-scrollbar{
+  width:6px;
+}
+#searchDropdownOverlay::-webkit-scrollbar-track{
+  background:rgba(11,15,12,.5);
+  border-radius:3px;
+}
+#searchDropdownOverlay::-webkit-scrollbar-thumb{
+  background:var(--olive-dim);
+  border-radius:3px;
+  border:1px solid var(--olive);
+}
+#searchDropdownOverlay::-webkit-scrollbar-thumb:hover{
+  background:var(--olive);
+}
