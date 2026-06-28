@@ -104,13 +104,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.modData = null;
     this.broadcastCount = 0;
 
-    generateMatchID() {
-      const now = new Date();
-      const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-      const rand = Math.random().toString(36).slice(2, 8);
-      return `match_${dateStr}_${timeStr}_${rand}`;
-    }
+    // Elimina la definición de generateMatchID de aquí
 
     this.namedIcons = {};
     this.typeIcons = {};
@@ -118,9 +112,18 @@ export default class SquadPanelBroadcast extends BasePlugin {
     this.namedIconsNorm = {};
     this.nameToTypeNorm = {};
     this.chatBuffer = [];
-    this.matchID = this.generateMatchID();
+    this.matchID = this.generateMatchID();   // ✅ ahora funciona
     this.snapshotCounter = 0;
     this._unmatchedVehicleNames = new Set();
+  }
+
+  // ✅ Define el método aquí, a la altura de otros métodos
+  generateMatchID() {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `match_${dateStr}_${timeStr}_${rand}`;
   }
 
   async mount() {
