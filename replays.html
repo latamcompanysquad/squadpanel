@@ -7,19 +7,33 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <style>
-        body { display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 300px; background: #1a1a1a; border-right: 1px solid #333; overflow-y: auto; }
+        :root{
+          --bg:#0b0f0c; --panel:#11160f; --panel-edge:#26301f;
+          --olive:#7c8f55; --olive-dim:#4a5638; --amber:#d9a441;
+          --text:#d8d9c9; --text-dim:#8a9080;
+          --blue:#4fa6e8; --blue-dim:#1c3a52;
+          --red:#e0584f;  --red-dim:#4a2220;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { display: flex; height: 100vh; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; }
+        #sidebar { width: 300px; background: var(--panel); border-right: 1px solid var(--panel-edge); overflow-y: auto; }
         #main { flex: 1; display: flex; flex-direction: column; }
-        #map-container { flex: 1; background: #000; }
-        #scrubber-panel { background: #222; padding: 15px; border-top: 1px solid #333; }
-        .match-item { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; transition: all 0.2s; }
-        .match-item:hover { background: #2a2a2a; }
+        #map-container { flex: 1; background: #05070a; }
+        #scrubber-panel { background: var(--panel); padding: 15px; border-top: 1px solid var(--panel-edge); }
+        .match-item { padding: 12px; border-bottom: 1px solid var(--panel-edge); cursor: pointer; transition: all 0.2s; }
+        .match-item:hover { background: #1a1f18; }
         #scrubber { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         input[type="range"] { flex: 1; }
-        button { background: #0066cc; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
-        .match-title { color: #fff; font-weight: bold; }
-        .match-meta { color: #aaa; font-size: 12px; margin-top: 5px; }
-        .info-text { color: #aaa; font-size: 12px; }
+        button { background: var(--olive); color: var(--text); border: 1px solid var(--panel-edge); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+        button:hover { opacity: 0.85; background: var(--olive-dim); }
+        .match-title { color: var(--text); font-weight: bold; }
+        .match-meta { color: var(--text-dim); font-size: 12px; margin-top: 5px; }
+        .info-text { color: var(--text-dim); font-size: 12px; }
+        .leaflet-tooltip { background: rgba(11, 15, 12, 0.95); color: var(--text); border: 1px solid var(--panel-edge); border-radius: 2px; padding: 6px 8px; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        .leaflet-tooltip.leaflet-tooltip-bottom:before { border-bottom-color: var(--panel-edge); }
+        .leaflet-control-zoom { border: 1px solid var(--panel-edge); border-radius: 2px; }
+        .leaflet-control-zoom-in, .leaflet-control-zoom-out { background: var(--panel); color: var(--text); border-bottom: 1px solid var(--panel-edge); }
+        .leaflet-control-zoom-in:hover, .leaflet-control-zoom-out:hover { background: var(--olive); }
     </style>
 </head>
 <body>
@@ -105,7 +119,126 @@
 
         let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
 
-        function loadMap(mapName) {
+        // ─── ICONOS DE ROLES Y UTILIDADES ─────────────────────────────────────
+        function roleIconName(p) {
+          const r = (p.role || '').toLowerCase();
+          if (p.isLeader) {
+            if (r.includes('sl_crewman') || r.includes('slcrewman'))  return 'crewman_squadleader';
+            if (r.includes('sl_pilot')   || r.includes('slpilot'))    return 'pilot_squadleader';
+            return 'squadleader';
+          }
+          if (r.includes('automaticrifleman_optic')) return 'automaticrifleman_optic';
+          if (r.includes('automaticrifleman') || r.includes('autorifleman') || r.includes('automatic_rifleman')) return 'automaticrifleman';
+          if (r.includes('crewman'))            return 'crewman';
+          if (r.includes('designatedmarksman') || r.includes('marksman')) return 'designatedmarksman';
+          if (r.includes('heavyantitank') || r.includes('heavy_at') || r.includes('hat')) return 'heavyantitank';
+          if (r.includes('lightantitank')  || r.includes('light_at') || r.includes('lat')) return 'lightantitank';
+          if (r.includes('machinegunner') || r.includes('machinegunner')) return 'machinegunner';
+          if (r.includes('medic'))              return 'medic';
+          if (r.includes('pilot'))              return 'pilot';
+          if (r.includes('raider'))             return 'raider';
+          if (r.includes('recruit') || r.includes('plain') || r.includes('unarmed')) return 'recruit';
+          if (r.includes('rifleman_scoped') || r.includes('rifleman2') || r.includes('rifleman_02') || r.includes('rifleman_03')) return 'rifleman_scoped';
+          if (r.includes('rifleman'))           return 'rifleman';
+          if (r.includes('sapper'))             return 'sapper';
+          if (r.includes('scout'))              return 'scout';
+          if (r.includes('sniper'))             return 'sniper';
+          if (r.includes('grenadier'))          return 'grenadier';
+          if (r.includes('engineer'))           return 'engineer';
+          return 'rifleman';
+        }
+
+        function roleIconPath(p, variant) {
+          const name = roleIconName(p);
+          if (variant === 'white') {
+            return `./resources/Role_Icons_Squad_White/T_role_${name}.webp`;
+          }
+          const teamFolder = p.teamID === 1 ? 'Role_Icons_Squad_Blue' : 'Role_Icons_Squad_Red';
+          const teamSuffix = p.teamID === 1 ? 'blue' : 'red';
+          return `./resources/${teamFolder}/T_role_${name}_${teamSuffix}.png`;
+        }
+
+        function esc(s) {
+          return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function makeTooltipContent(p) {
+          const tc = p.teamID === 1 ? 'tip-t1' : 'tip-t2';
+          const tl = `T${p.teamID}`;
+          const icon = roleIconName(p);
+          const role = icon.replace(/_/g,' ');
+          const veh = p.vehicle ? `<div style="font-size:10px;color:var(--amber);">🚗 ${esc(p.vehicle.name || p.vehicle)}</div>` : '';
+          const squad = p.squadID ? `<div style="font-size:10px;color:var(--text-dim);">Squad ${p.squadID}</div>` : '';
+          const leader = p.isLeader ? '<div style="font-size:10px;color:var(--amber);">★ Squad Leader</div>' : '';
+          return `<div style="font-weight:600;"><span style="color:var(--blue);">[${tl}]</span> ${esc(p.name)}</div><div style="font-size:10px;color:var(--text-dim);">${role}</div>${squad}${leader}${veh}`;
+        }
+
+        function makeIcon(p, selected) {
+          const color = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
+          const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+
+          if (!p.isAlive && p.position) {
+            const iconName = roleIconName(p);
+            const iconSrc = roleIconPath(p, 'team');
+            const xColor = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
+            const iconHtml = `<div style="position:relative;width:28px;height:28px;${ringStyle}"><img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;opacity:.45;filter:grayscale(.6) drop-shadow(0 0 1px #000a);"/><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:${xColor};text-shadow:0 0 3px #000,0 0 3px #000;">✕</div></div>`;
+            return L.divIcon({ html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
+          }
+
+          if (p.vehicle) {
+            let vehicleEmoji = '🚚';
+            const v = (p.vehicle.name || p.vehicle).toLowerCase();
+            if (v.includes('tank') || v.includes('mbt')) vehicleEmoji = '🎯';
+            else if (v.includes('helo') || v.includes('heli') || v.includes('ch-146') || v.includes('z-8')) vehicleEmoji = '🚁';
+            else if (v.includes('logi') || v.includes('logistics')) vehicleEmoji = '🚚';
+            else if (v.includes('mrap') || v.includes('tigr') || v.includes('tapv')) vehicleEmoji = '🚙';
+            else if (v.includes('ifv') || v.includes('apc')) vehicleEmoji = '🚌';
+            const iconHtml = `<div style="width:28px;height:28px;background:${color};border-radius:50%;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 4px rgba(0,0,0,0.8);${ringStyle}">${vehicleEmoji}</div>`;
+            return L.divIcon({ html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
+          }
+
+          const iconName = roleIconName(p);
+          const iconSrc = roleIconPath(p, 'team');
+          const roleImg = `<img src="${iconSrc}" alt="${iconName}" style="position:absolute;inset:1px;width:26px;height:26px;image-rendering:auto;filter:drop-shadow(0 0 1px #000a);"/>`;
+          const vehicleBadge = p.vehicle ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:2px;background:#d9a441;border:1px solid #000;display:flex;align-items:center;justify-content:center;font-size:6px;">🚗</div>` : '';
+          const html = `<div style="position:relative;width:28px;height:28px;${ringStyle}">${roleImg}${vehicleBadge}</div>`;
+          return L.divIcon({ html, iconSize: [28, 28], iconAnchor: [14, 14], className: '' });
+        }
+
+        function makeVehicleIcon(group, selected) {
+          const color = group.teamID === 1 ? '#4fa6e8' : '#e0584f';
+          const ringStyle = selected ? 'box-shadow:0 0 0 2px #d9a441;border-radius:50%;' : '';
+          const count = group.occupants ? group.occupants.length : 0;
+          let iconUrl = group.icon || 'public__img__markers__weapons__test.webp';
+          if (!iconUrl.startsWith('resources/')) {
+            iconUrl = 'resources/' + iconUrl;
+          }
+          const isEmpty = count === 0;
+          const opacityStyle = isEmpty ? 'opacity:0.6;' : '';
+          const html = `<div style="width:32px;height:32px;background:${color};border-radius:50%;border:2px solid #000;display:flex;align-items:center;justify-content:center;box-shadow:0 0 4px rgba(0,0,0,0.8);${ringStyle};${opacityStyle};position:relative;overflow:hidden;"><img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;" />${count > 0 ? `<span style="position:absolute;bottom:-2px;right:-2px;background:#1a1a1a;color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;font-weight:bold;display:flex;align-items:center;justify-content:center;border:1px solid #000;">${count}</span>` : ''}</div>`;
+          return L.divIcon({ html, iconSize: [32, 32], iconAnchor: [16, 16], className: '' });
+        }
+
+        function objectiveColor(owningTeam) {
+          const t = parseInt(owningTeam, 10);
+          return t === 1 ? '#4fa6e8' : t === 2 ? '#e0584f' : '#9aa092';
+        }
+
+        function isMainObjective(o) {
+          return o.name && o.name.toLowerCase().includes('main');
+        }
+
+        function makeObjectiveIcon(owningTeam, isMain) {
+          const color = objectiveColor(owningTeam);
+          let svg;
+          if (isMain) {
+            svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36"><line x1="14" y1="4" x2="14" y2="33" stroke="#1a1a1a" stroke-width="2"/><circle cx="14" cy="13" r="9" fill="${color}" stroke="#000" stroke-width="1.5" opacity="0.95"/><text x="14" y="17" text-anchor="middle" font-size="8" fill="#fff" font-family="sans-serif" font-weight="bold">M</text><circle cx="14" cy="33" r="2.5" fill="#000"/></svg>`;
+            return L.divIcon({ html: svg, iconSize:[28,36], iconAnchor:[14,33], className:'' });
+          }
+          svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="32" viewBox="0 0 26 32"><line x1="4" y1="2" x2="4" y2="29" stroke="#1a1a1a" stroke-width="2"/><path d="M4 3 L22 7.5 L4 13 Z" fill="${color}" stroke="#000" stroke-width="1" opacity="0.95"/><circle cx="4" cy="29" r="2.5" fill="#000"/></svg>`;
+          return L.divIcon({ html: svg, iconSize:[26,32], iconAnchor:[4,29], className:'' });
+        }
+
             const mapKey = getMapKeyFromName(mapName);
             if (!mapKey) { console.error('❌ Map not found:', mapName); return; }
             if (mapKey === currentMapKey) return;
@@ -155,18 +288,15 @@
         }
 
         function render(i) {
-            if (!snapshots[i]) {
-                console.warn(`❌ No snapshot at index ${i}`);
-                return;
-            }
+            if (!snapshots[i]) return;
             const snap = snapshots[i];
-            console.log(`🎬 Rendering snapshot ${i}:`, snap);
-            
             loadMap(snap.layer || snap.map);
-
-            Object.values({...document.querySelectorAll('.leaflet-marker-pane div')}).forEach(m => {
-                try { map.removeLayer(m); } catch(e) {}
-            });
+            
+            // Limpiar markers
+            for (let key in window.replayMarkers || {}) {
+                map.removeLayer(window.replayMarkers[key]);
+            }
+            window.replayMarkers = {};
 
             let corn = null;
             if (snap.cornerZero && snap.cornerOne) {
@@ -176,7 +306,6 @@
                     minY: Math.min(snap.cornerZero.y, snap.cornerOne.y),
                     maxY: Math.max(snap.cornerZero.y, snap.cornerOne.y)
                 };
-                console.log('📐 Corners from snapshot:', corn);
             } else {
                 const mapKey = getMapKeyFromName(snap.layer || snap.map);
                 const c = MAP_CORNERS[mapKey];
@@ -184,40 +313,65 @@
                     minX: Math.min(c.c0[0], c.c1[0]), maxX: Math.max(c.c0[0], c.c1[0]),
                     minY: Math.min(c.c0[1], c.c1[1]), maxY: Math.max(c.c0[1], c.c1[1])
                 };
-                console.log('📐 Corners from MAP_CORNERS:', corn);
+            }
+            if (!corn) return;
+
+            // Renderizar vehículos (agrupados)
+            const vehicleGroups = {};
+            if (snap.vehicles) {
+                snap.vehicles.forEach(v => {
+                    if (!v.position) return;
+                    const key = `veh_${v.id || v.name}_${v.teamID}`;
+                    if (!vehicleGroups[key]) {
+                        vehicleGroups[key] = {
+                            vehicleId: v.id || key,
+                            vehicleName: v.name || 'Vehículo',
+                            teamID: v.teamID,
+                            occupants: [],
+                            position: v.position,
+                            icon: v.icon || null
+                        };
+                    }
+                });
+            }
+            
+            for (const key in vehicleGroups) {
+                const v = vehicleGroups[key];
+                const ll = gameToLatLng(v.position, corn);
+                const icon = makeVehicleIcon(v, false);
+                const m = L.marker(ll, { icon }).addTo(map);
+                const tooltipText = `🚗 ${esc(v.vehicleName)} [T${v.teamID}]`;
+                m.bindTooltip(tooltipText, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                window.replayMarkers[key] = m;
             }
 
-            if (!corn) {
-                console.error('❌ No corners available for map', snap.layer || snap.map);
-                return;
+            // Renderizar players individuales
+            if (snap.players) {
+                snap.players.forEach(p => {
+                    if (!p.position || vehicleGroups[`veh_${p.vehicle?.id || p.vehicle}_${p.teamID}`]) return;
+                    const key = `player_${p.steamID}`;
+                    const ll = gameToLatLng(p.position, corn);
+                    const icon = makeIcon(p, false);
+                    const m = L.marker(ll, { icon }).addTo(map);
+                    m.bindTooltip(makeTooltipContent(p), { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                    window.replayMarkers[key] = m;
+                });
             }
 
-            console.log(`👥 Players:`, snap.players?.length || 0);
-            (snap.players || []).forEach(p => {
-                if (!p.position) return;
-                const col = p.teamID === 1 ? '#4fa6e8' : '#e0584f';
-                L.circleMarker(gameToLatLng(p.position, corn), {
-                    radius: 5, fillColor: col, fillOpacity: 0.8, weight: 1, color: '#fff'
-                }).addTo(map).bindPopup(p.name);
-            });
-
-            console.log(`🚗 Vehicles:`, snap.vehicles?.length || 0);
-            (snap.vehicles || []).forEach(v => {
-                if (!v.position) return;
-                const col = v.teamID === 1 ? '#4fa6e8' : '#e0584f';
-                L.circleMarker(gameToLatLng(v.position, corn), {
-                    radius: 7, fillColor: col, fillOpacity: 0.6, weight: 2, color: '#ffff00'
-                }).addTo(map).bindPopup(v.type);
-            });
-
-            console.log(`🚩 Objectives:`, snap.objectives?.length || 0);
-            (snap.objectives || []).forEach(o => {
-                if (!o.position) return;
-                const col = o.owningTeam === 1 ? '#0066ff' : o.owningTeam === 2 ? '#ff3333' : '#888';
-                L.circleMarker(gameToLatLng(o.position, corn), {
-                    radius: 6, fillColor: col, fillOpacity: 0.4, weight: 2, color: col
-                }).addTo(map).bindPopup(o.name);
-            });
+            // Renderizar objetivos
+            if (snap.objectives) {
+                snap.objectives.forEach(o => {
+                    if (!o.position) return;
+                    const key = `obj_${o.name}`;
+                    const ll = gameToLatLng(o.position, corn);
+                    const isMain = isMainObjective(o);
+                    const icon = makeObjectiveIcon(o.owningTeam, isMain);
+                    const m = L.marker(ll, { icon }).addTo(map);
+                    const ownerText = o.owningTeam === 1 ? 'T1' : o.owningTeam === 2 ? 'T2' : 'Neutral';
+                    m.bindTooltip(`${o.name} [${ownerText}]`, { permanent: false, direction: 'top', offset: [0,-14], className: 'leaflet-tooltip' });
+                    window.replayMarkers[key] = m;
+                });
+            }
 
             map.fitBounds(bounds);
             idx = i;
@@ -225,7 +379,6 @@
             document.getElementById('snap-info').textContent = `[${i}/${snapshots.length-1}]`;
             document.getElementById('time-info').textContent = `[${String(Math.floor(i*2/60)).padStart(2,'0')}:${String(Math.floor(i*2%60)).padStart(2,'0')}]`;
             document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
-            console.log('✅ Snapshot rendered');
         }
 
         function play() {
