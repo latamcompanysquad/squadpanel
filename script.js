@@ -975,9 +975,12 @@ function switchTab(tab) {
   document.querySelectorAll('.side-tab').forEach((el, i) => {
     el.classList.toggle('active', tabs[i] === tab);
   });
-  document.getElementById('tabPlayers').classList.toggle('show', tab === 'players');
-  document.getElementById('tabAdmin').classList.toggle('show', tab === 'admin');
-  document.getElementById('tabChat').classList.toggle('show', tab === 'chat');
+  const tabPlayers = document.getElementById('tabPlayers');
+  const tabAdmin = document.getElementById('tabAdmin');
+  const tabChat = document.getElementById('tabChat');
+  if (tabPlayers) tabPlayers.classList.toggle('show', tab === 'players');
+  if (tabAdmin) tabAdmin.classList.toggle('show', tab === 'admin');
+  if (tabChat) tabChat.classList.toggle('show', tab === 'chat');
   if (tab === 'chat') {
     scrollChatToBottom();
     if (currentMapKey) {
