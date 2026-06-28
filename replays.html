@@ -654,6 +654,103 @@ function rToggleSquad(key) {
   if (snap && snap.players) rUpdatePlayerList(snap.players);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// FOB / HAB / RALLY / AMMO — paridad con script.js
+// ═══════════════════════════════════════════════════════════════════
+let rFobLayer = null, rRallyLayer = null, rAmmoLayer = null;
+
+function rGetDeployableIcon(type, teamID, active=true) {
+  const tid = parseInt(teamID,10);
+  let suf = tid===1?'BLUE':tid===2?'RED':'WHITE';
+  if (!active) suf = 'WHITE';
+  const base = type==='fob'?'MAP_FOB':type==='hab'?'MAP_HAB':type==='ammo'?'MAP_AMMOCRATE':'MAP_RALLY';
+  return `./resources/${base}_${suf}.svg`;
+}
+
+function rInitLayer(ref, name) {
+  if (!ref) {
+    if (name==='fob') {
+      try { rMap.createPane('rFobsPane'); rMap.getPane('rFobsPane').style.zIndex=450; } catch(e){}
+      rFobLayer = L.featureGroup({pane:'rFobsPane'}).addTo(rMap);
+    } else if (name==='rally') {
+      rRallyLayer = L.featureGroup().addTo(rMap);
+    } else {
+      rAmmoLayer = L.featureGroup().addTo(rMap);
+    }
+  } else {
+    ref.clearLayers();
+  }
+}
+
+function rClearLayers() {
+  if (rFobLayer)   rFobLayer.clearLayers();
+  if (rRallyLayer) rRallyLayer.clearLayers();
+  if (rAmmoLayer)  rAmmoLayer.clearLayers();
+}
+
+function rRenderFob(fob, corn) {
+  let tid = parseInt(fob.teamID,10);
+  if (isNaN(tid)||(tid!==1&&tid!==2)) tid=1;
+  const isHab   = fob.isHab===true;
+  const isActive= fob.isActive!==false;
+  const pos     = fob.pos||{x:0,y:0};
+  const ll      = gameToLatLng(pos, corn);
+  const habName = fob.habName||(isHab?`HAB${tid}`:`FOB${tid}`);
+  const constructR = fob.construct_radius||15000;
+  const exclusionR = fob.exclusion_radius||30000;
+
+  if (!isHab) {
+    const cols = tid===1?{ex:'#2a7ab0',co:'#4fa6e8'}:{ex:'#b33a30',co:'#e0584f'};
+    const xRange = Math.abs(corn.maxX-corn.minX);
+    const toU = m => Math.abs(m/xRange)*MAP_UNITS;
+    L.circle(ll,{radius:toU(exclusionR),color:cols.ex,weight:2.5,fillOpacity:.03,dashArray:'4,5'}).addTo(rFobLayer);
+    L.circle(ll,{radius:toU(constructR),color:cols.co,weight:2.5,fillOpacity:.05}).addTo(rFobLayer);
+  }
+  const iconType = isHab?'hab':'fob';
+  const iconUrl  = rGetDeployableIcon(iconType, tid, isActive);
+  const sz = isHab?30:24;
+  const xOver = isHab&&!isActive?`<div style="position:absolute;top:-6px;right:-6px;font-size:16px;color:#ff0000;font-weight:bold;text-shadow:0 0 3px #000;line-height:1;">✕</div>`:'';
+  const html = `<div style="position:relative;width:${sz}px;height:${sz}px;"><img src="${iconUrl}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 2px rgba(0,0,0,.6));"/>${xOver}</div>`;
+  const icon = L.divIcon({html,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:'fob-icon'});
+  const m = L.marker(ll,{icon}).addTo(rFobLayer);
+  const statusTxt = isHab?(isActive?'🟢 Activo':'🔴 Inactivo'):'';
+  m.bindTooltip(`<strong>${esc(habName)}</strong><br/>Team ${tid}${isHab?'<br/>'+statusTxt:''}`,{className:'squad-tip',direction:'top'});
+}
+
+function rRenderRally(rally, corn) {
+  let tid = parseInt(rally.teamID,10);
+  if (isNaN(tid)||(tid!==1&&tid!==2)) tid=1;
+  const ll  = gameToLatLng(rally.pos||{x:0,y:0}, corn);
+  const url = rGetDeployableIcon('rally',tid,true);
+  const html= `<img src="${url}" style="width:24px;height:24px;filter:drop-shadow(0 0 2px rgba(0,0,0,.6));"/>`;
+  const icon= L.divIcon({html,iconSize:[24,24],iconAnchor:[12,12],className:'rally-icon'});
+  L.marker(ll,{icon}).addTo(rRallyLayer)
+    .bindTooltip(`Squad ${rally.squadID||'?'} Rally (T${tid})`,{className:'squad-tip',direction:'top'});
+}
+
+function rRenderAmmo(ammo, corn) {
+  let tid = parseInt(ammo.teamID,10);
+  if (isNaN(tid)||(tid!==1&&tid!==2)) tid=1;
+  const isBuilt = (ammo.state||'Completed')==='Completed';
+  const ll  = gameToLatLng(ammo.pos||{x:0,y:0}, corn);
+  const url = rGetDeployableIcon('ammo',tid,true);
+  const html= `<img src="${url}" style="width:24px;height:24px;filter:drop-shadow(0 0 2px rgba(0,0,0,.6));${!isBuilt?'opacity:.5;':''}"/>`;
+  const icon= L.divIcon({html,iconSize:[24,24],iconAnchor:[12,12],className:'ammo-icon'});
+  L.marker(ll,{icon}).addTo(rAmmoLayer)
+    .bindTooltip(`Ammo T${tid} ${isBuilt?'✅':'🚧'}`,{className:'squad-tip',direction:'top'});
+}
+
+function rUpdateDeployables(snap, corn) {
+  // init/clear layers
+  rInitLayer(rFobLayer,'fob');   rFobLayer   = rFobLayer   || L.featureGroup().addTo(rMap);
+  rInitLayer(rRallyLayer,'rally'); rRallyLayer = rRallyLayer || L.featureGroup().addTo(rMap);
+  rInitLayer(rAmmoLayer,'ammo');  rAmmoLayer  = rAmmoLayer  || L.featureGroup().addTo(rMap);
+
+  if (snap.fobs?.length)        snap.fobs.forEach(f=>{ try{rRenderFob(f,corn);}catch(e){} });
+  if (snap.rallyPoints?.length) snap.rallyPoints.forEach(r=>{ try{rRenderRally(r,corn);}catch(e){} });
+  if (snap.ammocrates?.length)  snap.ammocrates.forEach(a=>{ try{rRenderAmmo(a,corn);}catch(e){} });
+}
+
 // ── Render snapshot ──
 function rRender(i) {
   if (!rSnapshots[i]) return;
@@ -666,6 +763,7 @@ function rRender(i) {
   rUpdateHUD(snap);
   if (snap.objectives && snap.objectives.length) rUpdateObjectives(snap.objectives, corn);
   rUpdateMarkers(snap, corn);
+  rUpdateDeployables(snap, corn);
   if (snap.players) rUpdatePlayerList(snap.players);
 
   // status text
@@ -711,6 +809,7 @@ function rToggleFilter(key) {
   if (!corn) return;
   if (snap.objectives) rUpdateObjectives(snap.objectives, corn);
   rUpdateMarkers(snap, corn);
+  rUpdateDeployables(snap, corn);
   if (snap.players) rUpdatePlayerList(snap.players);
 }
 function rToggleFollow() {
@@ -781,6 +880,7 @@ async function rSelectMatch(id) {
     for(const id of Object.keys(rMarkers)){ rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
     for(const id of Object.keys(rObjectiveMarkers)){ rMap.removeLayer(rObjectiveMarkers[id]); delete rObjectiveMarkers[id]; }
     if(rObjectiveLine){ rMap.removeLayer(rObjectiveLine); rObjectiveLine=null; }
+    rClearLayers();
     rRender(0);
   } catch(e){ document.getElementById('rStatusText').textContent='Error'; }
 }
