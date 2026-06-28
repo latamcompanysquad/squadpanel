@@ -229,28 +229,6 @@ function metersToMapUnits(meters, corners) {
 function lerp(a, b, t) { return a + (b - a) * t; }
 
 // ─── FACCIONES Y ROLES ────────────────────────────────────────────────────────
-function createGridOverlay() {
-  const canvas = document.createElement('canvas');
-  canvas.width = MAP_UNITS;
-  canvas.height = MAP_UNITS;
-  const ctx = canvas.getContext('2d');
-  ctx.strokeStyle = 'rgba(100, 200, 100, 0.15)';
-  ctx.lineWidth = 1;
-  const gridSize = 100;
-  for (let i = 0; i <= MAP_UNITS; i += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, MAP_UNITS);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(MAP_UNITS, i);
-    ctx.stroke();
-  }
-  const overlay = L.imageOverlay(canvas.toDataURL(), [[0, 0], [MAP_UNITS, MAP_UNITS]], { opacity: 1 });
-  overlay.addTo(map);
-}
-
 function applyFadeOutAnimation(marker) {
   const el = marker.getElement();
   if (el) {
@@ -1522,7 +1500,6 @@ async function poll() {
         lastSnapshot = null;
       }
       loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
-      createGridOverlay();
       const chatMapKey = mapKey || currentMapKey;
     }
 
