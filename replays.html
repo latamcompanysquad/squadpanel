@@ -797,30 +797,60 @@ function rPlay() {
   if (!rSnapshots.length) return;
   rPlaying = !rPlaying;
   if (rPlaying) {
-    const speed = parseFloat(document.getElementById('rSpeed').value);
-    const getNextDelay = () => {
+    const speed = parseFloat(document.getElementById('rSpeed').value) || 1;
+    // Usamos setTimeout recursivo para recalcular en cada paso
+    const tick = () => {
+      if (!rPlaying) return;
       if (rIdx + 1 < rSnapshots.length) {
         const cur = rSnapshots[rIdx].timestamp || new Date(rSnapshots[rIdx].created_at).getTime();
         const next = rSnapshots[rIdx+1].timestamp || new Date(rSnapshots[rIdx+1].created_at).getTime();
-        return Math.max(50, (next - cur) / speed);
+        const delta = next - cur;
+        const delay = delta > 0 ? Math.max(50, delta / speed) : 2000 / speed;
+        rTimer = setTimeout(() => {
+          if (rIdx < rSnapshots.length-1) {
+            rRender(++rIdx);
+            tick();
+          } else {
+            rPlaying = false;
+            rRender(rIdx);
+            document.getElementById('rPlayBtn').textContent = '▶';
+          }
+        }, delay);
+      } else {
+        rPlaying = false;
+        rRender(rIdx);
+        document.getElementById('rPlayBtn').textContent = '▶';
       }
-      return 2000 / speed;
     };
-    rTimer = setInterval(()=>{
-      if (rIdx < rSnapshots.length-1) rRender(++rIdx);
-      else { rPlaying = false; clearInterval(rTimer); rRender(rIdx); }
-    }, getNextDelay());
-  } else clearInterval(rTimer);
+    tick();
+  } else {
+    clearInterval(rTimer);
+    rTimer = null;
+  }
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 }
 
 function rSeek(delta) {
-  rPlaying=false; clearInterval(rTimer);
-  rRender(Math.max(0, Math.min(rIdx+delta, rSnapshots.length-1)));
+  rPlaying = false;
+  clearInterval(rTimer);
+  rTimer = null;
+  rRender(Math.max(0, Math.min(rIdx + delta, rSnapshots.length - 1)));
 }
-function rOnScrub(val) { rPlaying=false; clearInterval(rTimer); rRender(parseInt(val)); }
-function rOnSpeedChange() { if(rPlaying){ clearInterval(rTimer); rPlaying=false; rPlay(); } }
 
+function rOnScrub(val) {
+  rPlaying = false;
+  clearInterval(rTimer);
+  rTimer = null;
+  rRender(parseInt(val));
+}
+
+function rOnSpeedChange() {
+  if (rPlaying) {
+    clearInterval(rTimer);
+    rTimer = null;
+    rPlay();
+  }
+}
 // ── Filters ──
 function rToggleFilter(key) {
   rFilters[key] = !rFilters[key];
@@ -910,7 +940,10 @@ async function rSelectMatch(id) {
       hasMore = data.length === limit;
     }
     rSnapshots = allSnapshots.map(s => s.data || s);
-    rIdx=0; rPlaying=false; clearInterval(rTimer);
+    rIdx = 0;
+  rPlaying = false;
+  clearInterval(rTimer);
+  rTimer = null;
     document.getElementById('rTimeline').max = rSnapshots.length-1;
     // clear markers
     for(const id of Object.keys(rMarkers)){ rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
