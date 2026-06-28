@@ -1610,7 +1610,15 @@ function updateChatMessages(chatMessages) {
   if (showLegacy) chatDiv.innerHTML = html;
   if (showPanel) chatPanelDiv.innerHTML = html;
   
-  scrollChatToBottom();
+  scrollChatToBottomIfAtBottom();
+}
+
+function scrollChatToBottomIfAtBottom() {
+  const chatPanelDiv = document.getElementById('chatPanelMessages');
+  if (chatPanelDiv) {
+    const isAtBottom = chatPanelDiv.scrollHeight - chatPanelDiv.scrollTop <= chatPanelDiv.clientHeight + 5;
+    if (isAtBottom) chatPanelDiv.scrollTop = chatPanelDiv.scrollHeight;
+  }
 }
 
 function toggleChatPanel() {
