@@ -82,6 +82,18 @@ export default class SquadPanelBroadcast extends BasePlugin {
         default: 1,
         example: 1,
       },
+      supabaseUrl: {
+        required: false,
+        description: 'URL de Supabase para logging RCON (ej: https://xxxxx.supabase.co)',
+        default: '',
+        example: 'https://vaddajsbjijtzibjhafj.supabase.co',
+      },
+      supabaseKey: {
+        required: false,
+        description: 'API Key anónima de Supabase para logging RCON',
+        default: '',
+        example: 'eyJhbGciOiJIUzI1NiIs...',
+      },
     };
   }
 
@@ -808,7 +820,10 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
   async logRconCommand(command, success, response, discordId, discordName, ipAddress) {
     try {
-      if (!this.options.supabaseUrl || !this.options.supabaseKey) return;
+      if (!this.options.supabaseUrl || !this.options.supabaseKey) {
+        this.verbose(2, `[RCON_LOG] ⚠️ Supabase no configurado - omitiendo log de: ${command}`);
+        return;
+      }
       
       const fetch_response = await fetch(`${this.options.supabaseUrl}/rest/v1/rcon_logs`, {
         method: 'POST',
@@ -829,10 +844,12 @@ export default class SquadPanelBroadcast extends BasePlugin {
       });
       
       if (fetch_response.ok) {
-        this.verbose(2, `[RCON_LOG] ✓ ${command} registrado`);
+        this.verbose(1, `[RCON_LOG] ✅ ${command} → registrado en Supabase`);
+      } else {
+        this.verbose(1, `[RCON_LOG] ❌ Error ${fetch_response.status}: ${await fetch_response.text()}`);
       }
     } catch (err) {
-      this.verbose(2, `[RCON_LOG] Error: ${err.message}`);
+      this.verbose(1, `[RCON_LOG] ❌ ${err.message}`);
     }
   }
 
