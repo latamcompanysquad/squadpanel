@@ -229,6 +229,39 @@ function metersToMapUnits(meters, corners) {
 function lerp(a, b, t) { return a + (b - a) * t; }
 
 // ─── FACCIONES Y ROLES ────────────────────────────────────────────────────────
+function createGridOverlay() {
+  if (gridOverlay) map.removeLayer(gridOverlay);
+  const gridGroup = L.featureGroup();
+  const gridSize = metersToMapUnits(50, { minX: 0, maxX: 1000, minY: 0, maxY: 1000 });
+  for (let x = 0; x <= MAP_UNITS; x += gridSize) {
+    L.polyline([[0, x], [MAP_UNITS, x]], { color: 'rgba(100,200,100,0.15)', weight: 0.5, dashArray: '4,4' }).addTo(gridGroup);
+  }
+  for (let y = 0; y <= MAP_UNITS; y += gridSize) {
+    L.polyline([[y, 0], [y, MAP_UNITS]], { color: 'rgba(100,200,100,0.15)', weight: 0.5, dashArray: '4,4' }).addTo(gridGroup);
+  }
+  gridGroup.addTo(map);
+  gridOverlay = gridGroup;
+}
+
+function applyFadeOutAnimation(marker) {
+  const el = marker.getElement();
+  if (el) {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'fadeOutDeath 3s forwards';
+    setTimeout(() => { if (el && el.parentNode) map.removeLayer(marker); }, 3000);
+  }
+}
+
+function applyFadeInAnimation(marker) {
+  const el = marker.getElement();
+  if (el) {
+    el.style.opacity = '0';
+    el.style.animation = 'fadeInSpawn 3s forwards';
+  }
+}
+
+// ─── FACCIONES Y ROLES ────────────────────────────────────────────────────────
 const KNOWN_FACTIONS = ['USA','USMC','ADF','CAF','BAF','RGF','VDV','INS','MEA','MEI','TLF','IMF','GFI','PLA','PLAAGF','PLANMC','WPMC','AFU','CRF'];
 function factionFromRole(role) {
   if (!role) return null;
@@ -385,6 +418,8 @@ const markers = {};
 let vehicleIconMap = {};
 let selectedSteamID = null;
 const expandedSquads = {}; // Track squad collapse/expand state per teamID_squadID
+const previousPlayerStates = {}; // Track previous state (alive/dead) per steamID
+let gridOverlay = null; // Grid layer
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -585,6 +620,27 @@ function selectStaticVehicle(group) {
 }
 
 function updateMarkers(players, vehicles, corners) {
+  // Detectar spawns y muertes
+  const currentPlayers = new Set(players.map(p => p.steamID));
+  for (const steamID of Object.keys(previousPlayerStates)) {
+    const wasAlive = previousPlayerStates[steamID];
+    const isAlive = currentPlayers.has(steamID);
+    if (wasAlive && !isAlive) {
+      const key = `player_${steamID}`;
+      if (markers[key]) {
+        applyFadeOutAnimation(markers[key]);
+        delete markers[key];
+      }
+    } else if (!wasAlive && isAlive) {
+      const p = players.find(pl => pl.steamID === steamID);
+      if (p && markers[`player_${steamID}`]) {
+        applyFadeInAnimation(markers[`player_${steamID}`]);
+      }
+    }
+  }
+  for (const p of players) {
+    previousPlayerStates[p.steamID] = true;
+  }
   // 1. Procesar vehículos ocupados (como antes)
   const { vehicleGroups, individualPlayers } = groupPlayersByVehicle(players);
   const seen = new Set(); // ahora almacenará claves completas
@@ -1458,6 +1514,7 @@ async function poll() {
         lastSnapshot = null;
       }
       loadBasemap(mapKey, !currentMapKey || mapKey !== currentMapKey || !imageLoaded);
+      createGridOverlay();
       const chatMapKey = mapKey || currentMapKey;
     }
 

@@ -286,3 +286,5 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 #searchDropdownOverlay::-webkit-scrollbar-thumb:hover{
   background:var(--olive);
 }
+@keyframes fadeOutDeath{0%{opacity:1;}100%{opacity:0;}}
+@keyframes fadeInSpawn{0%{opacity:0;}100%{opacity:1;}}
