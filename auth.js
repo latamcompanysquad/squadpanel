@@ -4,10 +4,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const DISCORD_SERVER_ID = '1496619805250420966';
 const AUTHORIZED_ROLES = ['1496620600414699550', '1496620972126638230', '1496620892367749243'];
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (typeof window.supabase !== 'undefined') {
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 async function loginWithDiscord() {
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
     provider: 'discord',
     options: {
       redirectTo: window.location.origin + '/auth/discord/callback'
@@ -17,7 +19,7 @@ async function loginWithDiscord() {
 }
 
 async function checkAuthAndRoles() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await window.supabaseClient.auth.getUser();
   
   if (!user) {
     window.location.href = '/login.html';
@@ -28,7 +30,7 @@ async function checkAuthAndRoles() {
   if (user.user_metadata?.provider_id) {
     const hasRole = await validateUserRoles(user.user_metadata.provider_id);
     if (!hasRole) {
-      await supabase.auth.signOut();
+      await window.supabaseClient.auth.signOut();
       alert('No tienes permisos. Solo staff puede acceder.');
       window.location.href = '/login.html';
       return false;
@@ -40,7 +42,7 @@ async function checkAuthAndRoles() {
 
 async function validateUserRoles(discordUserId) {
   try {
-const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions/v1/validate-roles', {
+    const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions/v1/validate-roles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -58,6 +60,6 @@ const response = await fetch('https://vaddaisbjjtzibihjafj.supabase.co/functions
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await window.supabaseClient.auth.signOut();
   window.location.href = '/login.html';
 }
