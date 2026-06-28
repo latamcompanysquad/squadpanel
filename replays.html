@@ -61,35 +61,46 @@
         const bounds = [[0, 0], [MAP_UNITS, MAP_UNITS]];
         
         const MAP_CORNERS = {
-          'albasrah': { c0:[-200000,-200000], c1:[200000,200000] },
-          'anvil': { c0:[-204000,-204000], c1:[102000,102000] },
-          'blackcoast': { c0:[-229900,-212700], c1:[229900,247200] },
-          'chora': { c0:[-246400,-266400], c1:[160000,140000] },
-          'fallujah': { c0:[-131500,-154500], c1:[169000,146000] },
-          'foolsroad': { c0:[-132600,-132600], c1:[44800,44800] },
-          'goosebay': { c0:[-201600,-201600], c1:[201500,201500] },
-          'skorpo': { c0:[-270000,-270000], c1:[270000,270000] },
-          'narva': { c0:[-288000,-288000], c1:[288000,288000] },
-          'kohat': { c0:[-206000,-206000], c1:[206000,206000] },
-          'mutaha': { c0:[-206000,-206000], c1:[206000,206000] },
+          'albasrah':     { c0:[-200000,-200000], c1:[200000,200000] },
+          'anvil':        { c0:[-204000,-204000], c1:[102000,102000] },
+          'blackcoast':   { c0:[-229900,-212700], c1:[229900,247200] },
+          'chora':        { c0:[-246400,-266400], c1:[160000,140000] },
+          'fallujah':     { c0:[-131500,-154500], c1:[169000,146000] },
+          'foolsroad':    { c0:[-132600,-132600], c1:[ 44800, 44800] },
+          'goosebay':     { c0:[-201600,-201600], c1:[201500,201500] },
+          'gorodok':      { c0:[-203200,-203200], c1:[203200,203200] },
+          'harju':        { c0:[-201600,-201600], c1:[201600,201600] },
+          'jensen':       { c0:[-200400,-200400], c1:[200400,200400] },
+          'kamdesh':      { c0:[-201600,-201600], c1:[201600,201600] },
+          'kohat':        { c0:[-230000,-230000], c1:[231700,231700] },
+          'kokan':        { c0:[-107600,-107600], c1:[142000,142000] },
+          'lashkar':      { c0:[-216700,-216700], c1:[216700,216700] },
+          'logar':        { c0:[ -88100,-113200], c1:[ 88000, 62900] },
+          'manicouagan':  { c0:[-201600,-201600], c1:[201500,201500] },
+          'mestia':       { c0:[-120000,-110000], c1:[120000,130000] },
+          'mutaha':       { c0:[ -93500,-114000], c1:[182000,161500] },
+          'narva':        { c0:[-139000,-140200], c1:[141000,139800] },
+          'pacific':      { c0:[-201600,-201600], c1:[201600,201600] },
+          'skorpo':       { c0:[-201600,-201600], c1:[201500,201500] },
+          'sumari':       { c0:[-201600,-201600], c1:[201600,201600] },
+          'tallil':       { c0:[-201600,-201600], c1:[201500,201500] },
+          'yehorivka':    { c0:[-201600,-201600], c1:[201600,201600] }
         };
-
-        let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
-
-        function normMap(n) { return (n || '').toLowerCase().replace(/[_\s-]/g, '').replace(/v\d+.*/, ''); }
-
-        function loadMap(k) {
-            const norm = normMap(k);
-            if (norm === currentMapKey) return;
-            if (basemapLayer) map.removeLayer(basemapLayer);
-            basemapLayer = L.imageOverlay(`./maps/${norm}.webp`, bounds, {opacity: 1}).addTo(map);
-            currentMapKey = norm;
+        
+        function getMapKeyFromName(s) {
+          let best = null;
+          for (const key of Object.keys(MAP_CORNERS)) {
+            if (s.toLowerCase().includes(key) && (!best || key.length > best.length)) best = key;
+          }
+          return best;
         }
-
+        
         function gameToLatLng(pos, corners) {
-            const fx = (pos.x - corners.minX) / (corners.maxX - corners.minX);
-            const fy = (pos.y - corners.minY) / (corners.maxY - corners.minY);
-            return [(1 - fy) * MAP_UNITS, fx * MAP_UNITS];
+          const fracX = (pos.x - corners.minX) / (corners.maxX - corners.minX);
+          const fracY = (pos.y - corners.minY) / (corners.maxY - corners.minY);
+          const px = fracX * MAP_UNITS;
+          const py = (1 - fracY) * MAP_UNITS;
+          return [py, px];
         }
 
         async function loadMatches() {
@@ -140,9 +151,7 @@
             const snap = snapshots[i];
             console.log(`🎬 Rendering snapshot ${i}:`, snap);
             
-            const mk = normMap(snap.layer || snap.map);
-            console.log('🗺️ Map key:', mk);
-            loadMap(mk);
+            loadMap(snap.layer || snap.map);
 
             Object.values({...document.querySelectorAll('.leaflet-marker-pane div')}).forEach(m => {
                 try { map.removeLayer(m); } catch(e) {}
@@ -158,7 +167,8 @@
                 };
                 console.log('📐 Corners from snapshot:', corn);
             } else {
-                const c = MAP_CORNERS[mk];
+                const mapKey = getMapKeyFromName(snap.layer || snap.map);
+                const c = MAP_CORNERS[mapKey];
                 if (c) corn = {
                     minX: Math.min(c.c0[0], c.c1[0]), maxX: Math.max(c.c0[0], c.c1[0]),
                     minY: Math.min(c.c0[1], c.c1[1]), maxY: Math.max(c.c0[1], c.c1[1])
@@ -167,7 +177,7 @@
             }
 
             if (!corn) {
-                console.error('❌ No corners available for map', mk);
+                console.error('❌ No corners available for map', snap.layer || snap.map);
                 return;
             }
 
