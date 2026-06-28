@@ -67,7 +67,10 @@ async function validateUserRoles(discordUserId) {
   try {
     const response = await fetch(SUPABASE_URL + '/functions/v1/validate-roles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
       body: JSON.stringify({ 
         userId: discordUserId,
         serverId: DISCORD_SERVER_ID,
