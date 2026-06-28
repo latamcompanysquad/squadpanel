@@ -750,7 +750,21 @@ function rUpdateDeployables(snap, corn) {
   if (snap.rallyPoints?.length) snap.rallyPoints.forEach(r=>{ try{rRenderRally(r,corn);}catch(e){} });
   if (snap.ammocrates?.length)  snap.ammocrates.forEach(a=>{ try{rRenderAmmo(a,corn);}catch(e){} });
 }
-
+// ── Helper para timestamp seguro ──
+function rSafeTs(snap) {
+  // Si tiene timestamp numérico válido, usarlo
+  if (snap && typeof snap.timestamp === 'number' && !isNaN(snap.timestamp)) {
+    return snap.timestamp;
+  }
+  // Si tiene created_at (nivel superior) intentar
+  if (snap && snap.created_at) {
+    const d = new Date(snap.created_at);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  // Fallback: usar índice * 2000 (asumiendo 2s por snapshot)
+  // Nota: necesitamos el índice, lo pasaremos como segundo argumento
+  return Date.now() - 10000; // o usaremos rIdx * 2000 fuera
+}
 // ── Render snapshot ──
 function rRender(i) {
   if (!rSnapshots[i]) return;
@@ -766,20 +780,29 @@ function rRender(i) {
   rUpdateDeployables(snap, corn);
   if (snap.players) rUpdatePlayerList(snap.players);
 
-  // status text
   document.getElementById('rStatusText').textContent = `Snap ${i+1}/${rSnapshots.length}`;
-  // scrubber
   document.getElementById('rTimeline').value = i;
 
-  // ── Tiempo real basado en timestamp ──
-  const firstTs = rSnapshots[0].timestamp || new Date(rSnapshots[0].created_at).getTime();
-  const currentTs = snap.timestamp || new Date(snap.created_at).getTime();
+  // ── Tiempo real basado en timestamp o fallback por índice ──
+  const first = rSnapshots[0];
+  const last = rSnapshots[rSnapshots.length-1];
+
+  // Intentar obtener timestamp numérico
+  const getTs = (s, idx) => {
+    if (s && typeof s.timestamp === 'number' && !isNaN(s.timestamp)) return s.timestamp;
+    // Si no, usar índice * 2000 (asumiendo 2s por snapshot)
+    return idx * 2000;
+  };
+
+  const firstTs = getTs(first, 0);
+  const currentTs = getTs(snap, i);
+  const totalTs = getTs(last, rSnapshots.length-1);
+
   const elapsed = (currentTs - firstTs) / 1000;
-  const lastSnap = rSnapshots[rSnapshots.length-1];
-  const totalTs = lastSnap.timestamp || new Date(lastSnap.created_at).getTime();
   const totalDuration = (totalTs - firstTs) / 1000;
 
   const fmt = (s) => {
+    if (!isFinite(s) || isNaN(s) || s < 0) return '--:--';
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
@@ -798,14 +821,20 @@ function rPlay() {
   rPlaying = !rPlaying;
   if (rPlaying) {
     const speed = parseFloat(document.getElementById('rSpeed').value) || 1;
-    // Usamos setTimeout recursivo para recalcular en cada paso
-    const tick = () => {
+    // Función recursiva con setTimeout
+    function tick() {
       if (!rPlaying) return;
       if (rIdx + 1 < rSnapshots.length) {
-        const cur = rSnapshots[rIdx].timestamp || new Date(rSnapshots[rIdx].created_at).getTime();
-        const next = rSnapshots[rIdx+1].timestamp || new Date(rSnapshots[rIdx+1].created_at).getTime();
-        const delta = next - cur;
-        const delay = delta > 0 ? Math.max(50, delta / speed) : 2000 / speed;
+        // Obtener timestamps de manera segura
+        const getTs = (s, idx) => {
+          if (s && typeof s.timestamp === 'number' && !isNaN(s.timestamp)) return s.timestamp;
+          return idx * 2000;
+        };
+        const curTs = getTs(rSnapshots[rIdx], rIdx);
+        const nextTs = getTs(rSnapshots[rIdx+1], rIdx+1);
+        let delta = nextTs - curTs;
+        if (delta <= 0) delta = 2000; // fallback si delta inválido
+        const delay = Math.max(50, delta / speed);
         rTimer = setTimeout(() => {
           if (rIdx < rSnapshots.length-1) {
             rRender(++rIdx);
@@ -821,36 +850,33 @@ function rPlay() {
         rRender(rIdx);
         document.getElementById('rPlayBtn').textContent = '▶';
       }
-    };
+    }
     tick();
   } else {
-    clearInterval(rTimer);
+    clearTimeout(rTimer);
     rTimer = null;
   }
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 }
 
 function rSeek(delta) {
-  rPlaying = false;
-  clearInterval(rTimer);
-  rTimer = null;
-  rRender(Math.max(0, Math.min(rIdx + delta, rSnapshots.length - 1)));
+  rPlaying=false; clearTimeout(rTimer);
+  rRender(Math.max(0, Math.min(rIdx+delta, rSnapshots.length-1)));
 }
-
 function rOnScrub(val) {
-  rPlaying = false;
-  clearInterval(rTimer);
-  rTimer = null;
+  rPlaying=false; clearTimeout(rTimer);
   rRender(parseInt(val));
 }
 
 function rOnSpeedChange() {
   if (rPlaying) {
-    clearInterval(rTimer);
+    clearTimeout(rTimer);
     rTimer = null;
-    rPlay();
+    rPlaying = false;
+    rPlay(); // reinicia con nueva velocidad
   }
 }
+
 // ── Filters ──
 function rToggleFilter(key) {
   rFilters[key] = !rFilters[key];
