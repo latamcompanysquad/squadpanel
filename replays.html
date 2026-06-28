@@ -103,6 +103,17 @@
           return [py, px];
         }
 
+        let map, basemapLayer, currentMapKey, snapshots = [], idx = 0, playing = false, timer;
+
+        function loadMap(mapName) {
+            const mapKey = getMapKeyFromName(mapName);
+            if (!mapKey) { console.error('❌ Map not found:', mapName); return; }
+            if (mapKey === currentMapKey) return;
+            if (basemapLayer) map.removeLayer(basemapLayer);
+            basemapLayer = L.imageOverlay(`./maps/${mapKey}.webp`, bounds, {opacity: 1}).addTo(map);
+            currentMapKey = mapKey;
+        }
+
         async function loadMatches() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?order=start_time.desc&limit=50`, 
