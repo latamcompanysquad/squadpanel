@@ -216,6 +216,22 @@ let rVehicleIconMap = {};
 let rVehicleIconMapNorm = {};
 let rVehicleTypeMap = {};
 let rDetailedVehicleMap = {};
+let rNameToTypeIndex = {};
+let rNameToTypeNormIndex = {};
+
+function findByPrefix(searchStr, detailedMap) {
+  const norm = normalizeVehicleKey(searchStr);
+  if (!norm || norm.length < 3) return null;
+  for (const [key, val] of Object.entries(detailedMap)) {
+    if (!val.type) continue;
+    const keyNorm = normalizeVehicleKey(key);
+    if (norm.startsWith(keyNorm.substring(0, Math.min(5, keyNorm.length))) || 
+        keyNorm.startsWith(norm.substring(0, Math.min(5, norm.length)))) {
+      return val.type;
+    }
+  }
+  return null;
+}
 
 function parseBlueprintName(rawName) {
   if (!rawName || !rawName.startsWith('BP_')) return rawName;
@@ -232,36 +248,39 @@ function inferVehicleType(vehicleName) {
     return undefined;
   }
   if (!rDetailedVehicleMap || Object.keys(rDetailedVehicleMap).length === 0) {
-    console.log('[INFER-TYPE] rDetailedVehicleMap no cargado', {keys: Object.keys(rDetailedVehicleMap).length});
+    console.log('[INFER-TYPE] rDetailedVehicleMap no cargado');
     return undefined;
   }
   
-  // Si es blueprint, parsear primero
   let searchName = vehicleName;
   if (vehicleName.startsWith('BP_')) {
     searchName = parseBlueprintName(vehicleName);
     console.log('[INFER-TYPE] Blueprint parseado:', vehicleName, '→', searchName);
   }
   
-  console.log('[INFER-TYPE] Buscando:', searchName);
-  
+  // 1. Exact match
   const entry = rDetailedVehicleMap[searchName];
   if (entry && entry.type) {
     console.log('[INFER-TYPE] ✓ EXACTO:', searchName, '→', entry.type);
     return entry.type;
   }
   
+  // 2. Normalized match en índice
   const norm = normalizeVehicleKey(searchName);
-  console.log('[INFER-TYPE] Intentando normalizado:', norm, 'de', searchName);
-  for (const key in rDetailedVehicleMap) {
-    const keyNorm = normalizeVehicleKey(key);
-    if (keyNorm === norm && rDetailedVehicleMap[key].type) {
-      console.log('[INFER-TYPE] ✓ NORM:', key, '→', rDetailedVehicleMap[key].type);
-      return rDetailedVehicleMap[key].type;
-    }
+  const typeFromNorm = rNameToTypeNormIndex[norm];
+  if (typeFromNorm) {
+    console.log('[INFER-TYPE] ✓ NORM-IDX:', norm, '→', typeFromNorm);
+    return typeFromNorm;
   }
   
-  console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, '(parsed:', searchName, ') norm:', norm);
+  // 3. Buscar por prefijo
+  const typeFromPrefix = findByPrefix(searchName, rDetailedVehicleMap);
+  if (typeFromPrefix) {
+    console.log('[INFER-TYPE] ✓ PREFIX:', searchName, '→', typeFromPrefix);
+    return typeFromPrefix;
+  }
+  
+  console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, '(parsed:', searchName, ')');
   return undefined;
 }
 
@@ -269,9 +288,22 @@ fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => {
   rVehicleIconMap = d.vehicles_with_named_icons || {}; 
   rVehicleTypeMap = d.vehicle_type_mapping || {};
   rDetailedVehicleMap = d.detailed_vehicle_mapping || {};
+  
+  // Construir índice normalizado para búsquedas rápidas
+  rNameToTypeIndex = {};
+  rNameToTypeNormIndex = {};
+  for (const [name, info] of Object.entries(rDetailedVehicleMap)) {
+    if (info.type) {
+      rNameToTypeIndex[name] = info.type;
+      const norm = normalizeVehicleKey(name);
+      if (!rNameToTypeNormIndex[norm]) {
+        rNameToTypeNormIndex[norm] = info.type;
+      }
+    }
+  }
+  
   rVehicleIconMapNorm = buildNormalizedIconIndex(rVehicleIconMap);
-  console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles, types:', Object.keys(rVehicleTypeMap).length, 'detailed:', Object.keys(rDetailedVehicleMap).length);
-  console.log('[REPLAY] Primeras 5 claves detailed:', Object.keys(rDetailedVehicleMap).slice(0,5));
+  console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles, types:', Object.keys(rVehicleTypeMap).length, 'detailed:', Object.keys(rDetailedVehicleMap).length, 'norm-idx:', Object.keys(rNameToTypeNormIndex).length);
 }).catch(e => console.warn('Icon map load failed:', e));
 
 function normalizeVehicleKey(str) {
