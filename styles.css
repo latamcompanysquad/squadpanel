@@ -288,3 +288,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 }
 @keyframes fadeOutDeath{0%{opacity:1;}100%{opacity:0;}}
 @keyframes fadeInSpawn{0%{opacity:0;}100%{opacity:1;}}
+
+/* Killfeed Panel Scrollbar */
+#killfeedPanelList::-webkit-scrollbar{
+  width:6px;
+}
+#killfeedPanelList::-webkit-scrollbar-track{
+  background:rgba(11,15,12,.5);
+  border-radius:3px;
+}
+#killfeedPanelList::-webkit-scrollbar-thumb{
+  background:var(--olive-dim);
+  border-radius:3px;
+  border:1px solid var(--olive);
+}
+#killfeedPanelList::-webkit-scrollbar-thumb:hover{
+  background:var(--olive);
+}

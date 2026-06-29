@@ -1733,6 +1733,19 @@ function updateKillfeedUI() {
   `).join('');
 }
 
+function getPlayerTeamColor(playerSteamId, playerEosId) {
+  if (!lastSnapshot || !lastSnapshot.players) return 'var(--text-dim)';
+  
+  const player = lastSnapshot.players.find(p => 
+    (playerSteamId && p.steamID === playerSteamId) || 
+    (playerEosId && p.eosID === playerEosId)
+  );
+  
+  if (!player) return 'var(--text-dim)';
+  
+  return player.teamID === 1 ? 'var(--blue)' : 'var(--red)';
+}
+
 function updateKillfeedFloatingUI() {
   const container = document.getElementById('killfeedPanelList');
   if (!container) return;
@@ -1742,15 +1755,13 @@ function updateKillfeedFloatingUI() {
 
   container.innerHTML = killfeedList.map((kill, idx) => {
     const isTK = kill.teamkill;
-    const isAttackerValid = kill.attacker_player_id && kill.attacker_player_id !== '0';
-    const isVictimValid = kill.victim_player_id && kill.victim_player_id !== '0';
-    
     const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
     const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 14);
     const weaponIcon = '🔫';
     
-    const attackerColor = isAttackerValid ? 'var(--red)' : 'var(--text-dim)';
-    const victimColor = isVictimValid ? 'var(--blue)' : 'var(--text-dim)';
+    // Obtener colores por team
+    const attackerColor = getPlayerTeamColor(kill.attacker_steam, kill.attacker_eos);
+    const victimColor = getPlayerTeamColor(kill.victim_steam, kill.victim_eos);
     
     const tkBadge = isTK ? '<span style="color:var(--amber);font-size:9px;font-weight:700;margin-left:4px;">[TK]</span>' : '';
     
@@ -1760,12 +1771,16 @@ function updateKillfeedFloatingUI() {
            onmouseout="this.style.background='transparent'">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
           <div style="flex:1;display:flex;align-items:center;gap:4px;min-width:0;">
+            <span style="font-size:11px;">🔴</span>
             <span style="color:${attackerColor};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${kill.attacker_name || 'Unknown'}</span>
           </div>
           <span style="color:var(--text-dim);font-size:9px;font-weight:600;flex-shrink:0;">${timestamp}</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <div style="color:${victimColor};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right;font-size:12px;">${kill.victim_name || 'Unknown'}</div>
+          <div style="display:flex;align-items:center;gap:4px;flex:1;">
+            <span style="font-size:11px;text-align:right;flex:1;">☠️</span>
+            <span style="color:${victimColor};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right;font-size:12px;">${kill.victim_name || 'Unknown'}</span>
+          </div>
           <div style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:2px;">
             <span>${weaponIcon}</span>
             <span title="${kill.weapon}">${weaponClean}</span>
@@ -1777,6 +1792,8 @@ function updateKillfeedFloatingUI() {
   }).join('');
 }
 
+let killfeedPollInterval = null;
+
 function toggleKillfeedPanel() {
   const panel = document.getElementById('killfeedPanelOverlay');
   const btn = document.getElementById('btnKillfeedToggle');
@@ -1787,7 +1804,27 @@ function toggleKillfeedPanel() {
   btn.style.color = isHidden ? 'var(--green)' : 'var(--text)';
   
   if (isHidden) {
+    // Panel se abre: actualizar UI y iniciar polling automático
     updateKillfeedFloatingUI();
+    
+    // Iniciar polling cada 3 segundos si no está ya activo
+    if (!killfeedPollInterval) {
+      killfeedPollInterval = setInterval(() => {
+        if (document.getElementById('killfeedPanelOverlay').style.display !== 'none') {
+          updateKillfeedFloatingUI();
+        } else {
+          // Detener polling si panel está cerrado
+          clearInterval(killfeedPollInterval);
+          killfeedPollInterval = null;
+        }
+      }, 3000);
+    }
+  } else {
+    // Panel se cierra: detener polling
+    if (killfeedPollInterval) {
+      clearInterval(killfeedPollInterval);
+      killfeedPollInterval = null;
+    }
   }
 }
 
