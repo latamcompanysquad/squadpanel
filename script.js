@@ -1764,6 +1764,32 @@ function updateKillfeedUI() {
   `).join('');
 }
 
+// Global scope - ANTES de cualquier renderizado
+window.handleKillfeedClick = function(killDataJson) {
+  console.log('🔫 [handleKillfeedClick] Click detected, data:', killDataJson);
+  try {
+    const kill = JSON.parse(killDataJson);
+    console.log('✅ Parsed kill:', kill);
+    
+    const params = new URLSearchParams({
+      kill_id: kill.killID || '',
+      attacker: kill.attacker || '',
+      victim: kill.victim || '',
+      weapon: kill.weapon || '',
+      ax: kill.ax || 0,
+      ay: kill.ay || 0,
+      vx: kill.vx || 0,
+      vy: kill.vy || 0
+    });
+    
+    const url = `replays.html?${params.toString()}`;
+    console.log('🚀 Abriendo:', url);
+    window.open(url, '_blank', 'width=1200,height=800');
+  } catch (err) {
+    console.log('❌ Error en handleKillfeedClick:', err.message, 'data:', killDataJson);
+  }
+};
+
 function getPlayerTeamColor(playerSteamId, playerEosId) {
   if (!lastSnapshot || !lastSnapshot.players) return 'var(--text-dim)';
   
@@ -1794,23 +1820,6 @@ function openKillReplay(killID, attackerName, victimName, weapon, attackerX, att
   });
   window.open(`replays.html?${params.toString()}`, '_blank', 'width=1200,height=800');
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('click', (e) => {
-    const killfeedItem = e.target.closest('.killfeed-item');
-    if (killfeedItem) {
-      const killJSON = killfeedItem.getAttribute('data-kill-json');
-      if (killJSON) {
-        try {
-          const kill = JSON.parse(killJSON);
-          openKillReplay(kill.killID, kill.attacker, kill.victim, kill.weapon, kill.ax, kill.ay, kill.vx, kill.vy);
-        } catch (err) {
-          console.log('❌ Error parsing kill data:', err);
-        }
-      }
-    }
-  });
-});
 
 function updateKillfeedFloatingUI() {
   const container = document.getElementById('killfeedPanelList');
@@ -1844,10 +1853,10 @@ function updateKillfeedFloatingUI() {
     return `
       <div class="killfeed-item" 
            data-kill-id="${killData.killID}"
-           data-kill-json='${JSON.stringify(killData).replace(/'/g, "&apos;")}'
            style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'"
+           onclick="window.handleKillfeedClick('${JSON.stringify(killData).replace(/'/g, "\\'")}')"
            title="Click para ver replay">
         <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${attackerCircle}${kill.attacker_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
