@@ -210,7 +210,7 @@
 // REPLAY ENGINE — paridad total con live map
 // ═══════════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
+const SUPABASE_URL = 'https://vaddaisbjjtzibihjafj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
 const MAP_UNITS = 1000;
 const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
@@ -267,7 +267,27 @@ const rMarkers = {};
 const rObjectiveMarkers = {};
 let rObjectiveLine = null;
 const rExpandedSquads = {};
-const rVehicleIconMap = {};
+let rVehicleIconMap = { byName: {}, byType: {} };
+
+// ── Load vehicle icon mapping (SYNC) ──
+let rVehMappingCache = { byName: {}, byType: {} };
+fetch('vehicle_icon_mapping.json')
+  .then(r => r.json())
+  .then(data => {
+    rVehMappingCache.byName = data.vehicles_with_named_icons || {};
+    rVehMappingCache.byType = data.vehicle_type_mapping || {};
+  })
+  .catch(e => console.warn('Icon map load failed:', e));
+
+function getVehicleIcon(vehicleName, vehicleType) {
+  if (rVehMappingCache.byName[vehicleName]) {
+    return rVehMappingCache.byName[vehicleName];
+  }
+  if (vehicleType && rVehMappingCache.byType[vehicleType]?.icon) {
+    return rVehMappingCache.byType[vehicleType].icon;
+  }
+  return 'public__img__markers__weapons__Mortar.webp';
+}
 
 // ── Helpers ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -493,7 +513,9 @@ function rGroupByVehicle(players) {
   for (const p of players) {
     if (!p.vehicle) { solo.push(p); continue; }
     const key = p.vehicle.id ? `veh_${p.vehicle.id}` : `veh_${p.vehicle.name}_${p.teamID}`;
-    if (!groups[key]) groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', teamID:p.teamID, occupants:[], position:null, icon:null };
+    if (!groups[key]) {
+      groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', vehicleType:p.vehicle.type, teamID:p.teamID, occupants:[], position:null, icon:null };
+    }
     groups[key].occupants.push(p);
     if (!groups[key].position && p.position) groups[key].position = p.position;
   }
@@ -515,6 +537,7 @@ function rUpdateMarkers(snap, corn) {
     seen.add(key);
     const ll = gameToLatLng(g.position, corn);
     const isSel = g.occupants.some(p=>p.steamID===rSelectedSteamID);
+    g.icon = g.icon || getVehicleIcon(g.vehicleName, g.vehicleType);
     const icon = makeVehicleIcon(g, isSel);
     if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
     else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
