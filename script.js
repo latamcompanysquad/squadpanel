@@ -1879,10 +1879,8 @@ function updateKillfeedFloatingUI() {
   const countSpan = document.getElementById('killCount');
   if (countSpan) countSpan.textContent = `(${killfeedList.length})`;
 
-  // Invertir orden: kills más recientes ARRIBA
-  const reversedKills = [...killfeedList].reverse();
-
-  container.innerHTML = reversedKills.map((kill, idx) => {
+  // killfeedList ya está en orden (newest first con unshift)
+  container.innerHTML = killfeedList.map((kill, idx) => {
     const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
     const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 18);
     
