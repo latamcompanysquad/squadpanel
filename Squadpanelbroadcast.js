@@ -1094,7 +1094,7 @@ async saveKillSnapshot(data) {
     try {
       const killRecord = {
         match_id: this.matchID,
-        timestamp: data.time || Date.now(),
+        timestamp: Date.now(),
         attacker_name: data.attacker.name,
         attacker_eos: data.attacker.eosID,
         attacker_steam: data.attacker.steamID,
