@@ -269,22 +269,24 @@ let rObjectiveLine = null;
 const rExpandedSquads = {};
 let rVehicleIconMap = { byName: {}, byType: {} };
 
-// ── Load vehicle icon mapping (SYNC) ──
-let rVehMappingCache = { byName: {}, byType: {} };
+// ── Load vehicle icon mapping ──
 fetch('vehicle_icon_mapping.json')
   .then(r => r.json())
   .then(data => {
-    rVehMappingCache.byName = data.vehicles_with_named_icons || {};
-    rVehMappingCache.byType = data.vehicle_type_mapping || {};
+    rVehicleIconMap = {
+      byName: data.vehicles_with_named_icons || {},
+      byType: data.vehicle_type_mapping || {}
+    };
   })
   .catch(e => console.warn('Icon map load failed:', e));
 
 function getVehicleIcon(vehicleName, vehicleType) {
-  if (rVehMappingCache.byName[vehicleName]) {
-    return rVehMappingCache.byName[vehicleName];
+  if (!vehicleName) return 'public__img__markers__weapons__Mortar.webp';
+  if (rVehicleIconMap.byName?.[vehicleName]) {
+    return rVehicleIconMap.byName[vehicleName];
   }
-  if (vehicleType && rVehMappingCache.byType[vehicleType]?.icon) {
-    return rVehMappingCache.byType[vehicleType].icon;
+  if (vehicleType && rVehicleIconMap.byType?.[vehicleType]) {
+    return rVehicleIconMap.byType[vehicleType].icon;
   }
   return 'public__img__markers__weapons__Mortar.webp';
 }
@@ -538,7 +540,6 @@ function rUpdateMarkers(snap, corn) {
     seen.add(key);
     const ll = gameToLatLng(g.position, corn);
     const isSel = g.occupants.some(p=>p.steamID===rSelectedSteamID);
-    g.icon = g.icon || getVehicleIcon(g.vehicleName, g.vehicleType);
     const icon = makeVehicleIcon(g, isSel);
     if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
     else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
