@@ -213,7 +213,7 @@
 const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
 let rVehicleIconMap = {};
-fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { rVehicleIconMap = d.vehicles_with_named_icons || {}; }).catch(e => console.warn('Icon map load failed:', e));
+fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { rVehicleIconMap = d.vehicles_with_named_icons || {}; console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles'); }).catch(e => console.warn('Icon map load failed:', e));
 const MAP_UNITS = 1000;
 const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
 
@@ -503,6 +503,11 @@ function rGroupByVehicle(players) {
   return { vehicleGroups: Object.values(groups), individualPlayers: solo };
 }
 
+// Logging para debug de iconos
+function logVehicleDebug(groups) {
+  groups.forEach((g, i) => console.log(`[REPLAY] Veh ${i}: ${g.vehicleName} (T${g.teamID}) - icon: ${g.icon}`));
+}
+
 function rUpdateMarkers(snap, corn) {
   const players   = snap.players   || [];
   const seen = new Set();
@@ -519,6 +524,7 @@ function rUpdateMarkers(snap, corn) {
     const ll = gameToLatLng(g.position, corn);
     const isSel = g.occupants.some(p=>p.steamID===rSelectedSteamID);
     if (!g.icon && rVehicleIconMap[g.vehicleName]) g.icon = rVehicleIconMap[g.vehicleName];
+    if (!g.icon) console.log(`[REPLAY] No icon for: ${g.vehicleName}, map has: ${Object.keys(rVehicleIconMap).slice(0,5).join(', ')}`);
     const icon = makeVehicleIcon(g, isSel);
     if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
     else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
