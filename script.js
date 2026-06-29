@@ -1746,6 +1746,24 @@ function getPlayerTeamColor(playerSteamId, playerEosId) {
   return player.teamID === 1 ? 'var(--blue)' : 'var(--red)';
 }
 
+function getTeamCircleEmoji(teamColor) {
+  if (teamColor === 'var(--blue)') return '🔵';
+  if (teamColor === 'var(--red)') return '🔴';
+  return '⚪';
+}
+
+function openKillReplay(killID, attackerName, victimName, weapon, attackerX, attackerY, victimX, victimY) {
+  const params = new URLSearchParams({
+    kill_id: killID,
+    attacker: attackerName,
+    victim: victimName,
+    weapon: weapon,
+    ax: attackerX, ay: attackerY,
+    vx: victimX, vy: victimY
+  });
+  window.open(`replays.html?${params.toString()}`, '_blank', 'width=1200,height=800');
+}
+
 function updateKillfeedFloatingUI() {
   const container = document.getElementById('killfeedPanelList');
   if (!container) return;
@@ -1760,15 +1778,17 @@ function updateKillfeedFloatingUI() {
     const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
     const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 18);
     
-    // Obtener colores por team
     const attackerColor = getPlayerTeamColor(kill.attacker_steam, kill.attacker_eos);
     const victimColor = getPlayerTeamColor(kill.victim_steam, kill.victim_eos);
+    const attackerCircle = getTeamCircleEmoji(attackerColor);
     
     return `
       <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
-           onmouseout="this.style.background='transparent'">
-        <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔴${kill.attacker_name || 'Unknown'}</span>
+           onmouseout="this.style.background='transparent'"
+           onclick="openKillReplay('${kill.id || kill.match_id}_${kill.timestamp}', '${kill.attacker_name}', '${kill.victim_name}', '${kill.weapon}', ${kill.attacker_pos_x || 0}, ${kill.attacker_pos_y || 0}, ${kill.victim_pos_x || 0}, ${kill.victim_pos_y || 0})"
+           title="Click para ver replay">
+        <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${attackerCircle}${kill.attacker_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
         <span style="color:${victimColor};font-weight:600;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">☠️${kill.victim_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;">${timestamp}</span>

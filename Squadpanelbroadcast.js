@@ -1091,6 +1091,28 @@ async saveKillSnapshot(data) {
       return;
     }
 
+    // Guardar en MariaDB como fallback (si está configurada)
+    if (this.options.dbLogHost && this.options.dbLogUser && this.options.dbLogPassword) {
+      try {
+        const mysql = require('mysql2/promise');
+        const conn = await mysql.createConnection({
+          host: this.options.dbLogHost,
+          user: this.options.dbLogUser,
+          password: this.options.dbLogPassword,
+          database: 'squadjs',
+          port: this.options.dbLogPort || 3306
+        });
+        await conn.execute(
+          `INSERT INTO DBLog_Deaths (timestamp, victimName, attackerName, weapon, teamkill, server, attacker_steam, victim_steam, match_id) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [new Date(), data.victim.name, data.attacker.name, data.weapon, data.teamkill || 0, this.options.serverID || '1', data.attacker.steamID, data.victim.steamID, this.matchID]
+        );
+        await conn.end();
+      } catch (err) {
+        // console.log('⚠️ DBLog fallback failed:', err.message);
+      }
+    }
+
     try {
       const killRecord = {
         match_id: this.matchID,
