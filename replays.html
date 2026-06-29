@@ -213,7 +213,43 @@
 const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
 let rVehicleIconMap = {};
-fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { rVehicleIconMap = d.vehicles_with_named_icons || {}; console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles'); }).catch(e => console.warn('Icon map load failed:', e));
+let rVehicleIconMapNorm = {};
+let rVehicleTypeMap = {};
+fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { 
+  rVehicleIconMap = d.vehicles_with_named_icons || {}; 
+  rVehicleTypeMap = d.vehicle_type_mapping || {};
+  rVehicleIconMapNorm = buildNormalizedIconIndex(rVehicleIconMap);
+  console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles, types:', Object.keys(rVehicleTypeMap).length);
+}).catch(e => console.warn('Icon map load failed:', e));
+
+function normalizeVehicleKey(str) {
+  if (!str) return '';
+  return String(str).toLowerCase().replace(/[\s\-_.]+/g, '');
+}
+
+function buildNormalizedIconIndex(dict) {
+  const idx = {};
+  for (const key in dict) idx[normalizeVehicleKey(key)] = dict[key];
+  return idx;
+}
+
+function getRVehicleIcon(vehicleName, vehicleType) {
+  if (!vehicleName) return 'public__img__markers__weapons__Mortar.webp';
+  
+  // Intenta match exacto
+  if (rVehicleIconMap[vehicleName]) return rVehicleIconMap[vehicleName];
+  
+  // Intenta normalizado
+  const norm = normalizeVehicleKey(vehicleName);
+  if (rVehicleIconMapNorm[norm]) return rVehicleIconMapNorm[norm];
+  
+  // Usa tipo si existe
+  if (vehicleType && rVehicleTypeMap[vehicleType]?.icon) {
+    return rVehicleTypeMap[vehicleType].icon;
+  }
+  
+  return 'public__img__markers__weapons__Mortar.webp';
+}
 const MAP_UNITS = 1000;
 const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
 
@@ -523,8 +559,7 @@ function rUpdateMarkers(snap, corn) {
     seen.add(key);
     const ll = gameToLatLng(g.position, corn);
     const isSel = g.occupants.some(p=>p.steamID===rSelectedSteamID);
-    if (!g.icon && rVehicleIconMap[g.vehicleName]) g.icon = rVehicleIconMap[g.vehicleName];
-    if (!g.icon) console.log(`[REPLAY] No icon for: ${g.vehicleName}, map has: ${Object.keys(rVehicleIconMap).slice(0,5).join(', ')}`);
+    if (!g.icon) g.icon = getRVehicleIcon(g.vehicleName, g.vehicleType);
     const icon = makeVehicleIcon(g, isSel);
     if (rMarkers[key]) { rMarkers[key].setLatLng(ll).setIcon(icon); }
     else { rMarkers[key] = L.marker(ll,{icon}).addTo(rMap); }
