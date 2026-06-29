@@ -985,7 +985,7 @@ async function rSelectMatch(id) {
     // ── PAGINACIÓN OPTIMIZADA ──
     let allSnapshots = [];
     let offset = 0;
-    const limit = 500; // Reducido de 1000 para no saturar
+    const limit = 200; // Reducido de 1000 para no saturar
     let hasMore = true;
     let retries = 0;
     const maxRetries = 3;
