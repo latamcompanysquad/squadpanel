@@ -214,6 +214,11 @@ export default class SquadPanelBroadcast extends BasePlugin {
       this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
     });
 
+    this.server.on('SAT_KILLFEED', async (data) => {
+      this.verbose(1, `🔫 SAT_KILLFEED recibido: ${data.attacker.name} → ${data.victim.name} (${data.weapon})`);
+      await this.saveKillSnapshot(data);
+    });
+
     this.verbose(1, `💬 Listeners de chat registrados`);
     this.timer = setInterval(async () => {
       await this.broadcast();
@@ -1075,6 +1080,48 @@ export default class SquadPanelBroadcast extends BasePlugin {
       });
     } catch (err) {
       this.verbose(2, `⚠️ Supabase save failed: ${err.message}`);
+    }
+  }
+
+  async saveKillSnapshot(data) {
+    if (!this.options.supabaseUrl || !this.options.supabaseKey) return;
+
+    try {
+      const killRecord = {
+        match_id: this.matchID,
+        timestamp: data.time || Date.now(),
+        attacker_name: data.attacker.name,
+        attacker_eos: data.attacker.eosID,
+        attacker_steam: data.attacker.steamID,
+        attacker_pos_x: data.attacker.pos.x,
+        attacker_pos_y: data.attacker.pos.y,
+        attacker_pos_z: data.attacker.pos.z,
+        victim_name: data.victim.name,
+        victim_eos: data.victim.eosID,
+        victim_steam: data.victim.steamID,
+        victim_pos_x: data.victim.pos.x,
+        victim_pos_y: data.victim.pos.y,
+        victim_pos_z: data.victim.pos.z,
+        weapon: data.weapon,
+        teamkill: data.teamkill || false,
+        attacker_player_id: data.attackerPlayer?.id || null,
+        victim_player_id: data.victimPlayer?.id || null,
+      };
+
+      await fetch(`${this.options.supabaseUrl}/rest/v1/kill_snapshots`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.options.supabaseKey}`,
+          'apikey': this.options.supabaseKey,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(killRecord),
+      });
+
+      this.verbose(1, `✅ Kill snapshot guardado: ${data.attacker.name} → ${data.victim.name}`);
+    } catch (err) {
+      this.verbose(2, `⚠️ Kill snapshot save failed: ${err.message}`);
     }
   }
 }
