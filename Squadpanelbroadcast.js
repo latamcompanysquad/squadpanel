@@ -127,7 +127,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
   }
 
   async mount() {
-    this.verbose(1, 'Montando SquadPanelBroadcast (modo centralizado vía GitHub)...');
+    // this.verbose(1, 'Montando SquadPanelBroadcast (modo centralizado vía GitHub)...');
 
     const secret = this.options.writeSecret;
     if (!secret || secret.trim() === '') {
@@ -140,35 +140,35 @@ export default class SquadPanelBroadcast extends BasePlugin {
       this.options.workerUrl = url;
     }
 
-    this.verbose(1, `🔑 writeSecret configurado (longitud: ${secret.length})`);
-    this.verbose(1, `🌐 Worker URL: ${url}`);
-    this.verbose(1, `📂 Match data path: ${this.options.matchDataPath}`);
+    // this.verbose(1, `🔑 writeSecret configurado (longitud: ${secret.length})`);
+    // this.verbose(1, `🌐 Worker URL: ${url}`);
+    // this.verbose(1, `📂 Match data path: ${this.options.matchDataPath}`);
 
     await this.loadIconMappings();
 
     this.server.on('POSSESSED_ADMIN_CAMERA', (info) => {
       if (info.player && info.player.steamID) {
         this.adminsInCamera.add(info.player.steamID);
-        this.verbose(1, `📷 [CAMERA IN] ${info.player.name} (SteamID: ${info.player.steamID})`);
-        this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ')}`);
+        // this.verbose(1, `📷 [CAMERA IN] ${info.player.name} (SteamID: ${info.player.steamID})`);
+        // this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ')}`);
       } else {
-        this.verbose(1, `📷 [CAMERA IN] Sin steamID válido`);
+        // this.verbose(1, `📷 [CAMERA IN] Sin steamID válido`);
       }
     });
     this.server.on('UNPOSSESSED_ADMIN_CAMERA', (info) => {
       if (info.player && info.player.steamID) {
         this.adminsInCamera.delete(info.player.steamID);
-        this.verbose(1, `📷 [CAMERA OUT] ${info.player.name} (SteamID: ${info.player.steamID})`);
-        this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ') || '(vacío)'}`);
+        // this.verbose(1, `📷 [CAMERA OUT] ${info.player.name} (SteamID: ${info.player.steamID})`);
+        // this.verbose(1, `   → adminsInCamera: ${Array.from(this.adminsInCamera).join(', ') || '(vacío)'}`);
       } else {
-        this.verbose(1, `📷 [CAMERA OUT] Sin steamID válido`);
+        // this.verbose(1, `📷 [CAMERA OUT] Sin steamID válido`);
       }
     });
-    this.verbose(1, `📷 Listeners de cámara registrados`);
+    // this.verbose(1, `📷 Listeners de cámara registrados`);
 
     this.server.on('CHAT_MESSAGE', (data) => {
       if (data.player && data.message) {
-        this.verbose(1, `🔍 [CHAT_RAW] "${data.raw}"`);
+        // this.verbose(1, `🔍 [CHAT_RAW] "${data.raw}"`);
         
         let channel = 'all';
         let teamID = null;
@@ -203,7 +203,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         };
         this.chatBuffer.push(msg);
         if (this.chatBuffer.length > 100) this.chatBuffer.shift();
-        this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
+        // this.verbose(1, `💬 [${msg.channel.toUpperCase()}] ${msg.name}: ${msg.message.substring(0, 60)}`);
       }
     });
 
@@ -211,21 +211,21 @@ export default class SquadPanelBroadcast extends BasePlugin {
       this.chatBuffer = [];
     this.matchID = this.generateMatchID();
     this.snapshotCounter = 0;
-      this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
+      // this.verbose(1, '💬 Chat buffer limpiado (nuevo match)');
     });
 
     this.server.on('SAT_KILLFEED', async (data) => {
-      this.verbose(1, `🔫 SAT_KILLFEED recibido: ${data.attacker.name} → ${data.victim.name} (${data.weapon})`);
+      // this.verbose(1, `🔫 SAT_KILLFEED recibido: ${data.attacker.name} → ${data.victim.name} (${data.weapon})`);
       await this.saveKillSnapshot(data);
     });
 
-    this.verbose(1, `💬 Listeners de chat registrados`);
+    // this.verbose(1, `💬 Listeners de chat registrados`);
     this.timer = setInterval(async () => {
       await this.broadcast();
       await this.pollAdminCommands();
     }, this.options.intervalMs);
 
-    this.verbose(1, `⏱️  Broadcasteando cada ${this.options.intervalMs}ms → ${this.options.workerUrl}`);
+    // this.verbose(1, `⏱️  Broadcasteando cada ${this.options.intervalMs}ms → ${this.options.workerUrl}`);
   }
 
   async unmount() {
@@ -233,7 +233,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.verbose(1, 'SquadPanelBroadcast detenido.');
+    // this.verbose(1, 'SquadPanelBroadcast detenido.');
   }
 
   // ─── CARGA DE MAPEOS DESDE URL ────────────────────────────────────────────
@@ -242,15 +242,15 @@ export default class SquadPanelBroadcast extends BasePlugin {
     const url = this.options.iconMappingUrl || 'https://raw.githubusercontent.com/latamcompanysquad/squadpanel/refs/heads/main/vehicle_icon_mapping.json';
 
     try {
-      this.verbose(1, `⬇️ Descargando mapeo desde ${url} ...`);
+      // this.verbose(1, `⬇️ Descargando mapeo desde ${url} ...`);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       this._applyMappingData(data);
-      this.verbose(1, `✅ Mapeo cargado desde GitHub (${Object.keys(this.namedIcons).length} iconos nombrados, ${Object.keys(this.typeIcons).length} tipos, ${Object.keys(this.nameToType).length} vehículos mapeados)`);
+      // this.verbose(1, `✅ Mapeo cargado desde GitHub (${Object.keys(this.namedIcons).length} iconos nombrados, ${Object.keys(this.typeIcons).length} tipos, ${Object.keys(this.nameToType).length} vehículos mapeados)`);
     } catch (err) {
-      this.verbose(1, `❌ Error al cargar mapeo desde URL: ${err.message}`);
-      this.verbose(1, '📋 Usando diccionarios de respaldo internos (mínimos).');
+      // this.verbose(1, `❌ Error al cargar mapeo desde URL: ${err.message}`);
+      // this.verbose(1, '📋 Usando diccionarios de respaldo internos (mínimos).');
       this.loadFallbackMappings();
     }
 
@@ -353,7 +353,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
     if (!this._unmatchedVehicleNames.has(vehicleName)) {
       this._unmatchedVehicleNames.add(vehicleName);
-      this.verbose(1, `🧩 Sin icono para "${vehicleName}" (parsed: "${parsedName}") → test.webp`);
+      // this.verbose(1, `🧩 Sin icono para "${vehicleName}" (parsed: "${parsedName}") → test.webp`);
     }
     return 'public__img__markers__weapons__test.webp';
   }
@@ -368,7 +368,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         const raw = buffer.toString('utf16le');
         const clean = raw.replace(/^\uFEFF/, '');
         this.modData = JSON.parse(clean);
-        this.verbose(1, '✅ CurrentMatchData.json leído correctamente (UTF-16 LE)');
+        // this.verbose(1, '✅ CurrentMatchData.json leído correctamente (UTF-16 LE)');
         this.logVehicleCount();
         return this.modData;
       }
@@ -383,11 +383,11 @@ export default class SquadPanelBroadcast extends BasePlugin {
       cleaned = cleaned.replace(/^[\x00-\x1F\x7F-\x9F\u200B\uFEFF\u2060\uFFFE]+/, '').trim();
 
       this.modData = JSON.parse(cleaned);
-      this.verbose(1, '✅ CurrentMatchData.json leído correctamente (UTF-8)');
+      // this.verbose(1, '✅ CurrentMatchData.json leído correctamente (UTF-8)');
       this.logVehicleCount();
 
     } catch (err) {
-      this.verbose(1, `⚠️ No se pudo leer CurrentMatchData.json: ${err.message}`);
+      // this.verbose(1, `⚠️ No se pudo leer CurrentMatchData.json: ${err.message}`);
       this.modData = null;
     }
     return this.modData;
@@ -395,7 +395,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
 
   logVehicleCount() {
     if (!this.modData || !this.modData.teams_data) {
-      this.verbose(1, '📊 No hay datos de vehículos en CurrentMatchData');
+      // this.verbose(1, '📊 No hay datos de vehículos en CurrentMatchData');
       return;
     }
     let total = 0;
@@ -407,7 +407,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       }
     }
     const countsStr = Object.entries(teamCounts).map(([k, v]) => `T${k}: ${v}`).join(', ');
-    this.verbose(1, `📊 Vehículos en CurrentMatchData: ${total} total (${countsStr})`);
+    // this.verbose(1, `📊 Vehículos en CurrentMatchData: ${total} total (${countsStr})`);
   }
 
   // ─── CONSTRUCCIÓN DE MAPAS DE DATOS ──────────────────────────────────────
@@ -467,7 +467,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       const snapshot = this.buildSnapshot(modData);
       await this.postToWorker(snapshot);
     } catch (err) {
-      this.verbose(1, `❌ Error en broadcast: ${err.message}`);
+      // this.verbose(1, `❌ Error en broadcast: ${err.message}`);
     }
   }
 
@@ -538,11 +538,11 @@ export default class SquadPanelBroadcast extends BasePlugin {
     }
     
     // DEBUG: Log de squadNameMap
-    this.verbose(1, `🔍 squadNameMap: ${JSON.stringify(squadNameMap)}`);
+    // this.verbose(1, `🔍 squadNameMap: ${JSON.stringify(squadNameMap)}`);
     if (server.squads && server.squads.length > 0) {
-      this.verbose(1, `🔍 server.squads (primeros 3): ${JSON.stringify(server.squads.slice(0, 3).map(s => ({ id: s.squadID, name: s.squadName, teamID: s.teamID })))}`);
+      // this.verbose(1, `🔍 server.squads (primeros 3): ${JSON.stringify(server.squads.slice(0, 3).map(s => ({ id: s.squadID, name: s.squadName, teamID: s.teamID })))}`);
     } else {
-      this.verbose(1, `⚠️  No hay squads disponibles en server.squads`);
+      // this.verbose(1, `⚠️  No hay squads disponibles en server.squads`);
     }
 
     // ── VEHÍCULOS (SIEMPRE DESDE MODDATA) ──
@@ -592,8 +592,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
     }
 
     // LOG de vehículos enviados
-    this.verbose(1, `🚗 Vehículos enviados al worker: ${vehicles.length}`);
-    this.verbose(1, `📋 Vehículos: ${vehicles.map(v => `${v.type}(T${v.teamID})`).join(', ')}`);
+    // this.verbose(1, `🚗 Vehículos enviados al worker: ${vehicles.length}`);
+    // this.verbose(1, `📋 Vehículos: ${vehicles.map(v => `${v.type}(T${v.teamID})`).join(', ')}`);
 
     if (isFirstBroadcast || isPeriodicLog) {
       this._validateVehicleIconCoverage(vehicles);
@@ -651,13 +651,13 @@ export default class SquadPanelBroadcast extends BasePlugin {
     // DEBUG: Always log spectators every broadcast
     const withSpectating = players.filter(p => p.isSpectating).length;
     if (this.adminsInCamera.size > 0 || withSpectating > 0) {
-      this.verbose(1, `📷 [DEBUG] adminsInCamera.size=${this.adminsInCamera.size}, withSpectating=${withSpectating}`);
+      // this.verbose(1, `📷 [DEBUG] adminsInCamera.size=${this.adminsInCamera.size}, withSpectating=${withSpectating}`);
       if (withSpectating > 0) {
         const spectDeets = players.filter(p => p.isSpectating).map(p => `${p.name}(${p.steamID})`).join(', ');
-        this.verbose(1, `📷 [SPECTATORS FOUND] ${spectDeets}`);
+        // this.verbose(1, `📷 [SPECTATORS FOUND] ${spectDeets}`);
         // Log detailed info
         players.filter(p => p.isSpectating).forEach(p => {
-          this.verbose(1, `📷   → ${p.name}: position=${p.position ? 'YES' : 'NO'}, isAlive=${p.isAlive}, squad=${p.squadID ?? 'N/A'}`);
+          // this.verbose(1, `📷   → ${p.name}: position=${p.position ? 'YES' : 'NO'}, isAlive=${p.isAlive}, squad=${p.squadID ?? 'N/A'}`);
         });
       }
     }
@@ -669,9 +669,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
       const withSpectating = players.filter(p => p.isSpectating).length;
       if (withSpectating > 0) {
         const spectNames = players.filter(p => p.isSpectating).map(p => p.name).join(', ');
-        this.verbose(1, `📷 [SPECTATORS] ${withSpectating} en cámara: ${spectNames}`);
+        // this.verbose(1, `📷 [SPECTATORS] ${withSpectating} en cámara: ${spectNames}`);
       }
-      this.verbose(1, `📊 Jugadores: ${total} total, ${withPos} con posición, ${withVeh} en vehículo`);
+      // this.verbose(1, `📊 Jugadores: ${total} total, ${withPos} con posición, ${withVeh} en vehículo`);
     }
 
     // ── FOBs ──
@@ -824,7 +824,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
     const withIcon = vehicles.filter(v => v.icon && !v.icon.includes('test.webp')).length;
     const coverage = total > 0 ? ((withIcon / total) * 100).toFixed(1) : 0;
     const emoji = coverage >= 90 ? '✅' : coverage >= 70 ? '⚠️' : '❌';
-    this.verbose(1, `${emoji} Icon coverage: ${withIcon}/${total} vehicles (${coverage}%)`);
+    // this.verbose(1, `${emoji} Icon coverage: ${withIcon}/${total} vehicles (${coverage}%)`);
 
     if (withIcon < total) {
       const missing = vehicles
@@ -832,7 +832,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         .map(v => `${v.type}(T${v.teamID})`)
         .join(', ')
         .substring(0, 200);
-      this.verbose(2, `   Sin icono: ${missing}`);
+      // this.verbose(2, `   Sin icono: ${missing}`);
     }
   }
 
@@ -841,7 +841,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
   async logRconCommand(command, success, response, discordId, discordName, ipAddress) {
     try {
       if (!this.options.supabaseUrl || !this.options.supabaseKey) {
-        this.verbose(2, `[RCON_LOG] ⚠️ Supabase no configurado - omitiendo log de: ${command}`);
+        // this.verbose(2, `[RCON_LOG] ⚠️ Supabase no configurado - omitiendo log de: ${command}`);
         return;
       }
       
@@ -864,12 +864,12 @@ export default class SquadPanelBroadcast extends BasePlugin {
       });
       
       if (fetch_response.ok) {
-        this.verbose(1, `[RCON_LOG] ✅ ${command} → registrado en Supabase`);
+        // this.verbose(1, `[RCON_LOG] ✅ ${command} → registrado en Supabase`);
       } else {
-        this.verbose(1, `[RCON_LOG] ❌ Error ${fetch_response.status}: ${await fetch_response.text()}`);
+        // this.verbose(1, `[RCON_LOG] ❌ Error ${fetch_response.status}: ${await fetch_response.text()}`);
       }
     } catch (err) {
-      this.verbose(1, `[RCON_LOG] ❌ ${err.message}`);
+      // this.verbose(1, `[RCON_LOG] ❌ ${err.message}`);
     }
   }
 
@@ -893,9 +893,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
       try {
         await this.executeAdminCommand(cmd);
         await fetch(`${workerUrl}/api/admin/done/${cmd.id}`, { method: 'DELETE' });
-        this.verbose(1, `[AdminCmd] ✓ ${cmd.action} (${cmd.id})`);
+        // this.verbose(1, `[AdminCmd] ✓ ${cmd.action} (${cmd.id})`);
       } catch (e) {
-        this.verbose(1, `[AdminCmd] ✗ ${cmd.action}: ${e.message}`);
+        // this.verbose(1, `[AdminCmd] ✗ ${cmd.action}: ${e.message}`);
         await fetch(`${workerUrl}/api/admin/done/${cmd.id}`, { method: 'DELETE' }).catch(() => {});
       }
     }
@@ -980,7 +980,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
           success = true;
           break;
         default:
-          this.verbose(1, `[AdminCmd] Unknown action: ${action}`);
+          // this.verbose(1, `[AdminCmd] Unknown action: ${action}`);
       }
       
       // Log RCON command
@@ -1033,7 +1033,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
       this.saveToSupabaseAsync(snapshot);
       
       this.snapshotCounter++;
-      this.verbose(2, `✅ Data sent to Worker + Supabase (${new Date().toISOString()})`);
+      // this.verbose(2, `✅ Data sent to Worker + Supabase (${new Date().toISOString()})`);
     } catch (err) {
       throw new Error(`postToWorker failed: ${err.message}`);
     }
@@ -1079,7 +1079,7 @@ export default class SquadPanelBroadcast extends BasePlugin {
         }),
       });
     } catch (err) {
-      this.verbose(2, `⚠️ Supabase save failed: ${err.message}`);
+      // this.verbose(2, `⚠️ Supabase save failed: ${err.message}`);
     }
   }
 
@@ -1119,9 +1119,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
         body: JSON.stringify(killRecord),
       });
 
-      this.verbose(1, `✅ Kill snapshot guardado: ${data.attacker.name} → ${data.victim.name}`);
+      // this.verbose(1, `✅ Kill snapshot guardado: ${data.attacker.name} → ${data.victim.name}`);
     } catch (err) {
-      this.verbose(2, `⚠️ Kill snapshot save failed: ${err.message}`);
+      // this.verbose(2, `⚠️ Kill snapshot save failed: ${err.message}`);
     }
   }
 }
