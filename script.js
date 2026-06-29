@@ -1791,13 +1791,16 @@ function toggleKillfeedPanel() {
 
 initKillfeedListener();
 
-// Event listener para botón killfeed (evita ReferenceError)
-document.addEventListener('DOMContentLoaded', function() {
+// Inicializar event listener para botón killfeed
+(function initKillfeedButton() {
   const btnKillfeed = document.getElementById('btnKillfeedToggle');
   if (btnKillfeed) {
     btnKillfeed.addEventListener('click', toggleKillfeedPanel);
+    console.log('✅ Event listener killfeed registrado');
+  } else {
+    console.warn('⚠️ btnKillfeedToggle no encontrado en el DOM');
   }
-});
+})();
 
   // Zoom centrado en seleccionado
   map.on('zoom', function() {
