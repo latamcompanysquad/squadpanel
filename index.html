@@ -121,10 +121,10 @@
       <div id="controlPanel"></div>
     </div>
 
-    <div id="side" style="display:none;">
+    <div id="side">
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
-        <div class="side-tab" onclick="switchTab('killfeed')">🔫 Killfeed</div>
+        <div class="side-tab" onclick="switchTab('killfeed')" style="display:none;">🔫 Killfeed</div>
         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
       </div>
       <div id="sideContent">
@@ -138,7 +138,7 @@
             <div id="playerList"></div>
           </div>
         </div>
-        <div id="tabKillfeed" class="hide">
+        <div id="tabKillfeed" class="hide" style="display:none;">
           <div>
             <div class="panel-title">Killfeed Vivo</div>
             <div id="killfeedList" style="font-family:'JetBrains Mono',monospace;font-size:11px;max-height:500px;overflow-y:auto;"></div>
