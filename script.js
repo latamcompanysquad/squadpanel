@@ -1757,27 +1757,21 @@ function updateKillfeedFloatingUI() {
   const reversedKills = [...killfeedList].reverse();
 
   container.innerHTML = reversedKills.map((kill, idx) => {
-    const isTK = kill.teamkill;
     const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
-    const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 20);
+    const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 18);
     
     // Obtener colores por team
     const attackerColor = getPlayerTeamColor(kill.attacker_steam, kill.attacker_eos);
     const victimColor = getPlayerTeamColor(kill.victim_steam, kill.victim_eos);
     
-    // Detectar TK: si ambos tienen el mismo color (mismo team)
-    const isTKVisual = attackerColor === victimColor && attackerColor !== 'var(--text-dim)';
-    const tkIndicator = isTKVisual ? '<span style="color:var(--amber);font-weight:700;margin-left:2px;">[TK]</span>' : '';
-    
     return `
       <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'">
-        <span style="color:${attackerColor};font-weight:700;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔴${kill.attacker_name || 'Unknown'}</span>
-        <span style="color:var(--text-dim);font-size:10px;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
-        <span style="color:${victimColor};font-weight:600;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">☠️${kill.victim_name || 'Unknown'}</span>
+        <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔴${kill.attacker_name || 'Unknown'}</span>
+        <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
+        <span style="color:${victimColor};font-weight:600;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">☠️${kill.victim_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;">${timestamp}</span>
-        ${tkIndicator}
       </div>
     `;
   }).join('');
