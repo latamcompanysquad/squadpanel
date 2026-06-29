@@ -1706,6 +1706,37 @@ async function setupRealtimeListener() {
     } catch (err) {
       console.log('❌ Error en consulta de kills históricos:', err.message);
     }
+
+    // Polling fallback para auto-update (cada 3 segundos)
+    console.log('⏰ Iniciando polling fallback para killfeed...');
+    let lastKillTimestamp = Date.now();
+    setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('kill_snapshots')
+          .select('*')
+          .gt('created_at', new Date(lastKillTimestamp).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (error) {
+          console.log('⚠️ Polling error:', error.message);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          console.log(`📊 Polling encontró ${data.length} kills nuevas`);
+          data.reverse().forEach(kill => {
+            if (!killfeedList.find(k => k.id === kill.id)) {
+              addKillfeedItem(kill);
+              lastKillTimestamp = new Date(kill.created_at).getTime();
+            }
+          });
+        }
+      } catch (err) {
+        console.log('⚠️ Polling exception:', err.message);
+      }
+    }, 3000);
   } catch (err) {
     console.log('❌ Error setupRealtimeListener:', err.message, err);
   }
@@ -1764,6 +1795,23 @@ function openKillReplay(killID, attackerName, victimName, weapon, attackerX, att
   window.open(`replays.html?${params.toString()}`, '_blank', 'width=1200,height=800');
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', (e) => {
+    const killfeedItem = e.target.closest('.killfeed-item');
+    if (killfeedItem) {
+      const killJSON = killfeedItem.getAttribute('data-kill-json');
+      if (killJSON) {
+        try {
+          const kill = JSON.parse(killJSON);
+          openKillReplay(kill.killID, kill.attacker, kill.victim, kill.weapon, kill.ax, kill.ay, kill.vx, kill.vy);
+        } catch (err) {
+          console.log('❌ Error parsing kill data:', err);
+        }
+      }
+    }
+  });
+});
+
 function updateKillfeedFloatingUI() {
   const container = document.getElementById('killfeedPanelList');
   if (!container) return;
@@ -1782,11 +1830,24 @@ function updateKillfeedFloatingUI() {
     const victimColor = getPlayerTeamColor(kill.victim_steam, kill.victim_eos);
     const attackerCircle = getTeamCircleEmoji(attackerColor);
     
+    const killData = {
+      killID: kill.id || `${kill.match_id}_${kill.timestamp}`,
+      attacker: kill.attacker_name,
+      victim: kill.victim_name,
+      weapon: kill.weapon,
+      ax: kill.attacker_pos_x || 0,
+      ay: kill.attacker_pos_y || 0,
+      vx: kill.victim_pos_x || 0,
+      vy: kill.victim_pos_y || 0
+    };
+
     return `
-      <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
+      <div class="killfeed-item" 
+           data-kill-id="${killData.killID}"
+           data-kill-json='${JSON.stringify(killData).replace(/'/g, "&apos;")}'
+           style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'"
-           onclick="openKillReplay('${kill.id || kill.match_id}_${kill.timestamp}', '${kill.attacker_name}', '${kill.victim_name}', '${kill.weapon}', ${kill.attacker_pos_x || 0}, ${kill.attacker_pos_y || 0}, ${kill.victim_pos_x || 0}, ${kill.victim_pos_y || 0})"
            title="Click para ver replay">
         <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${attackerCircle}${kill.attacker_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
