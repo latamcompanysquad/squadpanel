@@ -1709,13 +1709,13 @@ async function setupRealtimeListener() {
 
     // Polling fallback para auto-update (cada 3 segundos)
     console.log('⏰ Iniciando polling fallback para killfeed...');
-    let lastKillTimestamp = new Date(Date.now() - 90000).toISOString(); // Últimas 90 segundos
+    let lastKillTimestamp = new Date(Date.now() - 10000).toISOString(); // Últimas 10 segundos
     setInterval(async () => {
       try {
         const { data, error } = await supabase
           .from('kill_snapshots')
           .select('*')
-          .gt('created_at', new Date(lastKillTimestamp).toISOString())
+          .gt('created_at', lastKillTimestamp)
           .order('created_at', { ascending: false })
           .limit(10);
         
@@ -1729,7 +1729,7 @@ async function setupRealtimeListener() {
           data.reverse().forEach(kill => {
             if (!killfeedList.find(k => k.id === kill.id)) {
               addKillfeedItem(kill);
-              lastKillTimestamp = new Date(kill.created_at).getTime();
+              lastKillTimestamp = kill.created_at;
             }
           });
         }
