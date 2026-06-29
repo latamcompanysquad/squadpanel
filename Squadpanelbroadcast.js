@@ -1084,8 +1084,12 @@ export default class SquadPanelBroadcast extends BasePlugin {
     }
   }
 
-  async saveKillSnapshot(data) {
-    if (!this.options.supabaseUrl || !this.options.supabaseKey) return;
+async saveKillSnapshot(data) {
+    console.log('💾 [saveKillSnapshot] Iniciando guardado');
+    if (!this.options.supabaseUrl || !this.options.supabaseKey) {
+      console.log('⚠️ Supabase no configurado');
+      return;
+    }
 
     try {
       const killRecord = {
@@ -1109,7 +1113,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
         victim_player_id: data.victimPlayer?.id || null,
       };
 
-      await fetch(`${this.options.supabaseUrl}/rest/v1/kill_snapshots`, {
+      console.log('📤 Enviando a Supabase:', killRecord);
+
+      const res = await fetch(`${this.options.supabaseUrl}/rest/v1/kill_snapshots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1120,9 +1126,17 @@ export default class SquadPanelBroadcast extends BasePlugin {
         body: JSON.stringify(killRecord),
       });
 
-      // this.verbose(1, `✅ Kill snapshot guardado: ${data.attacker.name} → ${data.victim.name}`);
+      console.log('✅ Supabase response status:', res.status);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.log('❌ Supabase error:', errText);
+        return;
+      }
+
+      console.log('✅ Kill snapshot guardado: ' + data.attacker.name + ' → ' + data.victim.name);
     } catch (err) {
-      // this.verbose(2, `⚠️ Kill snapshot save failed: ${err.message}`);
+      console.log('❌ Kill snapshot save failed:', err.message);
     }
   }
 }
