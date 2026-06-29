@@ -1709,7 +1709,7 @@ async function setupRealtimeListener() {
 
     // Polling fallback para auto-update (cada 3 segundos)
     console.log('⏰ Iniciando polling fallback para killfeed...');
-    let lastKillTimestamp = Date.now();
+    let lastKillTimestamp = new Date(Date.now() - 90000).toISOString(); // Últimas 90 segundos
     setInterval(async () => {
       try {
         const { data, error } = await supabase
