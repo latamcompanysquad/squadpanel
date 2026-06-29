@@ -1743,8 +1743,22 @@ async function setupRealtimeListener() {
 }
 
 function addKillfeedItem(kill) {
+  // Evitar duplicados: si el kill ya existe en la lista, no agregar
+  const killID = kill.id || `${kill.match_id}_${kill.timestamp}`;
+  const existingIndex = killfeedList.findIndex(k => (k.id || `${k.match_id}_${k.timestamp}`) === killID);
+  
+  if (existingIndex !== -1) {
+    // Kill ya existe, no hacer nada
+    console.log('⚠️ Kill duplicada, ignorando:', killID);
+    return;
+  }
+  
   killfeedList.unshift(kill);
-  if (killfeedList.length > MAX_KILLFEED_ITEMS) killfeedList.pop();
+  if (killfeedList.length > MAX_KILLFEED_ITEMS) {
+    killfeedList.pop();
+  }
+  
+  console.log('✅ Kill agregada:', kill.attacker_name, '→', kill.victim_name, '(Total:', killfeedList.length, ')');
   
   updateKillfeedUI();
   updateKillfeedFloatingUI();
@@ -1765,29 +1779,32 @@ function updateKillfeedUI() {
 }
 
 // Global scope - ANTES de cualquier renderizado
-window.handleKillfeedClick = function(killDataJson) {
-  console.log('🔫 [handleKillfeedClick] Click detected, data:', killDataJson);
-  try {
-    const kill = JSON.parse(killDataJson);
-    console.log('✅ Parsed kill:', kill);
-    
-    const params = new URLSearchParams({
-      kill_id: kill.killID || '',
-      attacker: kill.attacker || '',
-      victim: kill.victim || '',
-      weapon: kill.weapon || '',
-      ax: kill.ax || 0,
-      ay: kill.ay || 0,
-      vx: kill.vx || 0,
-      vy: kill.vy || 0
-    });
-    
-    const url = `replays.html?${params.toString()}`;
-    console.log('🚀 Abriendo:', url);
-    window.open(url, '_blank', 'width=1200,height=800');
-  } catch (err) {
-    console.log('❌ Error en handleKillfeedClick:', err.message, 'data:', killDataJson);
+// Global scope - Handler de click para killfeed (busca en lista en memoria)
+window.openKillReplayByID = function(killID) {
+  console.log('🔫 [openKillReplayByID] Click para kill:', killID);
+  const kill = killfeedList.find(k => (k.id || `${k.match_id}_${k.timestamp}`) === killID);
+  
+  if (!kill) {
+    console.log('❌ Kill no encontrada en lista:', killID);
+    return;
   }
+  
+  console.log('✅ Kill encontrada:', kill.attacker_name, '→', kill.victim_name);
+  
+  const params = new URLSearchParams({
+    kill_id: killID,
+    attacker: kill.attacker_name || '',
+    victim: kill.victim_name || '',
+    weapon: kill.weapon || '',
+    ax: kill.attacker_pos_x || 0,
+    ay: kill.attacker_pos_y || 0,
+    vx: kill.victim_pos_x || 0,
+    vy: kill.victim_pos_y || 0
+  });
+  
+  const url = `replays.html?${params.toString()}`;
+  console.log('🚀 Abriendo:', url);
+  window.open(url, '_blank', 'width=1200,height=800');
 };
 
 function getPlayerTeamColor(playerSteamId, playerEosId) {
@@ -1856,7 +1873,7 @@ function updateKillfeedFloatingUI() {
            style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'"
-           onclick="window.handleKillfeedClick('${JSON.stringify(killData).replace(/'/g, "\\'")}')"
+           onclick="window.openKillReplayByID('${killData.killID}')"
            title="Click para ver replay">
         <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${attackerCircle}${kill.attacker_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
