@@ -1753,77 +1753,66 @@ function updateKillfeedFloatingUI() {
   const countSpan = document.getElementById('killCount');
   if (countSpan) countSpan.textContent = `(${killfeedList.length})`;
 
-  container.innerHTML = killfeedList.map((kill, idx) => {
+  // Invertir orden: kills más recientes ARRIBA
+  const reversedKills = [...killfeedList].reverse();
+
+  container.innerHTML = reversedKills.map((kill, idx) => {
     const isTK = kill.teamkill;
     const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
-    const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 14);
-    const weaponIcon = '🔫';
+    const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 20);
     
     // Obtener colores por team
     const attackerColor = getPlayerTeamColor(kill.attacker_steam, kill.attacker_eos);
     const victimColor = getPlayerTeamColor(kill.victim_steam, kill.victim_eos);
     
-    const tkBadge = isTK ? '<span style="color:var(--amber);font-size:9px;font-weight:700;margin-left:4px;">[TK]</span>' : '';
+    // Detectar TK: si ambos tienen el mismo color (mismo team)
+    const isTKVisual = attackerColor === victimColor && attackerColor !== 'var(--text-dim)';
+    const tkIndicator = isTKVisual ? '<span style="color:var(--amber);font-weight:700;margin-left:2px;">[TK]</span>' : '';
     
     return `
-      <div style="padding:8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;" 
+      <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
-          <div style="flex:1;display:flex;align-items:center;gap:4px;min-width:0;">
-            <span style="font-size:11px;">🔴</span>
-            <span style="color:${attackerColor};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${kill.attacker_name || 'Unknown'}</span>
-          </div>
-          <span style="color:var(--text-dim);font-size:9px;font-weight:600;flex-shrink:0;">${timestamp}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
-          <div style="display:flex;align-items:center;gap:4px;flex:1;">
-            <span style="font-size:11px;text-align:right;flex:1;">☠️</span>
-            <span style="color:${victimColor};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right;font-size:12px;">${kill.victim_name || 'Unknown'}</span>
-          </div>
-          <div style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:2px;">
-            <span>${weaponIcon}</span>
-            <span title="${kill.weapon}">${weaponClean}</span>
-          </div>
-        </div>
-        ${tkBadge}
+        <span style="color:${attackerColor};font-weight:700;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔴${kill.attacker_name || 'Unknown'}</span>
+        <span style="color:var(--text-dim);font-size:10px;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
+        <span style="color:${victimColor};font-weight:600;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">☠️${kill.victim_name || 'Unknown'}</span>
+        <span style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;">${timestamp}</span>
+        ${tkIndicator}
       </div>
     `;
   }).join('');
 }
 
 let killfeedPollInterval = null;
+let killfeedPanelOpen = false;
 
 function toggleKillfeedPanel() {
   const panel = document.getElementById('killfeedPanelOverlay');
   const btn = document.getElementById('btnKillfeedToggle');
   if (!panel) return;
 
-  const isHidden = panel.style.display === 'none';
-  panel.style.display = isHidden ? 'flex' : 'none';
-  btn.style.color = isHidden ? 'var(--green)' : 'var(--text)';
+  killfeedPanelOpen = !killfeedPanelOpen;
+  panel.style.display = killfeedPanelOpen ? 'flex' : 'none';
+  btn.style.color = killfeedPanelOpen ? 'var(--green)' : 'var(--text)';
   
-  if (isHidden) {
-    // Panel se abre: actualizar UI y iniciar polling automático
+  if (killfeedPanelOpen) {
+    // Panel se abre: actualizar UI y iniciar polling
     updateKillfeedFloatingUI();
+    console.log('🔫 Killfeed panel abierto, iniciando polling...');
     
-    // Iniciar polling cada 3 segundos si no está ya activo
-    if (!killfeedPollInterval) {
-      killfeedPollInterval = setInterval(() => {
-        if (document.getElementById('killfeedPanelOverlay').style.display !== 'none') {
-          updateKillfeedFloatingUI();
-        } else {
-          // Detener polling si panel está cerrado
-          clearInterval(killfeedPollInterval);
-          killfeedPollInterval = null;
-        }
-      }, 3000);
-    }
+    if (killfeedPollInterval) clearInterval(killfeedPollInterval);
+    
+    killfeedPollInterval = setInterval(() => {
+      if (killfeedPanelOpen) {
+        updateKillfeedFloatingUI();
+      }
+    }, 2000); // Polling cada 2 segundos
   } else {
     // Panel se cierra: detener polling
     if (killfeedPollInterval) {
       clearInterval(killfeedPollInterval);
       killfeedPollInterval = null;
+      console.log('🔫 Killfeed panel cerrado, polling detenido');
     }
   }
 }
