@@ -967,22 +967,36 @@ async function rSelectMatch(id) {
   const mi=document.getElementById('mi_'+id); if(mi) mi.classList.add('active');
   document.getElementById('rStatusText').textContent='Cargando...';
   try {
-    // ── PAGINACIÓN COMPLETA ──
+    // ── PAGINACIÓN OPTIMIZADA ──
     let allSnapshots = [];
     let offset = 0;
-    const limit = 1000;
+    const limit = 500; // Reducido de 1000 para no saturar
     let hasMore = true;
-    while (hasMore) {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc&limit=${limit}&offset=${offset}`,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.length === 0) break;
-      allSnapshots = allSnapshots.concat(data);
-      offset += limit;
-      hasMore = data.length === limit;
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (hasMore && retries < maxRetries) {
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${id}&order=snapshot_index.asc&limit=${limit}&offset=${offset}`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.length === 0) break;
+        allSnapshots = allSnapshots.concat(data);
+        offset += limit;
+        hasMore = data.length === limit;
+        retries = 0; // Reset retries en caso de éxito
+
+        // Delay entre requests para no saturar
+        if (hasMore) await new Promise(r => setTimeout(r, 200));
+      } catch (e) {
+        retries++;
+        if (retries >= maxRetries) throw e;
+        console.warn(`[REPLAY] Request falló, reintentando (${retries}/${maxRetries})...`);
+        await new Promise(r => setTimeout(r, 500 * retries)); // Backoff exponencial
+      }
     }
     rSnapshots = allSnapshots.map(s => s.data || s);
     rIdx = 0;
