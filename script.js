@@ -1714,6 +1714,7 @@ function addKillfeedItem(kill) {
   if (killfeedList.length > MAX_KILLFEED_ITEMS) killfeedList.pop();
   
   updateKillfeedUI();
+  updateKillfeedFloatingUI();
 }
 
 function updateKillfeedUI() {
@@ -1728,6 +1729,64 @@ function updateKillfeedUI() {
       ${kill.teamkill ? '<div style="color:var(--amber);font-size:9px;font-weight:600;">TK</div>' : ''}
     </div>
   `).join('');
+}
+
+function updateKillfeedFloatingUI() {
+  const container = document.getElementById('killfeedPanelList');
+  if (!container) return;
+
+  const countSpan = document.getElementById('killCount');
+  if (countSpan) countSpan.textContent = `(${killfeedList.length})`;
+
+  container.innerHTML = killfeedList.map((kill, idx) => {
+    const isTK = kill.teamkill;
+    const isAttackerValid = kill.attacker_player_id && kill.attacker_player_id !== '0';
+    const isVictimValid = kill.victim_player_id && kill.victim_player_id !== '0';
+    
+    const timestamp = kill.created_at ? new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
+    const weaponClean = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 14);
+    const weaponIcon = '🔫';
+    
+    const attackerColor = isAttackerValid ? 'var(--red)' : 'var(--text-dim)';
+    const victimColor = isVictimValid ? 'var(--blue)' : 'var(--text-dim)';
+    
+    const tkBadge = isTK ? '<span style="color:var(--amber);font-size:9px;font-weight:700;margin-left:4px;">[TK]</span>' : '';
+    
+    return `
+      <div style="padding:8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;" 
+           onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
+           onmouseout="this.style.background='transparent'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+          <div style="flex:1;display:flex;align-items:center;gap:4px;min-width:0;">
+            <span style="color:${attackerColor};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${kill.attacker_name || 'Unknown'}</span>
+          </div>
+          <span style="color:var(--text-dim);font-size:9px;font-weight:600;flex-shrink:0;">${timestamp}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+          <div style="color:${victimColor};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right;font-size:12px;">${kill.victim_name || 'Unknown'}</div>
+          <div style="color:var(--text-dim);font-size:10px;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:2px;">
+            <span>${weaponIcon}</span>
+            <span title="${kill.weapon}">${weaponClean}</span>
+          </div>
+        </div>
+        ${tkBadge}
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleKillfeedPanel() {
+  const panel = document.getElementById('killfeedPanelOverlay');
+  const btn = document.getElementById('btnKillfeedToggle');
+  if (!panel) return;
+
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'flex' : 'none';
+  btn.style.color = isHidden ? 'var(--green)' : 'var(--text)';
+  
+  if (isHidden) {
+    updateKillfeedFloatingUI();
+  }
 }
 
 initKillfeedListener();
