@@ -123,6 +123,101 @@ export default {
       }
     }
 
+    // POST: actualizar vehicle mappings y pushear a GitHub
+    if (request.method === "POST" && url.pathname === "/api/push-vehicle-mappings") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: "Invalid JSON" }, 400);
+      }
+
+      const { mappings } = body;
+      if (!mappings || typeof mappings !== "object") {
+        return json({ error: "Missing or invalid mappings" }, 400);
+      }
+
+      try {
+        const token = env.GITHUB_TOKEN;
+        const owner = "latamcompanysquad";
+        const repo = "squadpanel";
+        const branch = "main";
+        const filePath = "vehicle_icon_mapping.json";
+
+        // 1. Leer archivo actual de GitHub
+        const getResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3.raw",
+            },
+          }
+        );
+
+        if (!getResponse.ok) {
+          throw new Error(`GitHub read failed: ${getResponse.status}`);
+        }
+
+        const rawContent = await getResponse.text();
+        const currentData = JSON.parse(rawContent);
+
+        // 2. Mergear nuevo mappings en detailed_vehicle_mapping
+        if (!currentData.detailed_vehicle_mapping) {
+          currentData.detailed_vehicle_mapping = {};
+        }
+        Object.assign(currentData.detailed_vehicle_mapping, mappings);
+
+        // 3. Preparar para commit
+        const newContent = JSON.stringify(currentData, null, 2);
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(newContent);
+        const base64 = btoa(String.fromCharCode(...bytes));
+
+        // 4. Obtener SHA del archivo actual (necesario para actualizar)
+        const shaResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+            },
+          }
+        );
+
+        const shaData = await shaResponse.json();
+        const sha = shaData.sha;
+
+        // 5. Hacer commit y push
+        const commitResponse = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`,
+          {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: `feat: add new vehicle mappings from SquadPanel UI (${Object.keys(mappings).length} vehicles)`,
+              content: base64,
+              sha: sha,
+              branch: branch,
+            }),
+          }
+        );
+
+        if (!commitResponse.ok) {
+          const errText = await commitResponse.text();
+          throw new Error(`GitHub commit failed: ${commitResponse.status} - ${errText}`);
+        }
+
+        return json({ success: true, count: Object.keys(mappings).length });
+      } catch (error) {
+        console.error("Push vehicle mappings error:", error.message);
+        return json({ error: error.message }, 500);
+      }
+    }
+
     // 404 para cualquier otra ruta
     return json({ error: "Not found" }, 404);
   },
