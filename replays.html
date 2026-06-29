@@ -210,7 +210,7 @@
 // REPLAY ENGINE — paridad total con live map
 // ═══════════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://vaddaisbjjtzibihjafj.supabase.co';
+const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
 let rVehicleIconMap = {};
 fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { rVehicleIconMap = d.vehicles_with_named_icons || {}; }).catch(e => console.warn('Icon map load failed:', e));
