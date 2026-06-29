@@ -514,8 +514,7 @@ function rGroupByVehicle(players) {
     if (!p.vehicle) { solo.push(p); continue; }
     const key = p.vehicle.id ? `veh_${p.vehicle.id}` : `veh_${p.vehicle.name}_${p.teamID}`;
     if (!groups[key]) {
-      const iconPath = getVehicleIcon(p.vehicle.name, p.vehicle.type);
-      groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', teamID:p.teamID, occupants:[], position:null, icon:iconPath };
+      groups[key] = { vehicleId:p.vehicle.id||key, vehicleName:p.vehicle.name||'Vehículo', vehicleType:p.vehicle.type, teamID:p.teamID, occupants:[], position:null, icon:null };
     }
     groups[key].occupants.push(p);
     if (!groups[key].position && p.position) groups[key].position = p.position;
