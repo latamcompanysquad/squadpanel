@@ -218,13 +218,34 @@ let rVehicleTypeMap = {};
 let rDetailedVehicleMap = {};
 
 function inferVehicleType(vehicleName) {
-  if (!vehicleName || !rDetailedVehicleMap) return undefined;
-  const entry = rDetailedVehicleMap[vehicleName];
-  if (entry && entry.type) return entry.type;
-  const norm = normalizeVehicleKey(vehicleName);
-  for (const key in rDetailedVehicleMap) {
-    if (normalizeVehicleKey(key) === norm && rDetailedVehicleMap[key].type) return rDetailedVehicleMap[key].type;
+  if (!vehicleName) {
+    console.log('[INFER-TYPE] vehicleName vacio/null');
+    return undefined;
   }
+  if (!rDetailedVehicleMap || Object.keys(rDetailedVehicleMap).length === 0) {
+    console.log('[INFER-TYPE] rDetailedVehicleMap no cargado', {keys: Object.keys(rDetailedVehicleMap).length});
+    return undefined;
+  }
+  
+  console.log('[INFER-TYPE] Buscando:', vehicleName);
+  
+  const entry = rDetailedVehicleMap[vehicleName];
+  if (entry && entry.type) {
+    console.log('[INFER-TYPE] ✓ EXACTO:', vehicleName, '→', entry.type);
+    return entry.type;
+  }
+  
+  const norm = normalizeVehicleKey(vehicleName);
+  console.log('[INFER-TYPE] Intentando normalizado:', norm, 'de', vehicleName);
+  for (const key in rDetailedVehicleMap) {
+    const keyNorm = normalizeVehicleKey(key);
+    if (keyNorm === norm && rDetailedVehicleMap[key].type) {
+      console.log('[INFER-TYPE] ✓ NORM:', key, '→', rDetailedVehicleMap[key].type);
+      return rDetailedVehicleMap[key].type;
+    }
+  }
+  
+  console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, 'norm:', norm);
   return undefined;
 }
 
@@ -233,7 +254,8 @@ fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => {
   rVehicleTypeMap = d.vehicle_type_mapping || {};
   rDetailedVehicleMap = d.detailed_vehicle_mapping || {};
   rVehicleIconMapNorm = buildNormalizedIconIndex(rVehicleIconMap);
-  console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles, types:', Object.keys(rVehicleTypeMap).length);
+  console.log('[REPLAY] Icon map loaded:', Object.keys(rVehicleIconMap).length, 'vehicles, types:', Object.keys(rVehicleTypeMap).length, 'detailed:', Object.keys(rDetailedVehicleMap).length);
+  console.log('[REPLAY] Primeras 5 claves detailed:', Object.keys(rDetailedVehicleMap).slice(0,5));
 }).catch(e => console.warn('Icon map load failed:', e));
 
 function normalizeVehicleKey(str) {
