@@ -215,8 +215,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
     });
 
     this.server.on('SAT_KILLFEED', async (data) => {
-      console.log('🔫 [SquadPanelBroadcast] SAT_KILLFEED RECIBIDO');
-      console.log('   Attacker:', data.attacker.name, 'Victim:', data.victim.name);
+      // console.log('🔫 [SquadPanelBroadcast] SAT_KILLFEED RECIBIDO');
+      // console.log('   Attacker:', data.attacker.name, 'Victim:', data.victim.name);
       await this.saveKillSnapshot(data);
     });
 
@@ -1085,9 +1085,9 @@ export default class SquadPanelBroadcast extends BasePlugin {
   }
 
 async saveKillSnapshot(data) {
-    console.log('💾 [saveKillSnapshot] Iniciando guardado');
+    // console.log('💾 [saveKillSnapshot] Iniciando guardado');
     if (!this.options.supabaseUrl || !this.options.supabaseKey) {
-      console.log('⚠️ Supabase no configurado');
+      // console.log('⚠️ Supabase no configurado');
       return;
     }
 
@@ -1113,7 +1113,7 @@ async saveKillSnapshot(data) {
         victim_player_id: data.victimPlayer?.id || null,
       };
 
-      console.log('📤 Enviando a Supabase:', killRecord);
+      // console.log('📤 Enviando a Supabase:', killRecord);
 
       const res = await fetch(`${this.options.supabaseUrl}/rest/v1/kill_snapshots`, {
         method: 'POST',
@@ -1126,17 +1126,17 @@ async saveKillSnapshot(data) {
         body: JSON.stringify(killRecord),
       });
 
-      console.log('✅ Supabase response status:', res.status);
+      // console.log('✅ Supabase response status:', res.status);
 
       if (!res.ok) {
         const errText = await res.text();
-        console.log('❌ Supabase error:', errText);
+        // console.log('❌ Supabase error:', errText);
         return;
       }
 
-      console.log('✅ Kill snapshot guardado: ' + data.attacker.name + ' → ' + data.victim.name);
+      // console.log('✅ Kill snapshot guardado: ' + data.attacker.name + ' → ' + data.victim.name);
     } catch (err) {
-      console.log('❌ Kill snapshot save failed:', err.message);
+      // console.log('❌ Kill snapshot save failed:', err.message);
     }
   }
 }
