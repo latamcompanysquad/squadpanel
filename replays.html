@@ -217,6 +217,15 @@ let rVehicleIconMapNorm = {};
 let rVehicleTypeMap = {};
 let rDetailedVehicleMap = {};
 
+function parseBlueprintName(rawName) {
+  if (!rawName || !rawName.startsWith('BP_')) return rawName;
+  return rawName
+    .replace(/^BP_/, '')
+    .replace(/_\d+$/, '')
+    .replace(/_(Desert|Woodland|Snow|Arid|Green|Urban|Jungle)(_C)?$/i, '')
+    .replace(/_C$/i, '');
+}
+
 function inferVehicleType(vehicleName) {
   if (!vehicleName) {
     console.log('[INFER-TYPE] vehicleName vacio/null');
@@ -227,16 +236,23 @@ function inferVehicleType(vehicleName) {
     return undefined;
   }
   
-  console.log('[INFER-TYPE] Buscando:', vehicleName);
+  // Si es blueprint, parsear primero
+  let searchName = vehicleName;
+  if (vehicleName.startsWith('BP_')) {
+    searchName = parseBlueprintName(vehicleName);
+    console.log('[INFER-TYPE] Blueprint parseado:', vehicleName, '→', searchName);
+  }
   
-  const entry = rDetailedVehicleMap[vehicleName];
+  console.log('[INFER-TYPE] Buscando:', searchName);
+  
+  const entry = rDetailedVehicleMap[searchName];
   if (entry && entry.type) {
-    console.log('[INFER-TYPE] ✓ EXACTO:', vehicleName, '→', entry.type);
+    console.log('[INFER-TYPE] ✓ EXACTO:', searchName, '→', entry.type);
     return entry.type;
   }
   
-  const norm = normalizeVehicleKey(vehicleName);
-  console.log('[INFER-TYPE] Intentando normalizado:', norm, 'de', vehicleName);
+  const norm = normalizeVehicleKey(searchName);
+  console.log('[INFER-TYPE] Intentando normalizado:', norm, 'de', searchName);
   for (const key in rDetailedVehicleMap) {
     const keyNorm = normalizeVehicleKey(key);
     if (keyNorm === norm && rDetailedVehicleMap[key].type) {
@@ -245,7 +261,7 @@ function inferVehicleType(vehicleName) {
     }
   }
   
-  console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, 'norm:', norm);
+  console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, '(parsed:', searchName, ') norm:', norm);
   return undefined;
 }
 
