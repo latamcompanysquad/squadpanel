@@ -280,8 +280,42 @@ function inferVehicleType(vehicleName) {
     return typeFromPrefix;
   }
   
+  // 4. Heurístico por palabras clave
+  const heuristic = inferTypeFromKeywords(searchName);
+  if (heuristic) {
+    console.log('[INFER-TYPE] ✓ HEURISTIC:', searchName, '→', heuristic);
+    return heuristic;
+  }
+  
   console.log('[INFER-TYPE] ✗ NO ENCONTRADO:', vehicleName, '(parsed:', searchName, ')');
   return undefined;
+}
+
+function inferTypeFromKeywords(name) {
+  const lower = (name || '').toLowerCase();
+  
+  // Logistics/Utility
+  if (lower.includes('logi') || lower.includes('supply')) return 'LOGI';
+  
+  // Transport/Trucks
+  if (lower.includes('transport') || lower.includes('truck')) return 'TRAN';
+  
+  // Helicopters
+  if (lower.includes('helo') || lower.includes('helicopter') || lower.includes('raven') || lower.includes('black hawk') || lower.includes('huey')) return 'UH';
+  if (lower.includes('attack') || lower.includes('apache')) return 'AH';
+  
+  // Vehicles by size/type
+  if (lower.includes('mrap') || lower.includes('humvee') || lower.includes('hmmwv')) return 'MRAP';
+  if (lower.includes('jeep') || lower.includes('atv')) return 'ULTV';
+  if (lower.includes('apc') || lower.includes('mtlb')) return 'APC';
+  if (lower.includes('ifv') || lower.includes('bmp')) return 'IFV';
+  if (lower.includes('tank') || lower.includes('t-') || lower.includes('m48')) return 'MBT';
+  
+  // Weapons/Artillery
+  if (lower.includes('mortar') || lower.includes('grad') || lower.includes('himars')) return 'SPA';
+  if (lower.includes('zu-') || lower.includes('zu23')) return 'SPAA';
+  
+  return null;
 }
 
 fetch('vehicle_icon_mapping.json').then(r => r.json()).then(d => { 
