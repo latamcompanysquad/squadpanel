@@ -1627,6 +1627,77 @@ if (isChatVisible && currentMap) {
   poll();
   setInterval(poll, POLL_MS);
 
+// ─────── KILLFEED REALTIME (Supabase) ───────
+const killfeedList = [];
+const MAX_KILLFEED_ITEMS = 50;
+
+async function initKillfeedListener() {
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
+    // // console.log('⚠️ Supabase no configurado para killfeed');
+    return;
+  }
+
+  try {
+    // Crear cliente Supabase basic para realtime
+    const SUPABASE_ANON_KEY = SUPABASE_CONFIG.key;
+    const SUPABASE_URL = SUPABASE_CONFIG.url;
+    
+    // Cargar Supabase JS library si no está
+    if (!window.supabase) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
+      script.type = 'module';
+      script.onload = () => setupRealtimeListener();
+      document.head.appendChild(script);
+    } else {
+      setupRealtimeListener();
+    }
+  } catch (err) {
+    // // console.log('Error loading Supabase:', err.message);
+  }
+}
+
+async function setupRealtimeListener() {
+  if (!window.supabase) return;
+  
+  const { createClient } = window.supabase;
+  const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+  
+  // Escuchar inserts en kill_snapshots
+  supabase
+    .channel('public:kill_snapshots')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kill_snapshots' }, (payload) => {
+      const kill = payload.new;
+      addKillfeedItem(kill);
+    })
+    .subscribe();
+  
+  // // console.log('✅ Killfeed realtime listener iniciado');
+}
+
+function addKillfeedItem(kill) {
+  killfeedList.unshift(kill);
+  if (killfeedList.length > MAX_KILLFEED_ITEMS) killfeedList.pop();
+  
+  updateKillfeedUI();
+}
+
+function updateKillfeedUI() {
+  const container = document.getElementById('killfeedList');
+  if (!container) return;
+  
+  container.innerHTML = killfeedList.map(kill => `
+    <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.05)'" onmouseout="this.style.background='transparent'">
+      <div style="text-align:right;color:${kill.attacker_player_id ? 'var(--red)' : 'var(--text-dim)'};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.attacker_name}</div>
+      <div style="color:var(--text-dim);font-size:9px;white-space:nowrap;">${kill.weapon.replace('BP_', '').replace('_C', '').substring(0, 12)}</div>
+      <div style="color:${kill.victim_player_id ? 'var(--blue)' : 'var(--text-dim)'};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.victim_name}</div>
+      ${kill.teamkill ? '<div style="color:var(--amber);font-size:9px;font-weight:600;">TK</div>' : ''}
+    </div>
+  `).join('');
+}
+
+initKillfeedListener();
+
   // Zoom centrado en seleccionado
   map.on('zoom', function() {
     if (!selectedSteamID) return;

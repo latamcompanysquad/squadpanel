@@ -108,6 +108,7 @@
     <div id="side">
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
+        <div class="side-tab" onclick="switchTab('killfeed')">🔫 Killfeed</div>
         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
       </div>
       <div id="sideContent">
@@ -119,6 +120,12 @@
           <div>
             <div class="panel-title">TOTAL <span id="totalCount" style="font-size:13px;">0</span> <span style="font-size:10px;color:var(--text-dim);">(en mapa <span id="playerCount">0</span>)</span></div>
             <div id="playerList"></div>
+          </div>
+        </div>
+        <div id="tabKillfeed" class="hide">
+          <div>
+            <div class="panel-title">Killfeed Vivo</div>
+            <div id="killfeedList" style="font-family:'JetBrains Mono',monospace;font-size:11px;max-height:500px;overflow-y:auto;"></div>
           </div>
         </div>
         <div id="tabAdmin">
