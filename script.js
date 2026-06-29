@@ -1622,14 +1622,14 @@ if (isChatVisible && currentMap) {
 }
 
 // ─── INICIALIZACIÓN ──────────────────────────────────────────────────────────
+// ─────── KILLFEED REALTIME (Supabase) ───────
+const killfeedList = [];
+const MAX_KILLFEED_ITEMS = 50;
+
 (async function init() {
   await loadVehicleMapping();
   poll();
   setInterval(poll, POLL_MS);
-
-// ─────── KILLFEED REALTIME (Supabase) ───────
-const killfeedList = [];
-const MAX_KILLFEED_ITEMS = 50;
 
 async function initKillfeedListener() {
   console.log('🔫 [initKillfeedListener] Iniciando...');
@@ -1764,6 +1764,39 @@ function addKillfeedItem(kill) {
   updateKillfeedFloatingUI();
 }
 
+// Global click handler - Delegated event listener
+document.addEventListener('click', function(e) {
+  const killfeedItem = e.target.closest('[data-kill-id]');
+  if (!killfeedItem) return;
+  
+  const killID = killfeedItem.getAttribute('data-kill-id');
+  const attacker = killfeedItem.getAttribute('data-attacker') || 'Unknown';
+  const victim = killfeedItem.getAttribute('data-victim') || 'Unknown';
+  const weapon = killfeedItem.getAttribute('data-weapon') || '';
+  const ax = parseFloat(killfeedItem.getAttribute('data-ax')) || 0;
+  const ay = parseFloat(killfeedItem.getAttribute('data-ay')) || 0;
+  const vx = parseFloat(killfeedItem.getAttribute('data-vx')) || 0;
+  const vy = parseFloat(killfeedItem.getAttribute('data-vy')) || 0;
+  
+  console.log('🔫 [Click Killfeed]', attacker, '→', victim);
+  
+  const params = new URLSearchParams({
+    kill_id: killID,
+    attacker: attacker,
+    victim: victim,
+    weapon: weapon,
+    ax: ax,
+    ay: ay,
+    vx: vx,
+    vy: vy
+  });
+  
+  const url = `replays.html?${params.toString()}`;
+  console.log('🚀 Abriendo:', url);
+  window.open(url, '_blank', 'width=1200,height=800');
+}, true); // Usar capture phase para asegurar que se ejecute
+
+
 function updateKillfeedUI() {
   const container = document.getElementById('killfeedList');
   if (!container) return;
@@ -1870,10 +1903,16 @@ function updateKillfeedFloatingUI() {
     return `
       <div class="killfeed-item" 
            data-kill-id="${killData.killID}"
+           data-attacker="${kill.attacker_name || 'Unknown'}"
+           data-victim="${kill.victim_name || 'Unknown'}"
+           data-weapon="${kill.weapon || ''}"
+           data-ax="${kill.attacker_pos_x || 0}"
+           data-ay="${kill.attacker_pos_y || 0}"
+           data-vx="${kill.victim_pos_x || 0}"
+           data-vy="${kill.victim_pos_y || 0}"
            style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:all 0.15s;background:transparent;display:flex;align-items:center;gap:8px;" 
            onmouseover="this.style.background='rgba(0,255,136,0.08)'" 
            onmouseout="this.style.background='transparent'"
-           onclick="window.openKillReplayByID('${killData.killID}')"
            title="Click para ver replay">
         <span style="color:${attackerColor};font-weight:700;min-width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${attackerCircle}${kill.attacker_name || 'Unknown'}</span>
         <span style="color:var(--text-dim);font-size:10px;min-width:110px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">🔫${weaponClean}</span>
