@@ -214,7 +214,7 @@
     </div>
     <div id="rMappingContent" style="flex:1;overflow-y:auto;padding:16px;"></div>
     <div style="display:flex;gap:8px;padding:16px;border-top:1px solid var(--panel-edge);">
-      <button onclick="rExportMapping()" style="flex:1;padding:8px;background:var(--olive);color:white;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;">📋 Copiar JSON</button>
+      <button onclick="rPushToGithub()" style="flex:1;padding:8px;background:var(--olive);color:white;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;">📤 PUSH A GITHUB</button>
       <button onclick="document.getElementById('rMappingModal').style.display='none'" style="flex:1;padding:8px;background:var(--panel-edge);color:var(--text);border:1px solid var(--olive-dim);border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;">Cerrar</button>
     </div>
   </div>
@@ -228,6 +228,7 @@
 
 const SUPABASE_URL = 'https://vaddajsbjijtzibjhafj.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg';
+const WORKER_URL = 'https://squadpanel-worker.latamcompanysquad.workers.dev';
 let rVehicleIconMap = {};
 let rVehicleIconMapNorm = {};
 let rVehicleTypeMap = {};
@@ -1170,6 +1171,7 @@ document.getElementById('rExportBtn').onclick = ()=>{
 document.getElementById('rMappingBtn').onclick = rOpenMappingPanel;
 
 function rOpenMappingPanel() {
+  rLoadMappingsFromStorage();
   const modal = document.getElementById('rMappingModal');
   const content = document.getElementById('rMappingContent');
   
@@ -1205,37 +1207,82 @@ function rOpenMappingPanel() {
     document.getElementById(`name_${esc(vehName)}`).oninput = (e) => {
       if (!rPendingMappings[vehName]) rPendingMappings[vehName] = {};
       rPendingMappings[vehName].name = e.target.value;
+      rSaveMappingsToStorage();
     };
     document.getElementById(`type_${esc(vehName)}`).onchange = (e) => {
       if (!rPendingMappings[vehName]) rPendingMappings[vehName] = {};
       rPendingMappings[vehName].type = e.target.value;
+      rSaveMappingsToStorage();
     };
   }
   
   modal.style.display = 'flex';
 }
 
-function rExportMapping() {
-  const entries = {};
+function rSaveMappingsToStorage() {
+  localStorage.setItem('rPendingMappings', JSON.stringify(rPendingMappings));
+}
+
+function rLoadMappingsFromStorage() {
+  const stored = localStorage.getItem('rPendingMappings');
+  if (stored) {
+    try {
+      rPendingMappings = JSON.parse(stored);
+    } catch (e) {
+      console.warn('Failed to load mappings from storage:', e);
+    }
+  }
+}
+
+async function rPushToGithub() {
+  const pushBtn = event.target;
+  const validMappings = {};
+  
   for (const [vehName, data] of Object.entries(rPendingMappings)) {
     if (data.name && data.type) {
-      entries[data.name] = { type: data.type, fallback_icon: rVehicleTypeMap[data.type]?.icon || 'public__img__icons__default__vehicles__map_truck_transport.svg' };
+      validMappings[data.name] = { 
+        type: data.type, 
+        fallback_icon: rVehicleTypeMap[data.type]?.icon || 'public__img__icons__default__vehicles__map_truck_transport.svg' 
+      };
     }
   }
   
-  const output = {
-    description: 'New vehicle mappings from SquadPanel Replay Mapping Tool',
-    detailed_vehicle_mapping: entries
-  };
+  if (Object.keys(validMappings).length === 0) {
+    alert('⚠ Completa al menos un vehículo (nombre + tipo)');
+    return;
+  }
   
-  const json = JSON.stringify(output, null, 2);
-  const blob = new Blob([json], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'new_vehicle_mappings.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  pushBtn.disabled = true;
+  pushBtn.textContent = '⏳ Enviando...';
+  
+  try {
+    const res = await fetch(`${WORKER_URL}/api/push-vehicle-mappings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mappings: validMappings })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      pushBtn.textContent = '✓ Guardado en GitHub';
+      rPendingMappings = {};
+      localStorage.removeItem('rPendingMappings');
+      setTimeout(() => {
+        alert('✓ Mappings pusheados a GitHub!\nRecarga para ver los cambios.');
+        document.getElementById('rMappingModal').style.display = 'none';
+        pushBtn.textContent = '📤 PUSH A GITHUB';
+        pushBtn.disabled = false;
+      }, 1500);
+    } else {
+      alert('❌ Error: ' + (data.error || 'desconocido'));
+      pushBtn.textContent = '📤 PUSH A GITHUB';
+      pushBtn.disabled = false;
+    }
+  } catch (e) {
+    alert('❌ Error de conexión: ' + e.message);
+    pushBtn.textContent = '📤 PUSH A GITHUB';
+    pushBtn.disabled = false;
+  }
 }
 
 // ── Init ──
