@@ -1801,7 +1801,8 @@ function updateKillfeedUI() {
   const container = document.getElementById('killfeedList');
   if (!container) return;
   
-  container.innerHTML = killfeedList.map(kill => `
+  const reversedKills = [...killfeedList].reverse();
+  container.innerHTML = reversedKills.map(kill => `
     <div style="padding:6px 8px;border-bottom:1px solid var(--panel-edge);display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.05)'" onmouseout="this.style.background='transparent'">
       <div style="text-align:right;color:${kill.attacker_player_id ? 'var(--red)' : 'var(--text-dim)'};font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.attacker_name}</div>
       <div style="color:var(--text-dim);font-size:9px;white-space:nowrap;">${kill.weapon.replace('BP_', '').replace('_C', '').substring(0, 12)}</div>
