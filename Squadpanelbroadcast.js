@@ -215,7 +215,8 @@ export default class SquadPanelBroadcast extends BasePlugin {
     });
 
     this.server.on('SAT_KILLFEED', async (data) => {
-      // this.verbose(1, `🔫 SAT_KILLFEED recibido: ${data.attacker.name} → ${data.victim.name} (${data.weapon})`);
+      console.log('🔫 [SquadPanelBroadcast] SAT_KILLFEED RECIBIDO');
+      console.log('   Attacker:', data.attacker.name, 'Victim:', data.victim.name);
       await this.saveKillSnapshot(data);
     });
 
