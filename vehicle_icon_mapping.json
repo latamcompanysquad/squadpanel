@@ -180,7 +180,7 @@
     "FV510UA": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
     "FV432 L37A2 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
     "FV432 L11A1 RWS": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
-    "SA330 Puma": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
+    "SA330": { "type": "UH", "fallback_icon": "public__img__icons__default__vehicles__map_transporthelo.svg" },
     "Lynx 8x8 Transport": { "type": "APC", "fallback_icon": "public__img__icons__default__vehicles__map_trackedapc.svg" },
     "Lynx 8x8 Logistics": { "type": "LOGI", "fallback_icon": "public__img__icons__default__vehicles__map_truck_logistics.svg" },
     "Lynx 8x8 QJZ89": { "type": "IFV", "fallback_icon": "public__img__icons__default__vehicles__map_trackedifv.svg" },
