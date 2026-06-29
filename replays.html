@@ -96,6 +96,7 @@
     <div class="hud-block" style="display:flex;align-items:center;gap:12px;">
       <span class="status-text" id="rStatusText">Sin partida</span>
       <a href="index.html" style="display:inline-block;padding:6px 12px;background:linear-gradient(135deg,#3a7c3a,#2a5c2a);color:white;text-decoration:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;">🗺 LIVE</a>
+      <button id="rMappingBtn" style="padding:6px 12px;background:linear-gradient(135deg,#7c3a7c,#5c2a5c);color:white;border:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">🔧 MAPPING</button>
       <button id="rExportBtn" style="padding:6px 12px;background:linear-gradient(135deg,#ff6f00,#e65100);color:white;border:none;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">💾 Descargar</button>
     </div>
   </div>
@@ -203,6 +204,21 @@
 </div>
 <a id="rExportLink" download style="display:none;"></a>
 <div id="adminToast"></div>
+
+<!-- Vehicle Mapping Modal -->
+<div id="rMappingModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:2000;justify-content:center;align-items:center;">
+  <div style="background:#1a2518;border:1px solid var(--panel-edge);border-radius:6px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--panel-edge);">
+      <h2 style="margin:0;color:var(--olive);font-family:'Oswald',sans-serif;font-size:16px;">🔧 Vehicle Mapping</h2>
+      <button onclick="document.getElementById('rMappingModal').style.display='none'" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div id="rMappingContent" style="flex:1;overflow-y:auto;padding:16px;"></div>
+    <div style="display:flex;gap:8px;padding:16px;border-top:1px solid var(--panel-edge);">
+      <button onclick="rExportMapping()" style="flex:1;padding:8px;background:var(--olive);color:white;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;">📋 Copiar JSON</button>
+      <button onclick="document.getElementById('rMappingModal').style.display='none'" style="flex:1;padding:8px;background:var(--panel-edge);color:var(--text);border:1px solid var(--olive-dim);border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:12px;">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -366,6 +382,12 @@ function getRVehicleIcon(vehicleName, vehicleType) {
     return rVehicleTypeMap[vehicleType].icon;
   }
   
+  // Registrar como missing
+  const parsedName = vehicleName.startsWith('BP_') ? parseBlueprintName(vehicleName) : vehicleName;
+  if (!rMissingVehicles.has(parsedName)) {
+    rMissingVehicles.add(parsedName);
+  }
+  
   console.log(`[REPLAY-ICON-MISS] "${vehicleName}" (norm:"${normalizeVehicleKey(vehicleName)}", tipo:"${vehicleType}") | exactos: ${Object.keys(rVehicleIconMap).slice(0,2).join('|')} | norm: ${Object.keys(rVehicleIconMapNorm).slice(0,2).join('|')}`);
   return 'public__img__markers__weapons__Mortar.webp';
 }
@@ -424,6 +446,10 @@ const rMarkers = {};
 const rObjectiveMarkers = {};
 let rObjectiveLine = null;
 const rExpandedSquads = {};
+
+// ── Vehicle Mapping ──
+let rMissingVehicles = new Set();
+let rPendingMappings = {};
 
 // ── Helpers ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1139,6 +1165,78 @@ document.getElementById('rExportBtn').onclick = ()=>{
   const a=document.getElementById('rExportLink');
   a.href=URL.createObjectURL(blob); a.download='replay.json'; a.click();
 };
+
+// ── Vehicle Mapping ──
+document.getElementById('rMappingBtn').onclick = rOpenMappingPanel;
+
+function rOpenMappingPanel() {
+  const modal = document.getElementById('rMappingModal');
+  const content = document.getElementById('rMappingContent');
+  
+  if (rMissingVehicles.size === 0) {
+    content.innerHTML = '<div class="no-data">✓ Todos los vehículos están mapeados</div>';
+    modal.style.display = 'flex';
+    return;
+  }
+  
+  const types = ['TRAN','MRAP','LOGI','LTV','ULTV','APC','IFV','MBT','TD','MSV','SPA','SPAA','AH','UH','MGS','RSV'];
+  let html = '<div style="margin-bottom:12px;color:var(--text-dim);">Vehículos sin mapear: ' + rMissingVehicles.size + '</div>';
+  
+  for (const vehName of Array.from(rMissingVehicles).sort()) {
+    const mapped = rPendingMappings[vehName] || {};
+    html += `
+      <div style="border:1px solid var(--panel-edge);padding:10px;margin-bottom:8px;border-radius:3px;">
+        <div style="color:var(--olive);margin-bottom:8px;word-break:break-all;">${esc(vehName)}</div>
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;">
+          <input type="text" placeholder="Nombre legible (ej: US Utility Transport)" value="${esc(mapped.name||'')}" id="name_${esc(vehName)}" style="background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px;border-radius:3px;font-family:inherit;"/>
+          <select id="type_${esc(vehName)}" style="background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px;border-radius:3px;font-family:inherit;">
+            <option value="">-- Tipo --</option>
+            ${types.map(t=>`<option value="${t}" ${mapped.type===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = html;
+  
+  // Captar cambios
+  for (const vehName of rMissingVehicles) {
+    document.getElementById(`name_${esc(vehName)}`).oninput = (e) => {
+      if (!rPendingMappings[vehName]) rPendingMappings[vehName] = {};
+      rPendingMappings[vehName].name = e.target.value;
+    };
+    document.getElementById(`type_${esc(vehName)}`).onchange = (e) => {
+      if (!rPendingMappings[vehName]) rPendingMappings[vehName] = {};
+      rPendingMappings[vehName].type = e.target.value;
+    };
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function rExportMapping() {
+  const entries = {};
+  for (const [vehName, data] of Object.entries(rPendingMappings)) {
+    if (data.name && data.type) {
+      entries[data.name] = { type: data.type, fallback_icon: rVehicleTypeMap[data.type]?.icon || 'public__img__icons__default__vehicles__map_truck_transport.svg' };
+    }
+  }
+  
+  const output = {
+    description: 'New vehicle mappings from SquadPanel Replay Mapping Tool',
+    detailed_vehicle_mapping: entries
+  };
+  
+  const json = JSON.stringify(output, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'new_vehicle_mappings.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ── Init ──
 window.onload = () => {
