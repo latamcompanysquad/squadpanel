@@ -248,6 +248,7 @@ function getRVehicleIcon(vehicleName, vehicleType) {
     return rVehicleTypeMap[vehicleType].icon;
   }
   
+  console.log(`[REPLAY-ICON-MISS] "${vehicleName}" (norm:"${normalizeVehicleKey(vehicleName)}", tipo:"${vehicleType}") | exactos: ${Object.keys(rVehicleIconMap).slice(0,2).join('|')} | norm: ${Object.keys(rVehicleIconMapNorm).slice(0,2).join('|')}`);
   return 'public__img__markers__weapons__Mortar.webp';
 }
 const MAP_UNITS = 1000;
