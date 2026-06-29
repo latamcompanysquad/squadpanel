@@ -1688,21 +1688,23 @@ async function setupRealtimeListener() {
     
     console.log('✅ Killfeed realtime listener iniciado');
     
-    // Cargar kills históricos al iniciar
+    // Cargar kills históricos al iniciar (usando cliente Supabase, evita CORS)
     console.log('📥 Cargando kills históricos...');
-    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/kill_snapshots?order=created_at.desc&limit=50', {
-      headers: {
-        'apikey': SUPABASE_CONFIG.key,
-        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
+    try {
+      const { data, error } = await supabase
+        .from('kill_snapshots')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) {
+        console.log('❌ Error cargando kills históricos:', error.message);
+      } else {
+        console.log('✅ Kills históricos cargados:', data.length);
+        data.forEach(kill => addKillfeedItem(kill));
       }
-    });
-    
-    if (res.ok) {
-      const kills = await res.json();
-      console.log('✅ Kills históricos cargados:', kills.length);
-      kills.forEach(kill => addKillfeedItem(kill));
-    } else {
-      console.log('❌ Error cargando kills históricos:', res.status);
+    } catch (err) {
+      console.log('❌ Error en consulta de kills históricos:', err.message);
     }
   } catch (err) {
     console.log('❌ Error setupRealtimeListener:', err.message, err);
