@@ -1632,47 +1632,81 @@ const killfeedList = [];
 const MAX_KILLFEED_ITEMS = 50;
 
 async function initKillfeedListener() {
+  console.log('🔫 [initKillfeedListener] Iniciando...');
   if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
-    // // console.log('⚠️ Supabase no configurado para killfeed');
+    console.log('⚠️ Supabase no configurado');
     return;
   }
 
   try {
-    // Crear cliente Supabase basic para realtime
-    const SUPABASE_ANON_KEY = SUPABASE_CONFIG.key;
-    const SUPABASE_URL = SUPABASE_CONFIG.url;
+    console.log('📦 Supabase config:', { url: SUPABASE_CONFIG.url, hasKey: !!SUPABASE_CONFIG.key });
     
-    // Cargar Supabase JS library si no está
     if (!window.supabase) {
+      console.log('📥 Cargando librería Supabase...');
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/+esm';
       script.type = 'module';
-      script.onload = () => setupRealtimeListener();
+      script.onload = () => {
+        console.log('✅ Supabase library cargada');
+        setupRealtimeListener();
+      };
+      script.onerror = (err) => console.log('❌ Error cargando Supabase:', err);
       document.head.appendChild(script);
     } else {
+      console.log('✅ Supabase ya cargado');
       setupRealtimeListener();
     }
   } catch (err) {
-    // // console.log('Error loading Supabase:', err.message);
+    console.log('❌ Error initKillfeedListener:', err.message);
   }
 }
 
 async function setupRealtimeListener() {
-  if (!window.supabase) return;
+  console.log('🔌 [setupRealtimeListener] Iniciando conexión realtime...');
+  if (!window.supabase) {
+    console.log('❌ Supabase no disponible aún');
+    return;
+  }
   
-  const { createClient } = window.supabase;
-  const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
-  
-  // Escuchar inserts en kill_snapshots
-  supabase
-    .channel('public:kill_snapshots')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kill_snapshots' }, (payload) => {
-      const kill = payload.new;
-      addKillfeedItem(kill);
-    })
-    .subscribe();
-  
-  // // console.log('✅ Killfeed realtime listener iniciado');
+  try {
+    const { createClient } = window.supabase;
+    console.log('✅ createClient disponible');
+    
+    const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+    console.log('✅ Cliente Supabase creado');
+    
+    supabase
+      .channel('public:kill_snapshots')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kill_snapshots' }, (payload) => {
+        console.log('🔫 NUEVO KILL RECIBIDO:', payload.new);
+        const kill = payload.new;
+        addKillfeedItem(kill);
+      })
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+      });
+    
+    console.log('✅ Killfeed realtime listener iniciado');
+    
+    // Cargar kills históricos al iniciar
+    console.log('📥 Cargando kills históricos...');
+    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/kill_snapshots?order=created_at.desc&limit=50', {
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
+      }
+    });
+    
+    if (res.ok) {
+      const kills = await res.json();
+      console.log('✅ Kills históricos cargados:', kills.length);
+      kills.forEach(kill => addKillfeedItem(kill));
+    } else {
+      console.log('❌ Error cargando kills históricos:', res.status);
+    }
+  } catch (err) {
+    console.log('❌ Error setupRealtimeListener:', err.message, err);
+  }
 }
 
 function addKillfeedItem(kill) {
