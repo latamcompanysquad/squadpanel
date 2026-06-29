@@ -1791,6 +1791,14 @@ function toggleKillfeedPanel() {
 
 initKillfeedListener();
 
+// Event listener para botón killfeed (evita ReferenceError)
+document.addEventListener('DOMContentLoaded', function() {
+  const btnKillfeed = document.getElementById('btnKillfeedToggle');
+  if (btnKillfeed) {
+    btnKillfeed.addEventListener('click', toggleKillfeedPanel);
+  }
+});
+
   // Zoom centrado en seleccionado
   map.on('zoom', function() {
     if (!selectedSteamID) return;

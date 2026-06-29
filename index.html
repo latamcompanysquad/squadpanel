@@ -101,7 +101,7 @@
 
         <div id="killfeedWrapper">
           <div class="filter-group" style="justify-content:center;margin-bottom:6px;">
-            <div class="map-ctrl-btn" id="btnKillfeedToggle" onclick="toggleKillfeedPanel()" title="Killfeed en vivo" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;">🔫 KILLFEED</div>
+            <div class="map-ctrl-btn" id="btnKillfeedToggle" title="Killfeed en vivo" style="font-size:13px;font-weight:600;padding:6px 14px;width:auto;height:auto;cursor:pointer;transition:color 0.2s;">🔫 KILLFEED</div>
           </div>
           <div id="killfeedPanelOverlay" style="display:none;width:360px;max-height:500px;background:rgba(11,15,12,.95);border:1px solid var(--panel-edge);border-radius:4px;backdrop-filter:blur(4px);flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,.4);overflow:hidden;">
             <div style="padding:8px;border-bottom:1px solid var(--panel-edge);background:rgba(0,0,0,.3);font-size:12px;font-weight:600;color:var(--text);display:flex;justify-content:space-between;align-items:center;">
@@ -121,7 +121,7 @@
       <div id="controlPanel"></div>
     </div>
 
-    <div id="side">
+    <div id="side" style="display:none;">
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
         <div class="side-tab" onclick="switchTab('killfeed')">🔫 Killfeed</div>
