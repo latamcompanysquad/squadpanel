@@ -70,8 +70,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',mo
 .player-card .row{display:flex;justify-content:space-between;color:var(--text-dim);}
 .player-card .val{color:var(--text);}
 .no-data{color:var(--text-dim);font-size:11px;text-align:center;padding:20px 0;}
-#tabPlayers,#tabSearch,#tabAdmin{display:none;}
-#tabPlayers.show,#tabSearch.show,#tabAdmin.show{display:block;}
+#tabPlayers,#tabSearch,#tabAdmin,#tabHistory,#tabKillfeed{display:none;}
+#tabPlayers.show,#tabSearch.show,#tabAdmin.show,#tabHistory.show,#tabKillfeed.show{display:block;}
 .admin-section{margin-bottom:16px;}
 .admin-section .panel-title{color:var(--amber);}
 .btn{

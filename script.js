@@ -1020,9 +1020,13 @@ function switchTab(tab) {
   const tabPlayers = document.getElementById('tabPlayers');
   const tabAdmin = document.getElementById('tabAdmin');
   const tabChat = document.getElementById('tabChat');
+  const tabHistory = document.getElementById('tabHistory');
+  const tabKillfeed = document.getElementById('tabKillfeed');
   if (tabPlayers) tabPlayers.classList.toggle('show', tab === 'players');
   if (tabAdmin) tabAdmin.classList.toggle('show', tab === 'admin');
   if (tabChat) tabChat.classList.toggle('show', tab === 'chat');
+  if (tabHistory) tabHistory.classList.toggle('show', tab === 'history');
+  if (tabKillfeed) tabKillfeed.classList.toggle('show', tab === 'killfeed');
   if (tab === 'chat') {
     scrollChatToBottom();
     if (currentMapKey) {
