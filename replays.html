@@ -3,16 +3,19 @@
 <head>
 <script>
 // ── KILL REPLAY MODE ──
-const killReplayMode = new URLSearchParams(window.location.search).get('mode') === 'kill_replay';
-const killID = new URLSearchParams(window.location.search).get('kill_id');
-let killData = null;
-
-if (killReplayMode && killID) {
-  fetch(`/api/kill-snapshot/${killID}`)
-    .then(r => r.json())
-    .then(data => { killData = data; console.log('Kill data loaded:', killData); })
-    .catch(err => console.error('Failed to load kill:', err));
-}
+const params = new URLSearchParams(window.location.search);
+const killReplayMode = params.has('kill_id') && params.has('attacker');
+const killData = killReplayMode ? {
+  kill_id: params.get('kill_id'),
+  attacker_name: params.get('attacker'),
+  victim_name: params.get('victim'),
+  weapon: params.get('weapon'),
+  attacker_pos_x: parseFloat(params.get('ax')) || 0,
+  attacker_pos_y: parseFloat(params.get('ay')) || 0,
+  victim_pos_x: parseFloat(params.get('vx')) || 0,
+  victim_pos_y: parseFloat(params.get('vy')) || 0,
+} : null;
+console.log('Kill Replay Mode:', killReplayMode, killData);
 </script>
 
 <meta charset="UTF-8">

@@ -2252,7 +2252,7 @@ function renderHistoryTable() {
 
 // Inicializar histórico cuando se carga la página
 
-function toggleHistoryModal(){document.getElementById('historyModalOverlay').style.display='flex';loadHistoryMatches();initHistoryPanel()}
+function toggleHistoryModal(){document.getElementById('historyModalOverlay').style.display='flex';loadHistoryMatches()}
 function closeHistoryModal(){document.getElementById('historyModalOverlay').style.display='none'}
 
 document.addEventListener('DOMContentLoaded', () => {
