@@ -93,7 +93,7 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
 </style>
 <style>
 /* KILL REPLAY */
-#killReplayContainer { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.85); border: 2px solid #c84b31; padding: 12px; border-radius: 4px; max-width: 350px; color: var(--text); font-family: 'Oswald', sans-serif; z-index: 500; }
+#killReplayContainer { position: fixed; top: 80px; right: 10px; background: rgba(0,0,0,0.85); border: 2px solid #c84b31; padding: 12px; border-radius: 4px; max-width: 350px; color: var(--text); font-family: 'Oswald', sans-serif; z-index: 500; }
 .kill-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
 .kill-attacker { color: #ff6b6b; font-weight: 600; }
 .kill-weapon { color: #ffa500; font-size: 11px; }
@@ -1407,6 +1407,7 @@ function initKillReplay() {
   const zoomLevel = Math.max(-2, Math.min(4, 2-Math.log2(distance/500)));
   
   rMap.setView([centerY,centerX], zoomLevel);
+  rMap.invalidateSize();  
   
   L.circleMarker([killerPos.y,killerPos.x], {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.attacker_name);
   L.circleMarker([victimPos.y,victimPos.x], {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.victim_name);
@@ -1455,7 +1456,7 @@ function resetKillReplay() {
 window.onload = () => {
   rMap = L.map('map',{ crs:L.CRS.Simple, minZoom:-2, maxZoom:4, zoomSnap:.5, attributionControl:false, zoomControl:false });
   rMap.fitBounds(bounds);
-  rLoadMatches();
+  if (!killReplayMode) rLoadMatches();
 
   // deselect on map click
   rMap.on('click',()=>{
