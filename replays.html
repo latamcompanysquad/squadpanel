@@ -67,6 +67,12 @@
 #rSideContent::-webkit-scrollbar { width:4px; }
 #rSideContent::-webkit-scrollbar-track { background:var(--panel); }
 #rSideContent::-webkit-scrollbar-thumb { background:var(--olive-dim); border-radius:2px; }
+.delete-match-btn {
+  padding:4px 8px; font-size:14px; background:transparent; border:1px solid #8b3a3a;
+  color:#ff6b6b; cursor:pointer; border-radius:3px; transition:all .15s;
+}
+.delete-match-btn:hover { background:#8b3a3a; color:#ffb3b3; }
+.delete-match-btn:active { opacity:.7; }
 </style>
 </head>
 <body>
@@ -1100,9 +1106,12 @@ async function rLoadMatches() {
       { headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
     const matches = await res.json();
     document.getElementById('rMatchList').innerHTML = (matches||[]).map(m=>
-      `<div class="match-item" id="mi_${m.match_id}" onclick="rSelectMatch('${m.match_id}')">
-        <div class="match-title">${esc(m.map_name||'?')} — ${esc(m.layer_name||'?')}</div>
-        <div class="match-meta">${new Date(m.start_time).toLocaleString()} | ${m.snapshot_count} snaps</div>
+      `<div class="match-item" id="mi_${m.match_id}" onclick="rSelectMatch('${m.match_id}')" style="display:flex;justify-content:space-between;align-items:center;">
+        <div onclick="event.stopPropagation();">
+          <div class="match-title">${esc(m.map_name||'?')} — ${esc(m.layer_name||'?')}</div>
+          <div class="match-meta">${new Date(m.start_time).toLocaleString()} | ${m.snapshot_count} snaps</div>
+        </div>
+        <button class="delete-match-btn" onclick="rDeleteMatch(event,'${m.match_id}')">🗑</button>
       </div>`).join('') || '<div class="no-data">Sin partidas</div>';
   } catch(e){ document.getElementById('rMatchList').innerHTML='<div class="no-data">Error cargando</div>'; }
 }
@@ -1157,6 +1166,18 @@ async function rSelectMatch(id) {
     rClearLayers();
     rRender(0);
   } catch(e){ document.getElementById('rStatusText').textContent='Error'; }
+}
+
+async function rDeleteMatch(e, matchId) {
+  if(!confirm(`Eliminar match ${matchId}? Se borrarán todos los datos asociados.`)) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/match_metadata?match_id=eq.${matchId}`, { method:'DELETE', headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
+    await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${matchId}`, { method:'DELETE', headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
+    await fetch(`${SUPABASE_URL}/rest/v1/kill_snapshots?match_id=eq.${matchId}`, { method:'DELETE', headers:{ 'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}` }});
+    alert('Match eliminado ✓');
+    rLoadMatches();
+    document.getElementById('rStatusText').textContent='Match eliminado';
+  } catch(e){ alert('Error: '+e.message); }
 }
 
 // ── Export ──
