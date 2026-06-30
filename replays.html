@@ -1384,6 +1384,10 @@ function initKillReplay() {
   if (!killReplayMode || !killData) return;
   const container = document.getElementById('killReplayContainer');
   container.style.display = 'block';
+  if (!container) {
+    console.warn('[Kill Replay] Container not found in DOM');
+    return;
+  }
   document.getElementById('killAttacker').textContent = killData.attacker_name || '?';
   document.getElementById('killVictim').textContent = killData.victim_name || '?';
   document.getElementById('killWeapon').textContent = killData.weapon || 'Unknown';
@@ -1448,7 +1452,6 @@ function resetKillReplay() {
 
 // ── Init ──
 window.onload = () => {
-  setTimeout(() => initKillReplay(), 500);
   rMap = L.map('map',{ crs:L.CRS.Simple, minZoom:-2, maxZoom:4, zoomSnap:.5, attributionControl:false, zoomControl:false });
   rMap.fitBounds(bounds);
   rLoadMatches();
@@ -1460,6 +1463,7 @@ window.onload = () => {
       document.getElementById('rPlayerPanel').innerHTML='<div class="no-data">Haz click en un marcador</div>';
       const snap=rSnapshots[rIdx]; if(snap){const corn=getCorn(snap);if(corn)rUpdateMarkers(snap,corn);}
     }
+  setTimeout(() => initKillReplay(), 800);
   });
 };
 </script>
