@@ -1382,6 +1382,7 @@ let killTracerCtx = null;
 
 function initKillReplay() {
   if (!killReplayMode || !killData) return;
+  if (!rMap) { setTimeout(() => initKillReplay(), 5000); return; }
   const container = document.getElementById('killReplayContainer');
   container.style.display = 'block';
   if (!container) {
