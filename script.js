@@ -1860,7 +1860,7 @@ function getTeamCircleEmoji(teamColor) {
   return '⚪';
 }
 
-function openKillReplay(killID, attackerName, victimName, weapon, attackerX, attackerY, victimX, victimY) {
+window.openKillReplay = function(killID, attackerName, victimName, weapon, attackerX, attackerY, victimX, victimY) {
   const params = new URLSearchParams({
     kill_id: killID,
     attacker: attackerName,
@@ -1870,7 +1870,7 @@ function openKillReplay(killID, attackerName, victimName, weapon, attackerX, att
     vx: victimX, vy: victimY
   });
   window.open(`replays.html?${params.toString()}`, '_blank', 'width=1200,height=800');
-}
+};
 
 function updateKillfeedFloatingUI() {
   const container = document.getElementById('killfeedPanelList');
