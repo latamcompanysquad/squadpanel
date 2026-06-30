@@ -218,6 +218,10 @@ export default class SquadPanelBroadcast extends BasePlugin {
       // console.log('🔫 [SquadPanelBroadcast] SAT_KILLFEED RECIBIDO');
       // console.log('   Attacker:', data.attacker.name, 'Victim:', data.victim.name);
       await this.saveKillSnapshot(data);
+      this.broadcast('KILLFEED_LIVE', {
+        kill_id: `${data.timestamp}_${data.attacker.steamID}`,
+        ...data
+      });
     });
 
     // this.verbose(1, `💬 Listeners de chat registrados`);
@@ -1161,4 +1165,25 @@ async saveKillSnapshot(data) {
       // console.log('❌ Kill snapshot save failed:', err.message);
     }
   }
+  async getKillSnapshot(killID) {
+    if (!this.options.supabaseUrl || !this.options.supabaseKey) return null;
+    try {
+      const res = await fetch(
+        `${this.options.supabaseUrl}/rest/v1/kill_snapshots?match_id=eq.${this.matchID}&timestamp=eq.${killID.split('_')[0]}&limit=1`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.options.supabaseKey}`,
+            'apikey': this.options.supabaseKey,
+          },
+        }
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.length ? data[0] : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
 }

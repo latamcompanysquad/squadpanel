@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>
+// ── KILL REPLAY MODE ──
+const killReplayMode = new URLSearchParams(window.location.search).get('mode') === 'kill_replay';
+const killID = new URLSearchParams(window.location.search).get('kill_id');
+let killData = null;
+
+if (killReplayMode && killID) {
+  fetch(`/api/kill-snapshot/${killID}`)
+    .then(r => r.json())
+    .then(data => { killData = data; console.log('Kill data loaded:', killData); })
+    .catch(err => console.error('Failed to load kill:', err));
+}
+</script>
+
 <meta charset="UTF-8">
 <title>LATAMCOMPANY // Replays</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -74,6 +88,19 @@
 .delete-match-btn:hover { background:#8b3a3a; color:#ffb3b3; }
 .delete-match-btn:active { opacity:.7; }
 </style>
+<style>
+/* KILL REPLAY */
+#killReplayContainer { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.85); border: 2px solid #c84b31; padding: 12px; border-radius: 4px; max-width: 350px; color: var(--text); font-family: 'Oswald', sans-serif; z-index: 500; }
+.kill-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.kill-attacker { color: #ff6b6b; font-weight: 600; }
+.kill-weapon { color: #ffa500; font-size: 11px; }
+.kill-victim { color: #4ecdc4; font-weight: 600; }
+.kill-btn { padding: 6px 12px; background: #c84b31; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Oswald', sans-serif; margin-right: 8px; }
+.kill-btn:hover { background: #a03d28; }
+.kill-timer { color: #ffb400; font-weight: 600; }
+#killTracerCanvas { display: none; position: fixed; top: 0; left: 0; z-index: 400; }
+</style>
+
 </head>
 <body>
 <div id="app">
@@ -1322,8 +1349,81 @@ async function rPushToGithub() {
   }
 }
 
+
+// ── KILL REPLAY MODE ──
+let killReplayTimer = null;
+let killTracerProgress = 0;
+let killTracerCtx = null;
+
+function initKillReplay() {
+  if (!killReplayMode || !killData) return;
+  const container = document.getElementById('killReplayContainer');
+  container.style.display = 'block';
+  document.getElementById('killAttacker').textContent = killData.attacker_name || '?';
+  document.getElementById('killVictim').textContent = killData.victim_name || '?';
+  document.getElementById('killWeapon').textContent = killData.weapon || 'Unknown';
+  
+  const canvas = document.getElementById('killTracerCanvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+  killTracerCtx = canvas.getContext('2d');
+  
+  const killerPos = {x: parseFloat(killData.attacker_pos_x)||0, y: parseFloat(killData.attacker_pos_y)||0};
+  const victimPos = {x: parseFloat(killData.victim_pos_x)||0, y: parseFloat(killData.victim_pos_y)||0};
+  const centerX = (killerPos.x + victimPos.x)/2;
+  const centerY = (killerPos.y + victimPos.y)/2;
+  const distance = Math.sqrt(Math.pow(victimPos.x-killerPos.x,2)+Math.pow(victimPos.y-killerPos.y,2));
+  const zoomLevel = Math.max(-2, Math.min(4, 2-Math.log2(distance/500)));
+  
+  rMap.setView([centerY,centerX], zoomLevel);
+  
+  L.circleMarker([killerPos.y,killerPos.x], {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.attacker_name);
+  L.circleMarker([victimPos.y,victimPos.x], {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.victim_name);
+  
+  killTracerProgress = 0;
+  const duration = 3000;
+  const startTime = Date.now();
+  
+  const animateTracer = () => {
+    const elapsed = Date.now()-startTime;
+    killTracerProgress = Math.min(elapsed/duration, 1);
+    const seconds = (elapsed/1000).toFixed(1);
+    document.getElementById('killTimer').textContent = seconds+'s';
+    killTracerCtx.clearRect(0,0,killTracerCtx.canvas.width,killTracerCtx.canvas.height);
+    const killerScreen = rMap.latLngToContainerPoint([killerPos.y,killerPos.x]);
+    const victimScreen = rMap.latLngToContainerPoint([victimPos.y,victimPos.x]);
+    killTracerCtx.strokeStyle = `rgba(255,107,107,${1-killTracerProgress})`;
+    killTracerCtx.lineWidth = 3;
+    killTracerCtx.lineCap = 'round';
+    killTracerCtx.lineJoin = 'round';
+    killTracerCtx.beginPath();
+    killTracerCtx.moveTo(killerScreen.x, killerScreen.y);
+    killTracerCtx.lineTo(killerScreen.x+(victimScreen.x-killerScreen.x)*killTracerProgress, killerScreen.y+(victimScreen.y-killerScreen.y)*killTracerProgress);
+    killTracerCtx.stroke();
+    if(killTracerProgress>=0.9) {
+      const pulse=(killTracerProgress-0.9)/0.1;
+      killTracerCtx.strokeStyle = `rgba(78,205,196,${(1-pulse)*0.6})`;
+      killTracerCtx.lineWidth = 1+pulse*4;
+      killTracerCtx.beginPath();
+      killTracerCtx.arc(victimScreen.x,victimScreen.y,20+pulse*30,0,Math.PI*2);
+      killTracerCtx.stroke();
+    }
+    if(killTracerProgress<1) killReplayTimer = requestAnimationFrame(animateTracer);
+    else {killTracerProgress=0; killReplayTimer=setTimeout(()=>animateTracer(),500);}
+  };
+  animateTracer();
+}
+
+function resetKillReplay() {
+  if(killReplayTimer) {clearTimeout(killReplayTimer); cancelAnimationFrame(killReplayTimer);}
+  initKillReplay();
+}
+
+
 // ── Init ──
 window.onload = () => {
+  setTimeout(() => initKillReplay(), 500);
   rMap = L.map('map',{ crs:L.CRS.Simple, minZoom:-2, maxZoom:4, zoomSnap:.5, attributionControl:false, zoomControl:false });
   rMap.fitBounds(bounds);
   rLoadMatches();
