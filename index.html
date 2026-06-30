@@ -125,6 +125,7 @@
       <div id="sideTabs">
         <div class="side-tab active" onclick="switchTab('players')">Jugadores</div>
         <div class="side-tab" onclick="switchTab('killfeed')" style="display:none;">🔫 Killfeed</div>
+        <div class="side-tab" onclick="switchTab('history')">📜 Histórico</div>
         <div class="side-tab" onclick="switchTab('admin')">Admin</div>
       </div>
       <div id="sideContent">
@@ -142,6 +143,59 @@
           <div>
             <div class="panel-title">Killfeed Vivo</div>
             <div id="killfeedList" style="font-family:'JetBrains Mono',monospace;font-size:11px;max-height:500px;overflow-y:auto;"></div>
+          </div>
+        </div>
+        <div id="tabHistory" class="hide">
+          <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+            <!-- Filtros -->
+            <div style="border-bottom:1px solid var(--panel-edge);padding:10px;flex-shrink:0;background:#0d120b;">
+              <div class="panel-title" style="margin-bottom:10px;">Filtros</div>
+              
+              <!-- Fecha inicio -->
+              <label style="display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;margin-bottom:3px;">Desde</label>
+              <input type="date" id="historyDateFrom" style="width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px 8px;border-radius:3px;font-size:11px;box-sizing:border-box;margin-bottom:10px;">
+              
+              <!-- Fecha fin -->
+              <label style="display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;margin-bottom:3px;">Hasta</label>
+              <input type="date" id="historyDateTo" style="width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px 8px;border-radius:3px;font-size:11px;box-sizing:border-box;margin-bottom:10px;">
+              
+              <!-- Partida -->
+              <label style="display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;margin-bottom:3px;">Partida</label>
+              <select id="historyMatchSelect" style="width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px 8px;border-radius:3px;font-size:11px;box-sizing:border-box;margin-bottom:10px;">
+                <option value="">Todas las partidas</option>
+              </select>
+              
+              <!-- Jugador -->
+              <label style="display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;margin-bottom:3px;">Buscar jugador</label>
+              <input type="text" id="historyPlayerSearch" placeholder="Nombre jugador..." style="width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px 8px;border-radius:3px;font-size:11px;box-sizing:border-box;margin-bottom:10px;">
+              
+              <!-- Tipo de kill -->
+              <label style="display:block;color:var(--text-dim);font-size:10px;text-transform:uppercase;margin-bottom:3px;">Tipo</label>
+              <select id="historyKillType" style="width:100%;background:#0a0e08;border:1px solid var(--panel-edge);color:var(--text);padding:6px 8px;border-radius:3px;font-size:11px;box-sizing:border-box;margin-bottom:10px;">
+                <option value="">Todos</option>
+                <option value="normal">Normal</option>
+                <option value="teamkill">Teamkill</option>
+              </select>
+              
+              <button onclick="applyHistoryFilters()" style="width:100%;background:#2d5016;border:1px solid var(--olive);color:var(--olive);padding:8px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;">🔍 Buscar</button>
+            </div>
+            
+            <!-- Tabla kills -->
+            <div id="historyTableContainer" style="flex:1;overflow-y:auto;overflow-x:hidden;">
+              <table id="historyTable" style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;">
+                <thead style="position:sticky;top:0;background:#0d120b;border-bottom:1px solid var(--panel-edge);">
+                  <tr>
+                    <th style="text-align:left;padding:8px;color:var(--olive);font-weight:600;border-right:1px solid var(--panel-edge);">Hora</th>
+                    <th style="text-align:left;padding:8px;color:var(--olive);font-weight:600;border-right:1px solid var(--panel-edge);min-width:120px;">Attacker</th>
+                    <th style="text-align:center;padding:8px;color:var(--olive);font-weight:600;border-right:1px solid var(--panel-edge);width:80px;">Arma</th>
+                    <th style="text-align:left;padding:8px;color:var(--olive);font-weight:600;">Victim</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         <div id="tabAdmin">

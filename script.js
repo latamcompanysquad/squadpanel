@@ -2074,3 +2074,179 @@ function toggleSearchPanel() {
     }
   }
 }
+
+// ─────── HISTÓRICO DE KILLS ───────
+let historyMatches = [];
+let historyAllKills = [];
+let historyFilteredKills = [];
+let historyCurrentPage = 0;
+const HISTORY_PAGE_SIZE = 30;
+
+async function initHistoryTab() {
+  console.log('📜 [initHistoryTab] Inicializando histórico...');
+  
+  // Cargar partidas
+  await loadHistoryMatches();
+  
+  // Setear fechas por defecto (últimos 7 días)
+  const today = new Date();
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  
+  document.getElementById('historyDateFrom').value = sevenDaysAgo.toISOString().split('T')[0];
+  document.getElementById('historyDateTo').value = today.toISOString().split('T')[0];
+  
+  // Event listeners
+  document.getElementById('historyMatchSelect').addEventListener('change', (e) => {
+    if (e.target.value) {
+      const match = historyMatches.find(m => m.id === e.target.value);
+      if (match) {
+        const startDate = new Date(match.start_time);
+        const endDate = new Date(match.end_time || Date.now());
+        document.getElementById('historyDateFrom').value = startDate.toISOString().split('T')[0];
+        document.getElementById('historyDateTo').value = endDate.toISOString().split('T')[0];
+      }
+    }
+  });
+  
+  // Cargar datos iniciales
+  await applyHistoryFilters();
+}
+
+async function loadHistoryMatches() {
+  console.log('📥 [loadHistoryMatches] Cargando partidas...');
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) return;
+  
+  try {
+    const res = await fetch(SUPABASE_CONFIG.url + '/rest/v1/match_metadata?order=start_time.desc&limit=100', {
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
+      }
+    });
+    
+    if (res.ok) {
+      historyMatches = await res.json();
+      const select = document.getElementById('historyMatchSelect');
+      select.innerHTML = '<option value="">Todas las partidas</option>';
+      
+      historyMatches.forEach(match => {
+        const mapLayer = `${match.map_name || 'Unknown'} - ${match.layer_name || 'Unknown'}`;
+        const time = new Date(match.start_time).toLocaleString('es-ES');
+        const option = document.createElement('option');
+        option.value = match.match_id;
+        option.textContent = `${mapLayer} (${time})`;
+        select.appendChild(option);
+      });
+      
+      console.log('✅ Partidas cargadas:', historyMatches.length);
+    }
+  } catch (err) {
+    console.log('❌ Error cargando partidas:', err.message);
+  }
+}
+
+async function applyHistoryFilters() {
+  console.log('🔍 [applyHistoryFilters] Aplicando filtros...');
+  
+  const dateFrom = document.getElementById('historyDateFrom').value;
+  const dateTo = document.getElementById('historyDateTo').value;
+  const matchId = document.getElementById('historyMatchSelect').value;
+  const playerSearch = document.getElementById('historyPlayerSearch').value.toLowerCase();
+  const killType = document.getElementById('historyKillType').value;
+  
+  if (!dateFrom || !dateTo) {
+    console.log('⚠️ Fechas no configuradas');
+    return;
+  }
+  
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) return;
+  
+  try {
+    const dateFromTs = new Date(dateFrom).getTime();
+    const dateToTs = new Date(dateTo).getTime() + 86400000; // +1 día
+    
+    let query = `${SUPABASE_CONFIG.url}/rest/v1/kill_snapshots?timestamp=gte.${dateFromTs}&timestamp=lte.${dateToTs}&order=created_at.desc&limit=1000`;
+    
+    if (matchId) {
+      query += `&match_id=eq.${matchId}`;
+    }
+    
+    const res = await fetch(query, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': 'Bearer ' + SUPABASE_CONFIG.key
+      }
+    });
+    
+    if (res.ok) {
+      historyAllKills = await res.json();
+      
+      // Aplicar filtros locales
+      historyFilteredKills = historyAllKills.filter(kill => {
+        const matchesPlayer = !playerSearch || 
+          kill.attacker_name.toLowerCase().includes(playerSearch) || 
+          kill.victim_name.toLowerCase().includes(playerSearch);
+        
+        const matchesType = !killType || 
+          (killType === 'teamkill' && kill.teamkill) || 
+          (killType === 'normal' && !kill.teamkill);
+        
+        return matchesPlayer && matchesType;
+      });
+      
+      console.log('✅ Kills filtrados:', historyFilteredKills.length);
+      
+      historyCurrentPage = 0;
+      renderHistoryTable();
+    }
+  } catch (err) {
+    console.log('❌ Error aplicando filtros:', err.message);
+  }
+}
+
+function renderHistoryTable() {
+  const tbody = document.getElementById('historyTableBody');
+  const startIdx = historyCurrentPage * HISTORY_PAGE_SIZE;
+  const endIdx = startIdx + HISTORY_PAGE_SIZE;
+  const pageKills = historyFilteredKills.slice(startIdx, endIdx);
+  
+  if (pageKills.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-dim);">No hay kills</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = pageKills.map(kill => {
+    const time = new Date(kill.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const weapon = (kill.weapon || 'Unknown').replace('BP_', '').replace('_C', '').substring(0, 18);
+    const tkBadge = kill.teamkill ? ' <span style="color:var(--amber);font-weight:600;">[TK]</span>' : '';
+    
+    return `
+      <tr style="border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:background 0.2s;" 
+          onmouseover="this.style.background='rgba(0,255,136,0.05)'" 
+          onmouseout="this.style.background='transparent'"
+          onclick="openKillReplay('${kill.id}', '${kill.attacker_name}', '${kill.victim_name}', '${kill.weapon}', ${kill.attacker_pos_x}, ${kill.attacker_pos_y}, ${kill.victim_pos_x}, ${kill.victim_pos_y})">
+        <td style="padding:8px;border-right:1px solid var(--panel-edge);color:var(--text-dim);">${time}</td>
+        <td style="padding:8px;border-right:1px solid var(--panel-edge);color:var(--red);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.attacker_name}</td>
+        <td style="padding:8px;border-right:1px solid var(--panel-edge);text-align:center;color:var(--text-dim);font-size:10px;">${weapon}</td>
+        <td style="padding:8px;color:var(--blue);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.victim_name}${tkBadge}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // Agregar fila de paginación
+  if (historyFilteredKills.length > endIdx) {
+    const loadMoreRow = document.createElement('tr');
+    loadMoreRow.style.cssText = 'height:30px;';
+    loadMoreRow.innerHTML = `
+      <td colspan="4" style="text-align:center;padding:8px;">
+        <button onclick="historyCurrentPage++; renderHistoryTable();" style="background:transparent;border:1px solid var(--olive);color:var(--olive);padding:4px 12px;border-radius:3px;font-size:10px;cursor:pointer;">Cargar más</button>
+      </td>
+    `;
+    tbody.appendChild(loadMoreRow);
+  }
+}
+
+// Inicializar histórico cuando se carga la página
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => initHistoryTab(), 500);
+});
