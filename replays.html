@@ -222,6 +222,28 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
 </div>
 
 <!-- SCRUBBER BAR (fija abajo) -->
+<!-- KILL REPLAY OVERLAY -->
+<div id="killReplayContainer" style="display:none;">
+  <div class="kill-info">
+    <span class="kill-attacker" id="killAttacker">—</span>
+    <span>🔫</span>
+    <span class="kill-victim" id="killVictim">—</span>
+  </div>
+  <div class="kill-info">
+    <span class="kill-weapon" id="killWeapon">—</span>
+  </div>
+  <div class="kill-info">
+    <span>Duración: <span class="kill-timer" id="killTimer">0.0s</span></span>
+  </div>
+  <div style="margin-top: 8px; display: flex; gap: 8px;">
+    <button class="kill-btn" onclick="resetKillReplay()">↻ Reiniciar</button>
+    <button class="kill-btn" onclick="window.location.href='replays.html'">← Volver</button>
+  </div>
+</div>
+
+<!-- CANVAS para tracer -->
+<canvas id="killTracerCanvas"></canvas>
+
 <div id="scrubberBar">
   <div id="scrubberRow">
     <div class="scrub-btn" id="rPlayBtn" onclick="rPlay()" title="Play/Pause">▶</div>
