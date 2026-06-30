@@ -1465,8 +1465,9 @@ window.onload = () => {
       document.getElementById('rPlayerPanel').innerHTML='<div class="no-data">Haz click en un marcador</div>';
       const snap=rSnapshots[rIdx]; if(snap){const corn=getCorn(snap);if(corn)rUpdateMarkers(snap,corn);}
     }
-  setTimeout(() => initKillReplay(), 800);
   });
+  
+  setTimeout(() => initKillReplay(), 800);
 };
 </script>
 </body>
