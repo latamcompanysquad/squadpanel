@@ -1433,8 +1433,9 @@ function initKillReplay() {
   if (!killReplayMode || !killData) return;
   if (!rMap) { setTimeout(() => initKillReplay(), 100); return; }
   
-  // Cargar mapa en killReplayMode si no está cargado
-  if (killData.match_id && !rBasemap) {
+  // Cargar mapa en killReplayMode
+  if (killData.match_id) {
+    console.log('📡 Cargando mapa para kill replay...');
     loadKillReplayMap(killData.match_id).then(() => {
       continuInitKillReplay();
     });

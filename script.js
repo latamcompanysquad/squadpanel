@@ -1864,14 +1864,15 @@ function getTeamCircleEmoji(teamColor) {
   return '⚪';
 }
 
-window.openKillReplay = function(killID, attackerName, victimName, weapon, attackerX, attackerY, victimX, victimY) {
+window.openKillReplay = function(killID, attackerName, victimName, weapon, attackerX, attackerY, victimX, victimY, matchId) {
   const params = new URLSearchParams({
     kill_id: killID,
     attacker: attackerName,
     victim: victimName,
     weapon: weapon,
     ax: attackerX, ay: attackerY,
-    vx: victimX, vy: victimY
+    vx: victimX, vy: victimY,
+    match_id: matchId
   });
   window.open(`replays.html?${params.toString()}`, '_blank', 'width=1200,height=800');
 };
