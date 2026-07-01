@@ -14,6 +14,7 @@ const killData = killReplayMode ? {
   attacker_pos_y: parseFloat(params.get('ay')) || 0,
   victim_pos_x: parseFloat(params.get('vx')) || 0,
   victim_pos_y: parseFloat(params.get('vy')) || 0,
+  match_id: params.get('match_id') || null,
 } : null;
 console.log('Kill Replay Mode:', killReplayMode, killData);
 </script>
@@ -1379,10 +1380,73 @@ async function rPushToGithub() {
 let killReplayTimer = null;
 let killTracerProgress = 0;
 let killTracerCtx = null;
+let killReplayTimer = null;
+
+async function loadKillReplayMap(matchId) {
+  console.log('📡 [loadKillReplayMap] Cargando mapa para match:', matchId);
+  try {
+    const SUPABASE_CONFIG = {
+      url: 'https://vaddajsbjijtzibjhafj.supabase.co',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhZGRhanNiamlqdHppYmpoYWZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTYxMzEsImV4cCI6MjA5Nzk3MjEzMX0.Wf6bqF-HuCA3DGu_YGhN-NzbDRTBKIt_YTkyvTRb-Eg'
+    };
+    
+    const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/match_metadata?match_id=eq.${matchId}&limit=1`, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.key,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.key}`
+      }
+    });
+    
+    if (!res.ok) {
+      console.log('❌ Error cargando match_metadata');
+      return;
+    }
+    
+    const matches = await res.json();
+    if (matches.length === 0) {
+      console.log('⚠️ Match no encontrado');
+      return;
+    }
+    
+    const mapName = matches[0].map_name;
+    console.log('✅ Map name:', mapName);
+    
+    // Cargar imagen del mapa
+    const mapKey = Object.keys(MAP_CORNERS).find(key => 
+      MAP_CORNERS[key].name === mapName
+    );
+    
+    if (mapKey) {
+      const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
+      rBasemap = L.imageOverlay(`./maps/${mapKey}.webp`, bounds, { opacity:1 }).addTo(rMap);
+      console.log('✅ Mapa cargado:', mapKey);
+    } else {
+      console.log('⚠️ Mapa no encontrado en MAP_CORNERS');
+    }
+  } catch (err) {
+    console.log('❌ Error loadKillReplayMap:', err.message);
+  }
+}
+
+let killTracerProgress = 0;
+let killTracerCtx = null;
 
 function initKillReplay() {
   if (!killReplayMode || !killData) return;
   if (!rMap) { setTimeout(() => initKillReplay(), 100); return; }
+  
+  // Cargar mapa en killReplayMode si no está cargado
+  if (killData.match_id && !rBasemap) {
+    loadKillReplayMap(killData.match_id).then(() => {
+      continuInitKillReplay();
+    });
+    return;
+  }
+  
+  continuInitKillReplay();
+}
+
+function continuInitKillReplay() {
   const container = document.getElementById('killReplayContainer');
   container.style.display = 'block';
   if (!container) {

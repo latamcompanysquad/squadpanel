@@ -2228,7 +2228,7 @@ function renderHistoryTable() {
       <tr style="border-bottom:1px solid var(--panel-edge);cursor:pointer;transition:background 0.2s;" 
           onmouseover="this.style.background='rgba(0,255,136,0.05)'" 
           onmouseout="this.style.background='transparent'"
-          onclick="openKillReplay('${kill.id}', '${kill.attacker_name}', '${kill.victim_name}', '${kill.weapon}', ${kill.attacker_pos_x}, ${kill.attacker_pos_y}, ${kill.victim_pos_x}, ${kill.victim_pos_y})">
+          onclick="openKillReplay('${kill.id}', '${kill.attacker_name}', '${kill.victim_name}', '${kill.weapon}', ${kill.attacker_pos_x}, ${kill.attacker_pos_y}, ${kill.victim_pos_x}, ${kill.victim_pos_y}, '${kill.match_id}')">
         <td style="padding:8px;border-right:1px solid var(--panel-edge);color:var(--text-dim);">${time}</td>
         <td style="padding:8px;border-right:1px solid var(--panel-edge);color:var(--red);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kill.attacker_name}</td>
         <td style="padding:8px;border-right:1px solid var(--panel-edge);text-align:center;color:var(--text-dim);font-size:10px;">${weapon}</td>
