@@ -1444,26 +1444,71 @@ function initKillReplay() {
   continuInitKillReplay();
 }
 
-function continuInitKillReplay() {
+// ── Kill Replay: enriquecer con rol/team/squad desde match_snapshots ──
+async function rEnrichKillPlayers(kd) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kill_snapshots?id=eq.${kd.kill_id}&select=attacker_steam,victim_steam,timestamp&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!rows.length) return null;
+    const { attacker_steam, victim_steam, timestamp } = rows[0];
+
+    let snapRes = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${kd.match_id}&timestamp=lte.${timestamp}&order=timestamp.desc&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+    let snapRows = snapRes.ok ? await snapRes.json() : [];
+    if (!snapRows.length) {
+      snapRes = await fetch(`${SUPABASE_URL}/rest/v1/match_snapshots?match_id=eq.${kd.match_id}&timestamp=gte.${timestamp}&order=timestamp.asc&limit=1`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
+      snapRows = snapRes.ok ? await snapRes.json() : [];
+    }
+    if (!snapRows.length) return null;
+    const snapData = snapRows[0].data || snapRows[0];
+    const players = snapData.players || [];
+    return {
+      attackerP: players.find(p => p.steamID === attacker_steam) || null,
+      victimP: players.find(p => p.steamID === victim_steam) || null,
+    };
+  } catch (e) {
+    console.log('⚠️ No se pudo enriquecer roles kill replay:', e.message);
+    return null;
+  }
+}
+
+// ── Kill Replay: canvas siempre alineado con el div #map (fix del desfase) ──
+function resizeKillCanvas() {
+  const mapEl = document.getElementById('map');
+  const canvas = document.getElementById('killTracerCanvas');
+  if (!mapEl || !canvas) return;
+  const rect = mapEl.getBoundingClientRect();
+  canvas.style.left = rect.left + 'px';
+  canvas.style.top = rect.top + 'px';
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+}
+
+async function continuInitKillReplay() {
   const container = document.getElementById('killReplayContainer');
-  container.style.display = 'block';
   if (!container) {
     console.warn('[Kill Replay] Container not found in DOM');
     return;
   }
+  container.style.display = 'block';
   document.getElementById('killAttacker').textContent = killData.attacker_name || '?';
   document.getElementById('killVictim').textContent = killData.victim_name || '?';
   document.getElementById('killWeapon').textContent = killData.weapon || 'Unknown';
-  
+  const timerRow = document.getElementById('killTimer').closest('.kill-info');
+  if (timerRow) timerRow.style.display = 'none';
+
   const canvas = document.getElementById('killTracerCanvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  resizeKillCanvas();
+  window.onresize = resizeKillCanvas;
   canvas.style.display = 'block';
   killTracerCtx = canvas.getContext('2d');
-  
+
   const killerPos = {x: parseFloat(killData.attacker_pos_x)||0, y: parseFloat(killData.attacker_pos_y)||0};
   const victimPos = {x: parseFloat(killData.victim_pos_x)||0, y: parseFloat(killData.victim_pos_y)||0};
-  
+
   console.log('🎯 Killer coords (x,y):', killerPos);
   console.log('🎯 Victim coords (x,y):', victimPos);
 
@@ -1477,50 +1522,73 @@ function continuInitKillReplay() {
   const centerY = (killerLatLng[0] + victimLatLng[0])/2;
   const distancePx = Math.sqrt(Math.pow(victimLatLng[1]-killerLatLng[1],2)+Math.pow(victimLatLng[0]-killerLatLng[0],2));
   const zoomLevel = Math.max(-2, Math.min(4, 2-Math.log2(Math.max(distancePx,1)/50)));
-  
+
   rMap.setView([centerY,centerX], zoomLevel);
-  rMap.invalidateSize();  
-  
-  const killerMarker = L.circleMarker(killerLatLng, {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.attacker_name}</b>`).addTo(rMap);
-  const victimMarker = L.circleMarker(victimLatLng, {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.victim_name}</b>`).addTo(rMap);
+  rMap.invalidateSize();
+  resizeKillCanvas();
+
+  // Enriquecer con rol/team/squad reales (fallback a punto simple si no hay data)
+  const enrich = await rEnrichKillPlayers(killData);
+  const attackerP = enrich && enrich.attackerP ? Object.assign({}, enrich.attackerP, {isAlive:true}) : null;
+  const victimP   = enrich && enrich.victimP   ? Object.assign({}, enrich.victimP,   {isAlive:true}) : null;
+
+  if (attackerP) {
+    L.marker(killerLatLng, {icon: makeIcon(attackerP, false)})
+      .bindTooltip(makeTooltipContent(attackerP), {permanent:false, direction:'top', offset:[0,-14], className:'squad-tip'})
+      .addTo(rMap);
+  } else {
+    L.circleMarker(killerLatLng, {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2})
+      .bindTooltip(`<b>${esc(killData.attacker_name)}</b>`, {direction:'top'}).addTo(rMap);
+  }
+  if (victimP) {
+    L.marker(victimLatLng, {icon: makeIcon(victimP, false)})
+      .bindTooltip(makeTooltipContent(victimP), {permanent:false, direction:'top', offset:[0,-14], className:'squad-tip'})
+      .addTo(rMap);
+  } else {
+    L.circleMarker(victimLatLng, {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2})
+      .bindTooltip(`<b>${esc(killData.victim_name)}</b>`, {direction:'top'}).addTo(rMap);
+  }
   console.log('✅ Markers agregados al mapa');
-  
-  killTracerProgress = 0;
-  const duration = 3000;
-  const startTime = Date.now();
-  
-  const animateTracer = () => {
-    const elapsed = Date.now()-startTime;
-    killTracerProgress = Math.min(elapsed/duration, 1);
-    const seconds = (elapsed/1000).toFixed(1);
-    document.getElementById('killTimer').textContent = seconds+'s';
+
+  // Línea estática (sin fade) + pulso continuo en ambos puntos
+  const drawFrame = (phase) => {
+    if (!killTracerCtx) return;
     killTracerCtx.clearRect(0,0,killTracerCtx.canvas.width,killTracerCtx.canvas.height);
     const killerScreen = rMap.latLngToContainerPoint(killerLatLng);
     const victimScreen = rMap.latLngToContainerPoint(victimLatLng);
-    killTracerCtx.strokeStyle = `rgba(255,107,107,${1-killTracerProgress})`;
-    killTracerCtx.lineWidth = 3;
+
+    killTracerCtx.strokeStyle = 'rgba(255,107,107,0.85)';
+    killTracerCtx.lineWidth = 2.5;
     killTracerCtx.lineCap = 'round';
-    killTracerCtx.lineJoin = 'round';
     killTracerCtx.beginPath();
     killTracerCtx.moveTo(killerScreen.x, killerScreen.y);
-    killTracerCtx.lineTo(killerScreen.x+(victimScreen.x-killerScreen.x)*killTracerProgress, killerScreen.y+(victimScreen.y-killerScreen.y)*killTracerProgress);
+    killTracerCtx.lineTo(victimScreen.x, victimScreen.y);
     killTracerCtx.stroke();
-    if(killTracerProgress>=0.9) {
-      const pulse=(killTracerProgress-0.9)/0.1;
-      killTracerCtx.strokeStyle = `rgba(78,205,196,${(1-pulse)*0.6})`;
-      killTracerCtx.lineWidth = 1+pulse*4;
+
+    const drawPulse = (pt, rgb) => {
+      const radius = 10 + phase*18;
+      killTracerCtx.strokeStyle = `rgba(${rgb},${(1-phase)*0.7})`;
+      killTracerCtx.lineWidth = 2;
       killTracerCtx.beginPath();
-      killTracerCtx.arc(victimScreen.x,victimScreen.y,20+pulse*30,0,Math.PI*2);
+      killTracerCtx.arc(pt.x, pt.y, radius, 0, Math.PI*2);
       killTracerCtx.stroke();
-    }
-    if(killTracerProgress<1) killReplayTimer = requestAnimationFrame(animateTracer);
-    else {killTracerProgress=0; killReplayTimer=setTimeout(()=>animateTracer(),500);}
+    };
+    drawPulse(killerScreen, '255,107,107');
+    drawPulse(victimScreen, '78,205,196');
   };
-  animateTracer();
+
+  const pulseDuration = 1500;
+  const pulseStart = Date.now();
+  const animatePulse = () => {
+    const phase = ((Date.now()-pulseStart) % pulseDuration) / pulseDuration;
+    drawFrame(phase);
+    killReplayTimer = requestAnimationFrame(animatePulse);
+  };
+  animatePulse();
 }
 
 function resetKillReplay() {
-  if(killReplayTimer) {clearTimeout(killReplayTimer); cancelAnimationFrame(killReplayTimer);}
+  if (killReplayTimer) { clearTimeout(killReplayTimer); cancelAnimationFrame(killReplayTimer); }
   initKillReplay();
 }
 
