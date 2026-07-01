@@ -102,7 +102,6 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
 .kill-btn { padding: 6px 12px; background: #c84b31; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Oswald', sans-serif; margin-right: 8px; }
 .kill-btn:hover { background: #a03d28; }
 .kill-timer { color: #ffb400; font-weight: 600; }
-#killTracerCanvas { display: none; position: fixed; top: 0; left: 0; z-index: 400; pointer-events: none; }
 </style>
 
 </head>
@@ -249,9 +248,6 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
     <button class="kill-btn" onclick="window.location.href='replays.html'">← Volver</button>
   </div>
 </div>
-
-<!-- CANVAS para tracer -->
-<canvas id="killTracerCanvas"></canvas>
 
 <div id="scrubberBar">
   <div id="scrubberRow">
@@ -762,7 +758,7 @@ function logVehicleDebug(groups) {
 // ── Kill Replay: matcher de aislamiento. Prioriza nombre (exacto, viene de la URL/kill event)
 // porque steamID puede venir con precisión perdida desde Postgres bigint -> JSON number (Steam64 tiene 17 dígitos, > Number.MAX_SAFE_INTEGER). ──
 function isKillIsolatedPlayer(p) {
-  if (killIsolateNames && killIsolateNames.has(p.name)) return true;
+  if (killIsolateNames && p.name && killIsolateNames.has(p.name.trim())) return true;
   if (killIsolateSteamIDs && killIsolateSteamIDs.has(String(p.steamID))) return true;
   return false;
 }
@@ -1408,8 +1404,6 @@ async function rPushToGithub() {
 
 // ── KILL REPLAY MODE ──
 let killReplayTimer = null;
-let killTracerProgress = 0;
-let killTracerCtx = null;
 
 async function loadKillReplayMap(matchId) {
   console.log('📡 [loadKillReplayMap] Cargando mapa para match:', matchId);
@@ -1514,18 +1508,6 @@ async function rFetchKillWindowSnapshots(matchId, killTs, windowSec) {
   return all.map(s => s.data || s);
 }
 
-// ── Kill Replay: canvas siempre alineado con el div #map (fix del desfase) ──
-function resizeKillCanvas() {
-  const mapEl = document.getElementById('map');
-  const canvas = document.getElementById('killTracerCanvas');
-  if (!mapEl || !canvas) return;
-  const rect = mapEl.getBoundingClientRect();
-  canvas.style.left = rect.left + 'px';
-  canvas.style.top = rect.top + 'px';
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-}
-
 async function continuInitKillReplay() {
   const container = document.getElementById('killReplayContainer');
   if (!container) {
@@ -1539,19 +1521,13 @@ async function continuInitKillReplay() {
   const timerRow = document.getElementById('killTimer').closest('.kill-info');
   if (timerRow) timerRow.style.display = 'none';
 
-  const canvas = document.getElementById('killTracerCanvas');
-  resizeKillCanvas();
-  window.onresize = resizeKillCanvas;
-  canvas.style.display = 'block';
-  killTracerCtx = canvas.getContext('2d');
-
   const killerPos = {x: parseFloat(killData.attacker_pos_x)||0, y: parseFloat(killData.attacker_pos_y)||0};
   const victimPos = {x: parseFloat(killData.victim_pos_x)||0, y: parseFloat(killData.victim_pos_y)||0};
 
   console.log('🎯 Killer coords (x,y):', killerPos);
   console.log('🎯 Victim coords (x,y):', victimPos);
 
-  // Convertir coords crudas de Unreal Engine a lat/lng del mapa Leaflet (0-MAP_UNITS)
+  // Convertir coords crudas de Unreal Engine a lat/lng del mapa Leaflet (0-MAP_UNITS) — solo para centrar el zoom inicial
   const corn = rCurrentMapKey ? getCorn({ layer: rCurrentMapKey }) : null;
   const killerLatLng = corn ? gameToLatLng(killerPos, corn) : [killerPos.y, killerPos.x];
   const victimLatLng = corn ? gameToLatLng(victimPos, corn) : [victimPos.y, victimPos.x];
@@ -1564,31 +1540,9 @@ async function continuInitKillReplay() {
 
   rMap.setView([centerY,centerX], zoomLevel);
   rMap.invalidateSize();
-  resizeKillCanvas();
 
   // ── Cargar ventana de contexto (movimiento previo) y aislar a los 2 players ──
   await loadKillContextWindow();
-
-  // Línea estática del punto exacto de la kill (sin animación, sin pulso) —
-  // se redibuja solo cuando el mapa se mueve/zoomea, no en loop continuo.
-  const drawKillLine = () => {
-    if (!killTracerCtx) return;
-    killTracerCtx.clearRect(0,0,killTracerCtx.canvas.width,killTracerCtx.canvas.height);
-    const killerScreen = rMap.latLngToContainerPoint(killerLatLng);
-    const victimScreen = rMap.latLngToContainerPoint(victimLatLng);
-
-    killTracerCtx.strokeStyle = 'rgba(255,107,107,0.85)';
-    killTracerCtx.lineWidth = 2.5;
-    killTracerCtx.lineCap = 'round';
-    killTracerCtx.beginPath();
-    killTracerCtx.moveTo(killerScreen.x, killerScreen.y);
-    killTracerCtx.lineTo(victimScreen.x, victimScreen.y);
-    killTracerCtx.stroke();
-  };
-
-  drawKillLine();
-  rMap.off('move zoom', drawKillLine);
-  rMap.on('move zoom', drawKillLine);
 }
 
 // ── Kill Replay: carga snapshots [now - windowSec, kill] y arranca playback aislado ──
@@ -1617,7 +1571,7 @@ async function loadKillContextWindow() {
   for (const id of Object.keys(rMarkers)) { rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
   rClearLayers();
 
-  killIsolateNames = new Set([killData.attacker_name, killData.victim_name].filter(Boolean));
+  killIsolateNames = new Set([killData.attacker_name, killData.victim_name].filter(Boolean).map(n => n.trim()));
   killIsolateSteamIDs = new Set([meta.attacker_steam, meta.victim_steam].filter(Boolean).map(String));
   rSnapshots = snaps;
   rIdx = 0;
