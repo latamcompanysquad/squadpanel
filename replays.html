@@ -102,7 +102,7 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
 .kill-btn { padding: 6px 12px; background: #c84b31; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Oswald', sans-serif; margin-right: 8px; }
 .kill-btn:hover { background: #a03d28; }
 .kill-timer { color: #ffb400; font-weight: 600; }
-#killTracerCanvas { display: none; position: fixed; top: 0; left: 0; z-index: 400; }
+#killTracerCanvas { display: none; position: fixed; top: 0; left: 0; z-index: 400; pointer-events: none; }
 </style>
 
 </head>
@@ -507,7 +507,8 @@ const FACTION_CODE = {
 let rMap, rBasemap, rCurrentMapKey;
 let rSnapshots = [], rIdx = 0, rPlaying = false, rTimer = null;
 let rSelectedSteamID = null;
-let killIsolateSteamIDs = null; // Set con steamID de attacker/victim en kill replay; null = sin aislar
+let killIsolateSteamIDs = null; // Set con steamID (String) de attacker/victim en kill replay; null = sin aislar
+let killIsolateNames = null; // Set con nombres exactos (fuente primaria, sin riesgo de pérdida de precisión bigint)
 let rFollowSelected = false;
 let rAllPlayersCache = [];
 let rFilters = { t1:true, t2:true, veh:true, dead:true, flags:true, empty:true };
@@ -758,6 +759,14 @@ function logVehicleDebug(groups) {
   groups.forEach((g, i) => console.log(`[REPLAY] Veh ${i}: ${g.vehicleName} (T${g.teamID}) - icon: ${g.icon}`));
 }
 
+// ── Kill Replay: matcher de aislamiento. Prioriza nombre (exacto, viene de la URL/kill event)
+// porque steamID puede venir con precisión perdida desde Postgres bigint -> JSON number (Steam64 tiene 17 dígitos, > Number.MAX_SAFE_INTEGER). ──
+function isKillIsolatedPlayer(p) {
+  if (killIsolateNames && killIsolateNames.has(p.name)) return true;
+  if (killIsolateSteamIDs && killIsolateSteamIDs.has(String(p.steamID))) return true;
+  return false;
+}
+
 function rUpdateMarkers(snap, corn) {
   const players   = snap.players   || [];
   const seen = new Set();
@@ -766,8 +775,8 @@ function rUpdateMarkers(snap, corn) {
   // vehicles
   for (const g of vehicleGroups) {
     if (!g.position) continue;
-    if (killIsolateSteamIDs) {
-      if (!g.occupants.some(p => killIsolateSteamIDs.has(p.steamID))) continue;
+    if (killIsolateNames || killIsolateSteamIDs) {
+      if (!g.occupants.some(isKillIsolatedPlayer)) continue;
     } else {
       if (!rFilters.veh) continue;
       if (!rFilters.t1 && g.teamID===1) continue;
@@ -791,8 +800,8 @@ function rUpdateMarkers(snap, corn) {
   // solo players
   for (const p of individualPlayers) {
     if (!p.position) continue;
-    if (killIsolateSteamIDs) {
-      if (!killIsolateSteamIDs.has(p.steamID)) continue;
+    if (killIsolateNames || killIsolateSteamIDs) {
+      if (!isKillIsolatedPlayer(p)) continue;
     } else {
       if (!rFilters.t1 && p.teamID===1) continue;
       if (!rFilters.t2 && p.teamID===2) continue;
@@ -815,6 +824,10 @@ function rUpdateMarkers(snap, corn) {
   // remove stale
   for (const id of Object.keys(rMarkers)) {
     if (!seen.has(id)) { rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
+  }
+
+  if ((killIsolateNames || killIsolateSteamIDs) && seen.size === 0) {
+    console.log('⚠️ [rUpdateMarkers] Aislamiento activo pero 0 players coincidieron en este frame. Nombres en snapshot:', players.map(p=>p.name));
   }
 
   // follow
@@ -1056,7 +1069,7 @@ function rRender(i) {
   //document.getElementById('rTimeInfo').textContent = `[${fmt(elapsed)}]`;
   document.getElementById('rPlayBtn').textContent = rPlaying ? '⏸' : '▶';
 
-  if (i===0) rMap.fitBounds(bounds);
+  if (i===0 && !killReplayMode) rMap.fitBounds(bounds);
 }
 
 // ── Playback ──
@@ -1556,8 +1569,9 @@ async function continuInitKillReplay() {
   // ── Cargar ventana de contexto (movimiento previo) y aislar a los 2 players ──
   await loadKillContextWindow();
 
-  // Línea estática del punto exacto de la kill (sin fade) + pulso continuo en ambos puntos
-  const drawFrame = (phase) => {
+  // Línea estática del punto exacto de la kill (sin animación, sin pulso) —
+  // se redibuja solo cuando el mapa se mueve/zoomea, no en loop continuo.
+  const drawKillLine = () => {
     if (!killTracerCtx) return;
     killTracerCtx.clearRect(0,0,killTracerCtx.canvas.width,killTracerCtx.canvas.height);
     const killerScreen = rMap.latLngToContainerPoint(killerLatLng);
@@ -1570,27 +1584,11 @@ async function continuInitKillReplay() {
     killTracerCtx.moveTo(killerScreen.x, killerScreen.y);
     killTracerCtx.lineTo(victimScreen.x, victimScreen.y);
     killTracerCtx.stroke();
-
-    const drawPulse = (pt, rgb) => {
-      const radius = 10 + phase*18;
-      killTracerCtx.strokeStyle = `rgba(${rgb},${(1-phase)*0.7})`;
-      killTracerCtx.lineWidth = 2;
-      killTracerCtx.beginPath();
-      killTracerCtx.arc(pt.x, pt.y, radius, 0, Math.PI*2);
-      killTracerCtx.stroke();
-    };
-    drawPulse(killerScreen, '255,107,107');
-    drawPulse(victimScreen, '78,205,196');
   };
 
-  const pulseDuration = 1500;
-  const pulseStart = Date.now();
-  const animatePulse = () => {
-    const phase = ((Date.now()-pulseStart) % pulseDuration) / pulseDuration;
-    drawFrame(phase);
-    killReplayTimer = requestAnimationFrame(animatePulse);
-  };
-  animatePulse();
+  drawKillLine();
+  rMap.off('move zoom', drawKillLine);
+  rMap.on('move zoom', drawKillLine);
 }
 
 // ── Kill Replay: carga snapshots [now - windowSec, kill] y arranca playback aislado ──
@@ -1619,7 +1617,8 @@ async function loadKillContextWindow() {
   for (const id of Object.keys(rMarkers)) { rMap.removeLayer(rMarkers[id]); delete rMarkers[id]; }
   rClearLayers();
 
-  killIsolateSteamIDs = new Set([meta.attacker_steam, meta.victim_steam]);
+  killIsolateNames = new Set([killData.attacker_name, killData.victim_name].filter(Boolean));
+  killIsolateSteamIDs = new Set([meta.attacker_steam, meta.victim_steam].filter(Boolean).map(String));
   rSnapshots = snaps;
   rIdx = 0;
   rPlaying = false;
@@ -1629,7 +1628,7 @@ async function loadKillContextWindow() {
   const timeline = document.getElementById('rTimeline');
   if (timeline) timeline.max = rSnapshots.length - 1;
 
-  console.log(`✅ [loadKillContextWindow] ${rSnapshots.length} snapshots, aislando steamIDs:`, [...killIsolateSteamIDs]);
+  console.log('✅ [loadKillContextWindow]', rSnapshots.length, 'snapshots. Aislando por nombre:', [...killIsolateNames], '| steamID (respaldo):', [...killIsolateSteamIDs]);
   if (statusEl) statusEl.textContent = `${rSnapshots.length} snaps · ${windowSec}s de contexto`;
 
   rRender(0);
