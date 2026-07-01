@@ -1418,9 +1418,11 @@ async function loadKillReplayMap(matchId) {
     if (mapKey) {
       const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
       rBasemap = L.imageOverlay(`./maps/${mapKey}.webp`, bounds, { opacity:1 }).addTo(rMap);
+      if (!rMap.hasLayer(rBasemap)) rMap.addLayer(rBasemap);
       console.log('✅ Mapa cargado:', mapKey);
     } else {
       console.log('⚠️ Mapa no encontrado en MAP_CORNERS');
+      console.log('🔍 Disponibles:', Object.keys(MAP_CORNERS).map(k => MAP_CORNERS[k].name));
     }
   } catch (err) {
     console.log('❌ Error loadKillReplayMap:', err.message);
@@ -1461,6 +1463,9 @@ function continuInitKillReplay() {
   
   const killerPos = {x: parseFloat(killData.attacker_pos_x)||0, y: parseFloat(killData.attacker_pos_y)||0};
   const victimPos = {x: parseFloat(killData.victim_pos_x)||0, y: parseFloat(killData.victim_pos_y)||0};
+  
+  console.log('🎯 Killer coords (x,y):', killerPos);
+  console.log('🎯 Victim coords (x,y):', victimPos);
   const centerX = (killerPos.x + victimPos.x)/2;
   const centerY = (killerPos.y + victimPos.y)/2;
   const distance = Math.sqrt(Math.pow(victimPos.x-killerPos.x,2)+Math.pow(victimPos.y-killerPos.y,2));
@@ -1469,8 +1474,9 @@ function continuInitKillReplay() {
   rMap.setView([centerY,centerX], zoomLevel);
   rMap.invalidateSize();  
   
-  L.circleMarker([killerPos.y,killerPos.x], {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.attacker_name);
-  L.circleMarker([victimPos.y,victimPos.x], {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).addTo(rMap).bindPopup(killData.victim_name);
+  const killerMarker = L.circleMarker([killerPos.y,killerPos.x], {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.attacker_name}</b>`).addTo(rMap);
+  const victimMarker = L.circleMarker([victimPos.y,victimPos.x], {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.victim_name}</b>`).addTo(rMap);
+  console.log('✅ Markers agregados al mapa');
   
   killTracerProgress = 0;
   const duration = 3000;
