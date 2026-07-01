@@ -1411,11 +1411,10 @@ async function loadKillReplayMap(matchId) {
     console.log('✅ Map name:', mapName);
     
     // Cargar imagen del mapa
-    const mapKey = Object.keys(MAP_CORNERS).find(key => 
-      MAP_CORNERS[key].name === mapName
-    );
+    const mapKey = getMapKey(mapName);
     
     if (mapKey) {
+      rCurrentMapKey = mapKey;
       const bounds = [[0,0],[MAP_UNITS,MAP_UNITS]];
       rBasemap = L.imageOverlay(`./maps/${mapKey}.webp`, bounds, { opacity:1 }).addTo(rMap);
       if (!rMap.hasLayer(rBasemap)) rMap.addLayer(rBasemap);
@@ -1467,16 +1466,23 @@ function continuInitKillReplay() {
   
   console.log('🎯 Killer coords (x,y):', killerPos);
   console.log('🎯 Victim coords (x,y):', victimPos);
-  const centerX = (killerPos.x + victimPos.x)/2;
-  const centerY = (killerPos.y + victimPos.y)/2;
-  const distance = Math.sqrt(Math.pow(victimPos.x-killerPos.x,2)+Math.pow(victimPos.y-killerPos.y,2));
-  const zoomLevel = Math.max(-2, Math.min(4, 2-Math.log2(distance/500)));
+
+  // Convertir coords crudas de Unreal Engine a lat/lng del mapa Leaflet (0-MAP_UNITS)
+  const corn = rCurrentMapKey ? getCorn({ layer: rCurrentMapKey }) : null;
+  const killerLatLng = corn ? gameToLatLng(killerPos, corn) : [killerPos.y, killerPos.x];
+  const victimLatLng = corn ? gameToLatLng(victimPos, corn) : [victimPos.y, victimPos.x];
+  if (!corn) console.log('⚠️ Sin corn disponible, usando coords crudas (posiciones probablemente incorrectas)');
+
+  const centerX = (killerLatLng[1] + victimLatLng[1])/2;
+  const centerY = (killerLatLng[0] + victimLatLng[0])/2;
+  const distancePx = Math.sqrt(Math.pow(victimLatLng[1]-killerLatLng[1],2)+Math.pow(victimLatLng[0]-killerLatLng[0],2));
+  const zoomLevel = Math.max(-2, Math.min(4, 2-Math.log2(Math.max(distancePx,1)/50)));
   
   rMap.setView([centerY,centerX], zoomLevel);
   rMap.invalidateSize();  
   
-  const killerMarker = L.circleMarker([killerPos.y,killerPos.x], {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.attacker_name}</b>`).addTo(rMap);
-  const victimMarker = L.circleMarker([victimPos.y,victimPos.x], {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.victim_name}</b>`).addTo(rMap);
+  const killerMarker = L.circleMarker(killerLatLng, {radius:8,color:'#ff6b6b',fill:true,fillColor:'#ff6b6b',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.attacker_name}</b>`).addTo(rMap);
+  const victimMarker = L.circleMarker(victimLatLng, {radius:8,color:'#4ecdc4',fill:true,fillColor:'#4ecdc4',fillOpacity:0.8,weight:2}).bindPopup(`<b>${killData.victim_name}</b>`).addTo(rMap);
   console.log('✅ Markers agregados al mapa');
   
   killTracerProgress = 0;
@@ -1489,8 +1495,8 @@ function continuInitKillReplay() {
     const seconds = (elapsed/1000).toFixed(1);
     document.getElementById('killTimer').textContent = seconds+'s';
     killTracerCtx.clearRect(0,0,killTracerCtx.canvas.width,killTracerCtx.canvas.height);
-    const killerScreen = rMap.latLngToContainerPoint([killerPos.y,killerPos.x]);
-    const victimScreen = rMap.latLngToContainerPoint([victimPos.y,victimPos.x]);
+    const killerScreen = rMap.latLngToContainerPoint(killerLatLng);
+    const victimScreen = rMap.latLngToContainerPoint(victimLatLng);
     killTracerCtx.strokeStyle = `rgba(255,107,107,${1-killTracerProgress})`;
     killTracerCtx.lineWidth = 3;
     killTracerCtx.lineCap = 'round';
