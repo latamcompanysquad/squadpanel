@@ -240,6 +240,12 @@ console.log('Kill Replay Mode:', killReplayMode, killData);
       <input type="number" id="killWindowSec" value="30" min="5" max="180" step="5"
         style="width:50px;background:#111;color:#fff;border:1px solid #444;padding:2px 4px;">s
     </span>
+  </div>
+  <div class="kill-info">
+    <span>Contexto posterior:
+      <input type="number" id="killWindowAfterSec" value="30" min="0" max="180" step="5"
+        style="width:50px;background:#111;color:#fff;border:1px solid #444;padding:2px 4px;">s
+    </span>
     <button class="kill-btn" onclick="reloadKillWindow()">Aplicar</button>
   </div>
   <div class="kill-info" id="killWindowStatus" style="color:var(--text-dim);font-size:11px;">—</div>
@@ -1027,6 +1033,15 @@ function rUpdateDeployables(snap, corn) {
   if (snap.ammocrates?.length)  snap.ammocrates.forEach(a=>{ try{rRenderAmmo(a,corn);}catch(e){} });
 }
 
+// ── Fusiona la fila de Supabase (timestamp/created_at son columnas, no viven dentro de data) con el payload data ──
+// Sin esto, .map(s => s.data || s) descarta el timestamp real y el scrubber muestra NaN:NaN.
+function rMergeSnapshotTimestamp(row) {
+  const payload = row.data || row;
+  const ts = payload.timestamp || row.timestamp || row.created_at || null;
+  if (payload.timestamp) return payload; // ya lo trae, no tocar
+  return Object.assign({}, payload, { timestamp: ts });
+}
+
 // ── Render snapshot ──
 function rRender(i) {
   if (!rSnapshots[i]) return;
@@ -1232,7 +1247,7 @@ async function rSelectMatch(id) {
         await new Promise(r => setTimeout(r, 500 * retries)); // Backoff exponencial
       }
     }
-    rSnapshots = allSnapshots.map(s => s.data || s);
+    rSnapshots = allSnapshots.map(s => rMergeSnapshotTimestamp(s));
     rIdx = 0;
   rPlaying = false;
   clearInterval(rTimer);
@@ -1484,11 +1499,11 @@ async function rFetchKillMeta(killId) {
   }
 }
 
-// ── Kill Replay: trae match_snapshots dentro de [timestamp - windowSec, timestamp + buffer] ──
-async function rFetchKillWindowSnapshots(matchId, killTs, windowSec) {
-  const startTs = killTs - windowSec * 1000;
-  const endTs = killTs + 1500; // pequeño buffer post-impacto
-  console.log(`📡 [rFetchKillWindowSnapshots] match=${matchId} window=${windowSec}s start=${new Date(startTs).toISOString()} end=${new Date(endTs).toISOString()}`);
+// ── Kill Replay: trae match_snapshots dentro de [timestamp - beforeSec, timestamp + afterSec] ──
+async function rFetchKillWindowSnapshots(matchId, killTs, beforeSec, afterSec) {
+  const startTs = killTs - beforeSec * 1000;
+  const endTs = killTs + afterSec * 1000;
+  console.log(`📡 [rFetchKillWindowSnapshots] match=${matchId} before=${beforeSec}s after=${afterSec}s start=${new Date(startTs).toISOString()} end=${new Date(endTs).toISOString()}`);
 
   let all = [], offset = 0;
   const limit = 200;
@@ -1505,7 +1520,7 @@ async function rFetchKillWindowSnapshots(matchId, killTs, windowSec) {
     hasMore = data.length === limit;
   }
   console.log(`✅ [rFetchKillWindowSnapshots] ${all.length} snapshots cargados`);
-  return all.map(s => s.data || s);
+  return all.map(s => rMergeSnapshotTimestamp(s));
 }
 
 async function continuInitKillReplay() {
@@ -1545,9 +1560,10 @@ async function continuInitKillReplay() {
   await loadKillContextWindow();
 }
 
-// ── Kill Replay: carga snapshots [now - windowSec, kill] y arranca playback aislado ──
+// ── Kill Replay: carga snapshots [kill - beforeSec, kill + afterSec] y arranca playback aislado ──
 async function loadKillContextWindow() {
-  const windowSec = parseInt(document.getElementById('killWindowSec')?.value, 10) || 30;
+  const beforeSec = parseInt(document.getElementById('killWindowSec')?.value, 10) || 30;
+  const afterSec = parseInt(document.getElementById('killWindowAfterSec')?.value, 10) || 0;
   const statusEl = document.getElementById('killWindowStatus');
   if (statusEl) statusEl.textContent = 'Cargando contexto...';
 
@@ -1559,7 +1575,7 @@ async function loadKillContextWindow() {
   }
 
   const killTs = new Date(meta.timestamp).getTime();
-  const snaps = await rFetchKillWindowSnapshots(killData.match_id, killTs, windowSec);
+  const snaps = await rFetchKillWindowSnapshots(killData.match_id, killTs, beforeSec, afterSec);
 
   if (!snaps.length) {
     console.log('⚠️ [loadKillContextWindow] 0 snapshots en la ventana solicitada');
@@ -1583,7 +1599,7 @@ async function loadKillContextWindow() {
   if (timeline) timeline.max = rSnapshots.length - 1;
 
   console.log('✅ [loadKillContextWindow]', rSnapshots.length, 'snapshots. Aislando por nombre:', [...killIsolateNames], '| steamID (respaldo):', [...killIsolateSteamIDs]);
-  if (statusEl) statusEl.textContent = `${rSnapshots.length} snaps · ${windowSec}s de contexto`;
+  if (statusEl) statusEl.textContent = `${rSnapshots.length} snaps · ${beforeSec}s antes / ${afterSec}s despues`;
 
   rRender(0);
   rPlay(); // arranca automático desde el contexto hasta el momento de la kill
