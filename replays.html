@@ -1380,7 +1380,6 @@ async function rPushToGithub() {
 let killReplayTimer = null;
 let killTracerProgress = 0;
 let killTracerCtx = null;
-let killReplayTimer = null;
 
 async function loadKillReplayMap(matchId) {
   console.log('📡 [loadKillReplayMap] Cargando mapa para match:', matchId);
@@ -1427,9 +1426,6 @@ async function loadKillReplayMap(matchId) {
     console.log('❌ Error loadKillReplayMap:', err.message);
   }
 }
-
-let killTracerProgress = 0;
-let killTracerCtx = null;
 
 function initKillReplay() {
   if (!killReplayMode || !killData) return;
